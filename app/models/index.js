@@ -14,5 +14,13 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.user = require("./user.model.js")(sequelize, Sequelize, DataTypes);
+db.bot = require("./bot.model.js")(sequelize, Sequelize, DataTypes);
+
+db.user.hasMany(db.bot, { as: "bots" });
+db.bot.belongsTo(db.user, {
+  foreignKey: "userId",
+  as: "user",
+});
+
 
 module.exports = db;

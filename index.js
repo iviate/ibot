@@ -1,22 +1,31 @@
 // import * as http from 'http';
 
 
-
+require('log-timestamp');
 // module included to create worker threads
 const { Worker } = require('worker_threads');
 const axios = require('axios');
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt')
+const puppeteer = require("puppeteer");
 
 const db = require("./app/models");
 const e = require('express');
 const { syncBuiltinESMExports } = require('module');
-db.sequelize.sync();
+db.sequelize.sync({alter: true});
 
 var myApp = require('express')();
 myApp.use(bodyParser.json())
 var http = require('http').Server(myApp);
-var socketIO = require('socket.io')(http);
+var io = require('socket.io')(http);
+
+io.on('connection', (socket) => {
+    console.log('socket connection')
+    socket.on('chat message', (msg) => {
+        console.log(msg)
+        io.emit('chat message', msg);
+      });
+  });
 
 myApp.post('/login', async function (request, response) {
     const USERNAME = request.body.username;
@@ -28,8 +37,6 @@ myApp.post('/login', async function (request, response) {
         },
     });
     if(user){
-        console.log('found')
-        console.log(user.password)
         bcrypt.compare(PASSWORD, user.password).then(function(result) {
             if(result){
                 response.json({ success: true });
@@ -38,7 +45,7 @@ myApp.post('/login', async function (request, response) {
             }
         });
     }else{
-        const puppeteer = require("puppeteer");
+        
     // require("dotenv").config();
         (async (USERNAME, PASSWORD) => {
 
@@ -64,8 +71,7 @@ myApp.post('/login', async function (request, response) {
 
                 if(data.jwtToken != ''){
                     bcrypt.hash(PASSWORD, 12, function(err, hash) {
-                        console.log(hash)
-                        // db.user.create({username: USERNAME, password: hash})
+                        db.user.create({username: USERNAME, password: hash, truthbet_token: data.jwtToken, truthbet_token_at: db.sequelize.fn('NOW')})
                         response.json({ success: true });
                     });
                     
@@ -96,8 +102,35 @@ myApp.post('/login', async function (request, response) {
 
 });
 
-myApp.post('/login', async function (request, response) {
-
+myApp.post('/bot', async function (request, response) {
+    const USERNAME = request.body.username
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then( (user) => {
+        if(user)
+        {
+            botData = {
+                userId: user.id,
+                token: user.truthbet_token,
+                token_at: user.truthbet_token_at,
+                status: 1,
+                money_system: request.body.money_system,
+                profit_threshold: request.body.profit_threshold,
+                loss_threshold: request.body.loss_threshold,
+                init_wallet: request.body.init_wallet,
+                init_bet: request.body.init_bet,
+                max_turn: request.body.max_turn,
+            }
+            let botObj = db.bot.create(botData)
+            response.json({success: true, error_code: 0, data: botObj})
+        }else{
+            response.json({success: false, error_code: 404, message: 'user not found'})
+        }
+        
+    });
+    
 });
 
 http.listen(3000, function () {
@@ -163,7 +196,7 @@ function mainBody() {
         });
 
 
-    interval = setInterval(function () { playCasino(); }, 12000);
+    interval = setInterval(function () { playCasino(); }, 10000);
 
     // filling array with 100 items
 
@@ -187,12 +220,14 @@ function playCasino() {
     currentList.sort(compare)
     let found = true
     for (current of currentList) {
-        console.log(`table: ${current.table_id} percent: ${current.winner_percent} remaining: ${current.current.remaining} bot: ${current.bot}`)
-        console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
-        if (current.winner_percent != 0 && current.current.remaining >= 10 && current.bot != null) {
-
+        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} remaining: ${current.current.remaining} bot: ${current.bot}`)
+        // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
+        if (current.winner_percent != 0 && current.current.remaining >= 8 && current.current.remaining <= 15 && current.bot != null) {
+            console.log(`table: ${current.table_id} percent: ${current.winner_percent} remaining: ${current.current.remaining} bot: ${current.bot}`)
             isPlay = true
-            workerDict[current.table_id].worker.postMessage({ action: 'play' })
+            console.log('post play')
+            workerDict[current.table_id].worker.postMessage({ action: 'play', current: current.current })
+            io.emit('bot_play', {current});
             break;
         }
     }

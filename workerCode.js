@@ -1,5 +1,6 @@
 // parentPort for registering to events from main thread
 // workerData for receiving data clone
+require('log-timestamp');
 const { parentPort, workerData } = require('worker_threads');
 const axios = require('axios');
 
@@ -17,6 +18,7 @@ let statsCount;
 let bot = null;
 let playRound = null;
 let token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NDI4MjE5fSwiaWF0IjoxNTk1ODE2Njc0fQ.xGTblTjSj_5Aej9De_lOqPLkL_-9k7qbQGNxdix9d9c'
+let isPlay = false;
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NDI4MjE5fSwiaWF0IjoxNTk1ODM2ODUzfQ.1YDXUwVIg7kIiYpxYlRPrn06jLtdQ6nG9dufe6MhIIM
 registerForEventListening();
 
@@ -34,44 +36,45 @@ function getCurrent() {
             // console.log(current)
             let sum = predictStats.correct + predictStats.wrong + predictStats.tie
             let winner_percent = 0
-            if(sum != 0){
-                winner_percent = ((predictStats.correct + predictStats.tie) / sum) * 100 
+            if (sum != 0) {
+                winner_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
             }
-            
+
             parentPort.postMessage({
-                            error: false,
-                            action: 'getCurrent', 
-                            table_id: workerData.id, 
-                            info: info, 
-                            predictStats: predictStats, 
-                            round: round, 
-                            bot: bot, 
-                            current: current, 
-                            winner_percent: winner_percent,
-                            bot: bot})
+                error: false,
+                action: 'getCurrent',
+                table_id: workerData.id,
+                info: info,
+                predictStats: predictStats,
+                round: round,
+                bot: bot,
+                current: current,
+                winner_percent: winner_percent,
+                bot: bot
+            })
             // if (current.round == currentInfo.round && current.remaining > 5) {
-                // let payload = { table_id: workerData.id, game_id: current.id }
-                // if (bot == 'PLAYER') {
-                //     payload.chip = { credit: { PLAYER: 50 } }
-                // } else if (bot == 'BANKER') {
-                //     payload.chip = { credit: { BANKER: 50 } }
-                // } else {
-                //     return
-                // }
-                
-                // axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-                //     {
-                //         headers: {
-                //             Authorization: `Bearer ${token}`,
-                //             'content-type': 'application/json'
-                //         }
-                //     })
-                //     .then(response => {
-                //         console.log(response.data);
-                //     })
-                //     .catch(error => {
-                //         console.log(`bet: ${error}`);
-                //     });
+            // let payload = { table_id: workerData.id, game_id: current.id }
+            // if (bot == 'PLAYER') {
+            //     payload.chip = { credit: { PLAYER: 50 } }
+            // } else if (bot == 'BANKER') {
+            //     payload.chip = { credit: { BANKER: 50 } }
+            // } else {
+            //     return
+            // }
+
+            // axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+            //     {
+            //         headers: {
+            //             Authorization: `Bearer ${token}`,
+            //             'content-type': 'application/json'
+            //         }
+            //     })
+            //     .then(response => {
+            //         console.log(response.data);
+            //     })
+            //     .catch(error => {
+            //         console.log(`bet: ${error}`);
+            //     });
             // }
 
         })
@@ -82,56 +85,41 @@ function getCurrent() {
                 action: 'getCurrent',
                 error: true,
                 winner_percent: 0,
-                current: {remaining: 0},
-                bot: null})
+                current: { remaining: 0 },
+                bot: null
+            })
         });
 
-    
+
 }
 
-function betting(){
-    playRound = round
-    axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-                .then(response => {
-                    // console.log(response.data);
-                    // console.log(`round = ${response.data.info.detail.round}`)
-                    let current = response.data.game
-                    console.log(current)
-                    if (current.round == round && current.remaining > 5) {
-                        let payload = {table_id: workerData.id, game_id : current.id}
-                        if(bot == 'PLAYER'){
-                            payload.chip = {credit: {PLAYER: 50}}
-                        }else if(bot == 'BANKER'){
-                            payload.chip = {credit: {BANKER: 50}}
-                        }else{
-                            return
-                        }
+function betting(betCurrent) {
+    // console.log(betCurrent.round, round)
+    // if (betCurrent.round == round && betCurrent.remaining > 5) {
+    //     let payload = { table_id: workerData.id, game_id: betCurrent.id }
+    //     if (bot == 'PLAYER') {
+    //         payload.chip = { credit: { PLAYER: 50 } }
+    //     } else if (bot == 'BANKER') {
+    //         payload.chip = { credit: { BANKER: 50 } }
+    //     } else {
+    //         return
+    //     }
+    //     console.log('bet')
+    //     axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+    //         {
+    //             headers: {
+    //                 Authorization: `Bearer ${token}`,
+    //                 'content-type': 'application/json'
+    //             }
+    //         })
+    //         .then(response => {
+    //             console.log(response.data);
+    //         })
+    //         .catch(error => {
+    //             console.log(`${workerData.id} play bet error: ${error}`);
+    //         });
+    // }
 
-                        axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                    'content-type': 'application/json'
-                                }
-                            })
-                            .then(response => {
-                                console.log(response.data);
-                            })
-                            .catch(error => {
-                                console.log(`${workerData.id} play bet error: ${error}`);
-                            });
-                    }
-
-                })
-                .catch(error => {
-                    console.log(`${workerData.id} play current error: ${error}`);
-                    playRound = null
-                });
 }
 
 function registerForEventListening() {
@@ -140,12 +128,14 @@ function registerForEventListening() {
     let cb = (err, result) => {
         if (err) return console.error(err);
         // console.log("Thread id ")
-        
+
         if (result.action == 'getCurrent') {
             getCurrent()
-        }else if(result.action == 'play'){
+        } else if (result.action == 'play') {
             console.log(`Thred id ${workerData.id} action ${result.action}`)
-            betting()
+            isPlay = true
+            playRound = round + 1
+            // betting(result.current)
         }
 
 
@@ -228,7 +218,14 @@ function botplay(currentInfo) {
     let statsCount = currentInfo.statistic.length
     let playCount = predictStats.predict.length
     let currentRound = currentInfo.round
-    if (currentInfo.round == 0) return;
+    if (currentInfo.round == 0){
+        if(isPlay == true){
+            isPlay = false
+            parentPort.postMessage({ action: 'played', status: status })
+        }
+        return;
+
+    }
 
     // console.log(shoe, round, currentInfo.round, currentInfo.statistic.length, bot)
     let lastPlay = { ...predictStats.predict[playCount - 1] }
@@ -249,8 +246,9 @@ function botplay(currentInfo) {
                 predictStats.wrong++;
                 status = 'LOSE'
             }
-            if(playRound != null){
-                parentPort.postMessage({action: 'played', status: status})
+            if (isPlay && playRound == statsCount) {
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: status })
             }
             bot = null
         }
@@ -264,48 +262,50 @@ function botplay(currentInfo) {
         } else {
             bot = botChoice[Math.floor(Math.random() * botChoice.length)]
             predictStats.predict.push({ round: currentInfo.round, bot: bot, isResult: false })
-            // axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
-            //     {
-            //         headers: {
-            //             Authorization: `Bearer ${token}`
-            //         }
-            //     })
-            //     .then(response => {
-            //         // console.log(response.data);
-            //         // console.log(`round = ${response.data.info.detail.round}`)
-            //         let current = response.data.game
-            //         console.log(current)
-            //         if (current.round == currentInfo.round && current.remaining > 5) {
-            //             let payload = {table_id: workerData.id, game_id : current.id}
-            //             if(bot == 'PLAYER'){
-            //                 payload.chip = {credit: {PLAYER: 50}}
-            //             }else if(bot == 'BANKER'){
-            //                 payload.chip = {credit: {BANKER: 50}}
-            //             }else{
-            //                 return
-            //             }
+            if(isPlay && playRound == currentInfo.round){
+                axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    // console.log(response.data);
+                    // console.log(`round = ${response.data.info.detail.round}`)
+                    let current = response.data.game
+                    console.log(current)
+                    if (current.round == currentInfo.round && current.remaining > 5) {
+                        let payload = {table_id: workerData.id, game_id : current.id}
+                        if(bot == 'PLAYER'){
+                            payload.chip = {credit: {PLAYER: 50}}
+                        }else if(bot == 'BANKER'){
+                            payload.chip = {credit: {BANKER: 50}}
+                        }else{
+                            return
+                        }
 
-            //             axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-            //                 {
-            //                     headers: {
-            //                         Authorization: `Bearer ${token}`,
-            //                         'content-type': 'application/json'
-            //                     }
-            //                 })
-            //                 .then(response => {
-            //                     console.log(response.data);
-            //                 })
-            //                 .catch(error => {
-            //                     console.log(`bet: ${error}`);
-            //                 });
-            //         }
+                        axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                    'content-type': 'application/json'
+                                }
+                            })
+                            .then(response => {
+                                console.log(response.data);
+                            })
+                            .catch(error => {
+                                console.log(`bet: ${error}`);
+                            });
+                    }
 
-            //     })
-            //     .catch(error => {
-            //         console.log(`current: ${error}`);
-            //     });
-
-
+                })
+                .catch(error => {
+                    console.log(`current: ${error}`);
+                    isPlay = false
+                    parentPort.postMessage({ action: 'played', status: 'FAILED' })
+                });
+            }
         }
 
     }

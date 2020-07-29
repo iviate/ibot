@@ -38,6 +38,14 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       line: {
         type: DataTypes.STRING,
         allowNull: true,
+      },
+      truthbet_token: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      truthbet_token_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
       }
     });
   
