@@ -1,0 +1,45 @@
+
+module.exports = (sequelize, Sequelize, DataTypes) => {
+    const User = sequelize.define("user", {
+      username: {
+        type: DataTypes.STRING
+      },
+      password: {
+        type: DataTypes.STRING
+      },
+      last_login: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+      },
+      token: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      is_remember:{
+        type: DataTypes.BOOLEAN,
+        defdefaultValueault: false
+      },
+      agent: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      image: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      tel: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      line: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      }
+    });
+  
+    return User;
+  };
