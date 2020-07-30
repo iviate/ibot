@@ -13,6 +13,8 @@ const db = require("./app/models");
 const e = require('express');
 const { syncBuiltinESMExports } = require('module');
 db.sequelize.sync({alter: true});
+let botNumber = 25;
+let botWorkerDict = {};
 
 var myApp = require('express')();
 myApp.use(bodyParser.json())
@@ -83,9 +85,6 @@ myApp.post('/login', async function (request, response) {
                 response.json({ success: false, message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง' });
             }
 
-
-
-            
             //   response.json(data);
             
             
@@ -148,7 +147,42 @@ let isPlay = false;
 let playTable;
 let currentList = [];
 
-// mainBody();
+mainBody();
+
+function createBotWorker(){
+    let cb = (err, result) => {
+        if (err) { return console.error(err); }
+        if(result.action == 'bet_success'){
+            console.log(`bot ${result.id} bet success`)
+        }
+        if(result.action == 'bet_failed'){
+            console.log(`bot ${result.id} bet failed`)
+        }
+    };
+
+    for(let i = 0; i < botNumber; i++)
+    {
+        let w = new Worker(__dirname + '/botWorker.js', { workerData: {id: i} });
+        
+        // registering events in main thread to perform actions after receiving data/error/exit events
+        w.on('message', (msg) => {
+            // data will be passed into callback
+            cb(null, msg);
+        });
+        botWorkerDict[i] = w
+
+        // for error handling
+        w.on('error', cb);
+
+        // for exit
+        w.on('exit', (code) => {
+            if (code !== 0) {
+                console.error(new Error(`Worker stopped Code ${code}`))
+            }
+        });
+    }
+}
+
 
 function compare(a, b) {
     // console.log(compare)
@@ -167,6 +201,7 @@ function mainBody() {
     var token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NDI4MjE5fSwiaWF0IjoxNTk1ODE2Njc0fQ.xGTblTjSj_5Aej9De_lOqPLkL_-9k7qbQGNxdix9d9c'
     console.log("Main Thread Started");
 
+    createBotWorker()
 
     axios.get('https://truthbet.com/api/m/games',
         {
@@ -226,7 +261,7 @@ function playCasino() {
             console.log(`table: ${current.table_id} percent: ${current.winner_percent} remaining: ${current.current.remaining} bot: ${current.bot}`)
             isPlay = true
             console.log('post play')
-            workerDict[current.table_id].worker.postMessage({ action: 'play', current: current.current })
+            workerDict[current.table_id].worker.postMessage({ action: 'play', current: current.current})
             io.emit('bot_play', {current});
             break;
         }
@@ -265,6 +300,15 @@ function initiateWorker(table) {
         } if (result.action == 'played') {
             isPlay = false
             currentList = []
+        } 
+        if(result.action == 'bet'){
+            if (Object.keys(botWorkerDict).length > 0) {
+                Object.keys(botWorkerDict).forEach(function (key) {
+                    var val = botWorkerDict[key];
+                    // console.log(key, val)
+                    val.postMessage({action: 'bet', data: result.data })
+                });
+            }
         }
         // // if worker thread is still working on list then write index and updated value
         // if (result.isInProgress) {

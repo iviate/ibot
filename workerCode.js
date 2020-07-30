@@ -140,7 +140,7 @@ function registerForEventListening() {
 
 
         // //  setting up interval to call method to multiple with factor
-        interval = setInterval(predictPlay, 5000);
+        interval = setInterval(predictPlay, 8000);
     };
 
     // registering to events to receive messages from the main thread
@@ -218,8 +218,8 @@ function botplay(currentInfo) {
     let statsCount = currentInfo.statistic.length
     let playCount = predictStats.predict.length
     let currentRound = currentInfo.round
-    if (currentInfo.round == 0){
-        if(isPlay == true){
+    if (currentInfo.round == 0) {
+        if (isPlay == true) {
             isPlay = false
             parentPort.postMessage({ action: 'played', status: status })
         }
@@ -275,28 +275,7 @@ function botplay(currentInfo) {
                     let current = response.data.game
                     console.log(current)
                     if (current.round == currentInfo.round && current.remaining > 5) {
-                        let payload = {table_id: workerData.id, game_id : current.id}
-                        if(bot == 'PLAYER'){
-                            payload.chip = {credit: {PLAYER: 50}}
-                        }else if(bot == 'BANKER'){
-                            payload.chip = {credit: {BANKER: 50}}
-                        }else{
-                            return
-                        }
-
-                        axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                    'content-type': 'application/json'
-                                }
-                            })
-                            .then(response => {
-                                console.log(response.data);
-                            })
-                            .catch(error => {
-                                console.log(`bet: ${error}`);
-                            });
+                        parentPort.postMessage({action: 'bet', data: {bot:bot, table_id: workerData.id, round: current.round, game_id: current.id}})
                     }
 
                 })
@@ -306,31 +285,32 @@ function botplay(currentInfo) {
                     parentPort.postMessage({ action: 'played', status: 'FAILED' })
                 });
             }
-        }
+            
 
+        }
     }
 
-    predictStats.info = { ...currentInfo }
-    round = currentInfo.round
-    // console.log(predictStats.predict)
-    // console.log( `table: ${workerData.id} ${predictStats.correct}, ${predictStats.wrong}, ${predictStats.tie}`)
-    // if(round == currentInfo.round) return;
+predictStats.info = { ...currentInfo }
+round = currentInfo.round
+// console.log(predictStats.predict)
+// console.log( `table: ${workerData.id} ${predictStats.correct}, ${predictStats.wrong}, ${predictStats.tie}`)
+// if(round == currentInfo.round) return;
 
-    // if(currentInfo.statistic.length != currentInfo.round - 1) return;
-    // round = currentInfo.round
+// if(currentInfo.statistic.length != currentInfo.round - 1) return;
+// round = currentInfo.round
 
-    // if(bot == null && round > predictStats.predict.length){
-    //     bot = botChoice[Math.floor(Math.random() * botChoice.length)]
+// if(bot == null && round > predictStats.predict.length){
+//     bot = botChoice[Math.floor(Math.random() * botChoice.length)]
 
-    // }
+// }
 
-    // if(currentInfo.statistic.length < 5){
-    //     predictStats.predict.push({...lastStat, bot: null})
-    // }else{
-    //     predictStats.predict.push({...lastStat, bot: botChoice[Math.floor(Math.random() * botChoice.length)]})
-    //     console.log(predictStats.predict)
-    // }
-    return
+// if(currentInfo.statistic.length < 5){
+//     predictStats.predict.push({...lastStat, bot: null})
+// }else{
+//     predictStats.predict.push({...lastStat, bot: botChoice[Math.floor(Math.random() * botChoice.length)]})
+//     console.log(predictStats.predict)
+// }
+return
 }
 
 
