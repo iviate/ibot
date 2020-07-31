@@ -25,6 +25,9 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       init_bet: {
         type: DataTypes.FLOAT.UNSIGNED,
       },
+      bet_side: {
+        type: DataTypes.INTEGER, // 1 P/B , 2 ONLY B, 3 ONLY P
+      },
       max_turn: {
         type: DataTypes.INTEGER.UNSIGNED,
       },
@@ -35,6 +38,14 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       data: {
         type: DataTypes.TEXT,
         default: '{}'
+      },
+      stop_by: {
+        type: DataTypes.INTEGER, // 1 user, 2 profit stop, 3 loss stop, 4 error
+        allowNull: true
+      },
+      stop_wallet: {
+        type: DataTypes.FLOAT,
+        allowNull: true
       },
       closed_at: {
         type: DataTypes.DATE,

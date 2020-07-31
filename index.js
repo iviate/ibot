@@ -3,7 +3,9 @@
 
 require('log-timestamp');
 // module included to create worker threads
-const { Worker } = require('worker_threads');
+const {
+    Worker
+} = require('worker_threads');
 const axios = require('axios');
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt')
@@ -11,9 +13,13 @@ const puppeteer = require("puppeteer");
 
 const db = require("./app/models");
 const e = require('express');
-const { syncBuiltinESMExports } = require('module');
-db.sequelize.sync({alter: true});
-let botNumber = 25;
+const {
+    syncBuiltinESMExports
+} = require('module');
+db.sequelize.sync({
+    alter: true
+});
+let botNumber = 0;
 let botWorkerDict = {};
 
 var myApp = require('express')();
@@ -26,8 +32,8 @@ io.on('connection', (socket) => {
     socket.on('chat message', (msg) => {
         console.log(msg)
         io.emit('chat message', msg);
-      });
-  });
+    });
+});
 
 myApp.post('/login', async function (request, response) {
     const USERNAME = request.body.username;
@@ -38,22 +44,32 @@ myApp.post('/login', async function (request, response) {
             username: USERNAME,
         },
     });
-    if(user){
-        bcrypt.compare(PASSWORD, user.password).then(function(result) {
-            if(result){
-                response.json({ success: true });
-            }else{
-                response.json({ success: false, message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง' });
+    if (user) {
+        bcrypt.compare(PASSWORD, user.password).then(function (result) {
+            if (result) {
+                response.json({
+                    success: true
+                });
+            } else {
+                response.json({
+                    success: false,
+                    message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+                });
             }
         });
-    }else{
-        
-    // require("dotenv").config();
+    } else {
+
+        // require("dotenv").config();
         (async (USERNAME, PASSWORD) => {
 
-            const browser = await puppeteer.launch({ headless: true, devtools: false });
+            const browser = await puppeteer.launch({
+                headless: true,
+                devtools: false
+            });
             const page = await browser.newPage();
-            await page.goto("https://truthbet.com/login?redirect=/m", { waitUntil: "networkidle2" });
+            await page.goto("https://truthbet.com/login?redirect=/m", {
+                waitUntil: "networkidle2"
+            });
 
             await page.evaluate((USERNAME, PASSWORD) => {
                 document.querySelector('[name="username"]').value = USERNAME;
@@ -68,26 +84,41 @@ myApp.post('/login', async function (request, response) {
 
 
             try {
-                await page.waitForSelector('.fa-coins', { visible: false, timeout: 5000 })
+                await page.waitForSelector('.fa-coins', {
+                    visible: false,
+                    timeout: 5000
+                })
                 let data = await page.evaluate(() => window.App);
 
-                if(data.jwtToken != ''){
-                    bcrypt.hash(PASSWORD, 12, function(err, hash) {
-                        db.user.create({username: USERNAME, password: hash, truthbet_token: data.jwtToken, truthbet_token_at: db.sequelize.fn('NOW')})
-                        response.json({ success: true });
+                if (data.jwtToken != '') {
+                    bcrypt.hash(PASSWORD, 12, function (err, hash) {
+                        db.user.create({
+                            username: USERNAME,
+                            password: hash,
+                            truthbet_token: data.jwtToken,
+                            truthbet_token_at: db.sequelize.fn('NOW')
+                        })
+                        response.json({
+                            success: true
+                        });
                     });
-                    
-                }else{
-                    response.json({ success: false, message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง' });
+
+                } else {
+                    response.json({
+                        success: false,
+                        message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+                    });
                 }
-            }
-            catch (e) {
-                response.json({ success: false, message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง' });
+            } catch (e) {
+                response.json({
+                    success: false,
+                    message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+                });
             }
 
             //   response.json(data);
-            
-            
+
+
             // access baccarat room 2
             // await page.goto("https://truthbet.com/g/live/baccarat/22", {
             //   waitUntil: "networkidle2",
@@ -96,7 +127,7 @@ myApp.post('/login', async function (request, response) {
         })(USERNAME, PASSWORD);
     }
 
-    
+
     // return w;
 
 });
@@ -107,9 +138,8 @@ myApp.post('/bot', async function (request, response) {
         where: {
             username: USERNAME,
         },
-    }).then( (user) => {
-        if(user)
-        {
+    }).then((user) => {
+        if (user) {
             botData = {
                 userId: user.id,
                 token: user.truthbet_token,
@@ -123,13 +153,99 @@ myApp.post('/bot', async function (request, response) {
                 max_turn: request.body.max_turn,
             }
             let botObj = db.bot.create(botData)
-            response.json({success: true, error_code: 0, data: botObj})
-        }else{
-            response.json({success: false, error_code: 404, message: 'user not found'})
+            response.json({
+                success: true,
+                error_code: 0,
+                data: botObj
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
         }
-        
+
     });
-    
+
+});
+
+myApp.post('/bot', async function (request, response) {
+    const USERNAME = request.body.username
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            botData = {
+                userId: user.id,
+                token: user.truthbet_token,
+                token_at: user.truthbet_token_at,
+                status: 1,
+                money_system: request.body.money_system,
+                profit_threshold: request.body.profit_threshold,
+                loss_threshold: request.body.loss_threshold,
+                init_wallet: request.body.init_wallet,
+                init_bet: request.body.init_bet,
+                max_turn: request.body.max_turn,
+            }
+            let botObj = db.bot.create(botData)
+            response.json({
+                success: true,
+                error_code: 0,
+                data: botObj
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+
+});
+
+myApp.get('/wallet', function (request, response) {
+    const USERNAME = request.body.username
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            console.log(user.truthbet_token)
+            axios.get(`https://truthbet.com/api/wallet`,{
+                    headers: {
+                        Authorization: `Bearer ${user.truthbet_token}`
+                    }
+                })
+                .then(res => {
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res.data
+                    })
+                })
+                // .catch(error => {
+                //     response.json({
+                //         success: false,
+                //         error_code: 500,
+                //         message: 'internal error'
+                //     })
+                // });
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+
 });
 
 http.listen(3000, function () {
@@ -137,7 +253,7 @@ http.listen(3000, function () {
 });
 
 // main attributes
-let lst;    // list will be populated from 0 to n
+let lst; // list will be populated from 0 to n
 let index = -1; // index will be used to traverse list
 let myWorker; // worker reference
 let interval;
@@ -147,23 +263,28 @@ let isPlay = false;
 let playTable;
 let currentList = [];
 
-mainBody();
+// mainBody();
 
-function createBotWorker(){
+function createBotWorker() {
     let cb = (err, result) => {
-        if (err) { return console.error(err); }
-        if(result.action == 'bet_success'){
+        if (err) {
+            return console.error(err);
+        }
+        if (result.action == 'bet_success') {
             console.log(`bot ${result.id} bet success`)
         }
-        if(result.action == 'bet_failed'){
+        if (result.action == 'bet_failed') {
             console.log(`bot ${result.id} bet failed`)
         }
     };
 
-    for(let i = 0; i < botNumber; i++)
-    {
-        let w = new Worker(__dirname + '/botWorker.js', { workerData: {id: i} });
-        
+    for (let i = 0; i < botNumber; i++) {
+        let w = new Worker(__dirname + '/botWorker.js', {
+            workerData: {
+                id: i
+            }
+        });
+
         // registering events in main thread to perform actions after receiving data/error/exit events
         w.on('message', (msg) => {
             // data will be passed into callback
@@ -203,8 +324,7 @@ function mainBody() {
 
     createBotWorker()
 
-    axios.get('https://truthbet.com/api/m/games',
-        {
+    axios.get('https://truthbet.com/api/m/games', {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -231,7 +351,9 @@ function mainBody() {
         });
 
 
-    interval = setInterval(function () { playCasino(); }, 10000);
+    interval = setInterval(function () {
+        playCasino();
+    }, 10000);
 
     // filling array with 100 items
 
@@ -244,7 +366,9 @@ function playCasino() {
         Object.keys(workerDict).forEach(function (key) {
             var val = workerDict[key];
             // console.log(key, val)
-            val.worker.postMessage({ 'action': 'getCurrent' })
+            val.worker.postMessage({
+                'action': 'getCurrent'
+            })
         });
         return
     }
@@ -261,8 +385,13 @@ function playCasino() {
             console.log(`table: ${current.table_id} percent: ${current.winner_percent} remaining: ${current.current.remaining} bot: ${current.bot}`)
             isPlay = true
             console.log('post play')
-            workerDict[current.table_id].worker.postMessage({ action: 'play', current: current.current})
-            io.emit('bot_play', {current});
+            workerDict[current.table_id].worker.postMessage({
+                action: 'play',
+                current: current.current
+            })
+            io.emit('bot_play', {
+                current
+            });
             break;
         }
     }
@@ -293,20 +422,26 @@ function initiateWorker(table) {
 
     // define callback
     let cb = (err, result) => {
-        if (err) { return console.error(err); }
+        if (err) {
+            return console.error(err);
+        }
         if (result.action == 'getCurrent') {
             // console.log(result)
             currentList.push(result)
-        } if (result.action == 'played') {
+        }
+        if (result.action == 'played') {
             isPlay = false
             currentList = []
-        } 
-        if(result.action == 'bet'){
+        }
+        if (result.action == 'bet') {
             if (Object.keys(botWorkerDict).length > 0) {
                 Object.keys(botWorkerDict).forEach(function (key) {
                     var val = botWorkerDict[key];
                     // console.log(key, val)
-                    val.postMessage({action: 'bet', data: result.data })
+                    val.postMessage({
+                        action: 'bet',
+                        data: result.data
+                    })
                 });
             }
         }
@@ -324,14 +459,18 @@ function initiateWorker(table) {
     // start worker
     myWorker = startWorker(table, __dirname + '/workerCode.js', cb);
 
-    workerDict[table.id] = { worker: myWorker }
+    workerDict[table.id] = {
+        worker: myWorker
+    }
     // post a multiple factor to worker thread
     // myWorker.postMessage({ multipleFactor: table });
 }
 
 function startWorker(table, path, cb) {
     // sending path and data to worker thread constructor
-    let w = new Worker(path, { workerData: table });
+    let w = new Worker(path, {
+        workerData: table
+    });
 
     // registering events in main thread to perform actions after receiving data/error/exit events
     w.on('message', (msg) => {
