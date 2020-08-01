@@ -748,6 +748,8 @@ function initiateWorker(table) {
         }
         if (result.action == 'played') {
             if(result.status == 'FAILED' || result.status == null){
+                isPlay = false
+                currentList = []
                 return
             }
 
