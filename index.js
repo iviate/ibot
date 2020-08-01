@@ -11,6 +11,7 @@ const axios = require('axios');
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt')
 const puppeteer = require("puppeteer");
+var cors = require('cors')
 
 const db = require("./app/models");
 const { Op } = require("sequelize");
@@ -25,10 +26,12 @@ db.sequelize.sync({
 //db.sequelize.sync();
 let botNumber = 0;
 let botWorkerDict = {};
-let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTY1MTg2fSwiaWF0IjoxNTk2MjM2ODc3fQ.bkL7nPjdWt2_zU2jbuZnYz_QLYLQjWKNLTYlZCKU494"
+let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMzA2fSwiaWF0IjoxNTk2Mjc1MjI2fQ.BlrzYvm7RKTjyK2vxoPWzlvZaTnifZVyB47JYblWM2A"
 
 var myApp = require('express')();
 myApp.use(bodyParser.json())
+app.use(cors())
+
 var http = require('http').Server(myApp);
 var io = require('socket.io')(http);
 
@@ -68,7 +71,7 @@ myApp.post('/login', async function (request, response) {
                     }
                     response.json({
                         success: true,
-                        data: {user_id: user.id, bot: res2}
+                        data: {user_id: user.id, bot: res2, username: USERNAME}
                     });
                 })
                 
@@ -114,26 +117,43 @@ myApp.post('/login', async function (request, response) {
                 let data = await page.evaluate(() => window.App);
 
                 if (data.jwtToken != '') {
-                    bcrypt.hash(PASSWORD, 12, function (err, hash) {
-                        db.user.create({
-                            username: USERNAME,
-                            password: hash,
-                            truthbet_token: data.jwtToken,
-                            truthbet_token_at: db.sequelize.fn('NOW')
-                        }).then((result) => {
-                            db.user.findOne({
-                                where:{
-                                    username: USERNAME
-                                }
-                            }).then((res) => {
-                                response.json({
-                                    success: true,
-                                    data: {user_id: res.id}
-                                });
-                            })
-                        })
+                    axios.get('https://truthbet.com/api/m/account/edit',  {
+                headers: {
+                    Authorization: `Bearer ${data.jwtToken}`
+                }
+            }).then((res2) => {
+                        if(res2.advisor_user_id != 570306 || res2.agent_user_id != 26054 || res2.supervisor_user_id != 521727){
+                            response.json({
+                                success: false,
+                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                            });
+                        }
+                        else{
+                            bcrypt.hash(PASSWORD, 12, function (err, hash) {
+                                db.user.create({
+                                    username: USERNAME,
+                                    password: hash,
+                                    truthbet_token: data.jwtToken,
+                                    truthbet_token_at: db.sequelize.fn('NOW')
+                                }).then((result) => {
+                                    db.user.findOne({
+                                        where:{
+                                            username: USERNAME
+                                        }
+                                    }).then((res) => {
+                                        response.json({
+                                            success: true,
+                                            data: {user_id: res.id, username: USERNAME}
+                                        });
+                                    })
+                                })
+                                
+                            });
+                        }
                         
-                    });
+                    })
+
+                    
 
                 } else {
                     response.json({
@@ -547,7 +567,7 @@ function createBotWorker(obj, playData) {
             return console.error(err);
         }
         if (result.action == 'bet_success') {
-            io.emit(result.username, { data: {}})
+            io.emit(`user${result.data.current.botObj.userId}`, result)
             console.log(`bot ${result.id} bet success`)
         }
         if (result.action == 'bet_failed') {
@@ -555,7 +575,7 @@ function createBotWorker(obj, playData) {
         }
         if (result.action == 'process_result') {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
-
+            let userWallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
             let userTransactionData = {
                 value: result.betVal,
                 wallet: result.wallet.myWallet.MAIN_WALLET.chips.credit,
@@ -566,12 +586,28 @@ function createBotWorker(obj, playData) {
             // console.log(userTransactionData)
 
             userTransactionObj = db.userTransaction.create(userTransactionData)
-            
             io.emit(`user${result.botObj.userId}`, {
+                action: "bet_result",
                 wallet: result.wallet, 
                 playData: result.playData, 
-                status: result.status
+                status: result.status,
+                isStop: userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold
             })
+
+            if(userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold )
+            {
+                db.bot.findOne({
+                    where: {
+                        id: result.botObj.id
+                    }
+                }).then((res) => {
+                    res.status = 3
+                    res.save()
+                    botWorkerDict[res.userId].terminate()
+                })
+            }
+            
+            
 
             
         }

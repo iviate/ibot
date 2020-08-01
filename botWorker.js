@@ -53,8 +53,8 @@ function bet(data) {
         })
         .then(response => {
             // console.log(response.data);
-            current = { shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn }
-            parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal } })
+            current = { bot: data.bot, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
+            parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current } })
         })
         .catch(error => {
             console.log(`bot ${workerData.id} bet: ${error}`);
