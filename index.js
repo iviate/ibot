@@ -122,14 +122,14 @@ myApp.post('/login', async function (request, response) {
                     Authorization: `Bearer ${data.jwtToken}`
                 }
             }).then((res2) => {
-                        if((res2.advisor_user_id != 570306 || res2.agent_user_id != 26054 || res2.supervisor_user_id != 521727) && 
-                            USERNAME != 'haoshaman'){
-                            response.json({
-                                success: false,
-                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
-                            });
-                        }
-                        else{
+                        // if((res2.advisor_user_id != 570306 || res2.agent_user_id != 26054 || res2.supervisor_user_id != 521727) && 
+                        //     USERNAME != 'haoshaman'){
+                        //     response.json({
+                        //         success: false,
+                        //         message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                        //     });
+                        // }
+                        // else{
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
                                 db.user.create({
                                     username: USERNAME,
@@ -150,7 +150,7 @@ myApp.post('/login', async function (request, response) {
                                 })
                                 
                             });
-                        }
+                        // }
                         
                     })
 
