@@ -543,8 +543,8 @@ myApp.get('/wallet/:id', function (request, response) {
 
 });
 
-http.listen(3000, function () {
-    console.log('listening *.3000');
+http.listen(80, function () {
+    console.log('listening *.80');
 });
 
 // main attributes
