@@ -302,15 +302,17 @@ myApp.post('/bot', async function (request, response) {
                     botData.id = res.id
                     console.log(botData)
                     createBotWorker(botData, playData)
+
+                    response.json({
+                        success: true,
+                        error_code: 0,
+                        data: botData
+                    })
                 }
             })
 
             
-            response.json({
-                success: true,
-                error_code: 0,
-                data: botObj
-            })
+           
         } else {
             response.json({
                 success: false,
