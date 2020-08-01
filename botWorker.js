@@ -2,6 +2,8 @@ require('log-timestamp');
 const { parentPort, workerData } = require('worker_threads');
 const axios = require('axios');
 const { bot } = require('./app/models');
+const { POINT_CONVERSION_COMPRESSED } = require('constants');
+const e = require('express');
 
 let interval;
 let systemData;
@@ -22,48 +24,56 @@ function getBetVal() {
         return playData[playTurn - 1]
     }
     if (botObj.money_system == 3 || botObj.money_system == 4) {
-        return (playData[0] + playData[playData.length - 1]) * 25
+        return (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
     }
 }
 
 function bet(data) {
     if (status == 2) {
         console.log(`bot ${workerData.obj.id} pause`)
-        return
+    } else if (status == 3) {
+        console.log(`bot ${workerData.obj.id} stop`)
+    } else if(botObj.bet_side == 2 && data.bot == 'BANKER'){
+
+    } else if(botObj.bet_side == 3 && data.bot == 'PLAYER'){
+
     }
-    let betVal = getBetVal()
-    if (betVal < 50) {
-        betVal = 50
-    }
-    let payload = { table_id: data.table.id, game_id: data.game_id }
-    if (data.bot == 'PLAYER') {
-        payload.chip = { credit: { PLAYER: betVal } }
-    } else if (data.bot == 'BANKER') {
-        payload.chip = { credit: { BANKER: betVal } }
-    } else {
-        return
+    else {
+        let betVal = getBetVal()
+        if (betVal < botObj.init_bet) {
+            betVal = botObj.init_bet
+        }
+        let payload = { table_id: data.table.id, game_id: data.game_id }
+        if (data.bot == 'PLAYER') {
+            payload.chip = { credit: { PLAYER: betVal } }
+        } else if (data.bot == 'BANKER') {
+            payload.chip = { credit: { BANKER: betVal } }
+        } else {
+            return
+        }
+
+        axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            })
+            .then(response => {
+                // console.log(response.data);
+                current = { bot: data.bot, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
+                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current } })
+            })
+            .catch(error => {
+                console.log(`bot ${workerData.id} bet: ${error}`);
+                parentPort.postMessage({ action: 'bet_failed' })
+            });
     }
 
-    axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'content-type': 'application/json'
-            }
-        })
-        .then(response => {
-            // console.log(response.data);
-            current = { bot: data.bot, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
-            parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current } })
-        })
-        .catch(error => {
-            console.log(`bot ${workerData.id} bet: ${error}`);
-            parentPort.postMessage({ action: 'bet_failed' })
-        });
 }
 
 function processResultBet(status, botTransactionId) {
-    if (botObj.money_system == 1){}
+    if (botObj.money_system == 1) { }
     if (botObj.money_system == 2) {
         if (status == 'WIN') {
             playTurn = 1
@@ -88,14 +98,16 @@ function processResultBet(status, botTransactionId) {
         }
     })
         .then(res => {
-            parentPort.postMessage({action: 'process_result', 
-                                    status: status, 
-                                    wallet: res.data, 
-                                    betVal: current.betVal, 
-                                    botObj: botObj,
-                                    playData: playData,
-                                    botTransactionId: botTransactionId,
-                                    isStop: isStop})
+            parentPort.postMessage({
+                action: 'process_result',
+                status: status,
+                wallet: res.data,
+                betVal: current.betVal,
+                botObj: botObj,
+                playData: playData,
+                botTransactionId: botTransactionId,
+                isStop: isStop
+            })
         })
         .catch(error => {
             console.log(error)
@@ -125,7 +137,10 @@ function registerForEventListening() {
             status = 1
         }
         if (result.action == 'stop') {
+            console.log('action stop')
             isStop = true
+            status = 3
+            process.exit(0)
         }
         // console.log("Thread id ")
         // //  setting up interval to call method to multiple with factor

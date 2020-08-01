@@ -195,7 +195,7 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         let profit = profit_threshold - init_wallet
         let turn = 6
         let money = profit / turn / half_bet
-        while (turn < 20 && (profit / turn / 25 >= 1)) {
+        while (turn < 20 && (profit / turn / half_bet >= 1)) {
             money = profit / turn / half_bet
             turn++
         }
@@ -279,6 +279,7 @@ myApp.post('/bot', async function (request, response) {
                 loss_threshold: request.body.loss_threshold,
                 init_wallet: request.body.init_wallet,
                 init_bet: request.body.init_bet,
+                bet_side: request.body.bet_side,
                 max_turn: 0,
             }
 
@@ -330,15 +331,21 @@ myApp.post('/start', async function (request, response) {
         if (user) {
             db.bot.findOne({
                 where: {
-                    user_id: user.id,
+                    userId: user.id,
                     status: 2
                 },
             }).then((botObj) => {
                 if(botObj){
-                    botObj.status = 2
+                    botObj.status = 1
                     botObj.save()
+                    botWorkerDict[user.id].postMessage({ action: 'start'})
                     response.json({
                         success: true,
+                        error_code: null
+                    })
+                }else{
+                    response.json({
+                        success: false,
                         error_code: null
                     })
                 }
@@ -373,6 +380,11 @@ myApp.post('/pause', async function (request, response) {
                     botObj.status = 2
                     botWorkerDict[user.id].postMessage({ action: 'pause'})
                     botObj.save()
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                }else{
                     response.json({
                         success: true,
                         error_code: null
@@ -423,28 +435,31 @@ myApp.get('/user_transaction/:id', async function (request, response) {
 
 });
 
-myApp.post('/stop', async function (request, response) {
+myApp.post('/stop', function (request, response) {
     const USERNAME = request.body.username
     db.user.findOne({
         where: {
-            username: USERNAME,
-            status: {
-                [Op.or]: [1, 2]
-              }
+            username: USERNAME
         },
     }).then((user) => {
         if (user) {
             db.bot.findOne({
                 where: {
                     userId: user.id,
-                    status: 1
+                    status: {
+                        [Op.or]: [1, 2]
+                      }
                 },
             }).then((botObj) => {
                 if(botObj){
                     botObj.status = 3
                     botObj.save()
-                    botWorkerDict[user.id].terminate()
-                    delete botWorkerDict[user.id]
+                    botWorkerDict[user.id].postMessage({action: 'stop'})
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                }else{
                     response.json({
                         success: true,
                         error_code: null
@@ -574,6 +589,11 @@ function createBotWorker(obj, playData) {
         if (result.action == 'bet_failed') {
             console.log(`bot ${result.id} bet failed`)
         }
+        if (result.action == 'stop') {
+            console.log(`bot ${result.user_id} stop`)
+            botWorkerDict[res.userId].terminate()
+            delete botWorkerDict[res.userId]
+        }
         if (result.action == 'process_result') {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
@@ -592,10 +612,12 @@ function createBotWorker(obj, playData) {
                 wallet: result.wallet, 
                 playData: result.playData, 
                 status: result.status,
-                isStop: userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold
+                isStop: userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop
             })
 
-            if(userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold )
+            console.log(`isStop ${result.isStop}`)
+
+            if(userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop )
             {
                 db.bot.findOne({
                     where: {
@@ -605,6 +627,7 @@ function createBotWorker(obj, playData) {
                     res.status = 3
                     res.save()
                     botWorkerDict[res.userId].terminate()
+                    delete botWorkerDict[res.userId]
                 })
             }
             

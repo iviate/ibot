@@ -20,6 +20,7 @@ let playRound = null;
 let token = null
 let isPlay = false;
 var date = new Date();
+
 var last_pull_timestamp = date.getTime();
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NDI4MjE5fSwiaWF0IjoxNTk1ODM2ODUzfQ.1YDXUwVIg7kIiYpxYlRPrn06jLtdQ6nG9dufe6MhIIM
 registerForEventListening();
