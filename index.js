@@ -478,7 +478,7 @@ myApp.get('/bot_transaction', function(request, response){
     })  
 })
 
-myApp.get('/wallet/id', function (request, response) {
+myApp.get('/wallet/:id', function (request, response) {
     const user_id = request.params.id
     db.user.findOne({
         where: {
