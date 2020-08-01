@@ -81,7 +81,8 @@ myApp.post('/login', async function (request, response) {
 
             const browser = await puppeteer.launch({
                 headless: true,
-                devtools: false
+                devtools: false,
+                args: ['--no-sandbox']
             });
             const page = await browser.newPage();
             await page.goto("https://truthbet.com/login?redirect=/m", {
