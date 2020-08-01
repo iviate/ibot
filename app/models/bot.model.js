@@ -10,8 +10,11 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       status: {
         type: DataTypes.INTEGER // 1 open, 2 pasuse, 3 closed
       },
+      bot_type: {
+        type: DataTypes.INTEGER // 1 iBotX, 2 3 cut, 3 4 cut
+      },
       money_system: {
-        type: DataTypes.INTEGER // 1 stable, 2 ไนติงเกล, 3 ลาบูแชร์
+        type: DataTypes.INTEGER // 1 stable, 2 มาติงเกล, 3 ลาบูแชร์ 4 x system
       },
       profit_threshold: {
         type: DataTypes.FLOAT.UNSIGNED,
@@ -37,7 +40,7 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       },
       data: {
         type: DataTypes.TEXT,
-        default: '{}'
+        default: '[]'
       },
       stop_by: {
         type: DataTypes.INTEGER, // 1 user, 2 profit stop, 3 loss stop, 4 error

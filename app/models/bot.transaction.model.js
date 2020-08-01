@@ -1,10 +1,13 @@
 module.exports = (sequelize, Sequelize, DataTypes) => {
     const BotTransaction = sequelize.define("bot_transaction", {
+        bot_type:{
+            type: DataTypes.INTEGER // 1: iBotX, 2 3 cut, 3 4 cut
+        },
         table_id: {
             type: DataTypes.INTEGER
         },
         table_title: {
-            type: DataTypes.INTEGER
+            type: DataTypes.STRING
         },
         game_id: {
             type: DataTypes.STRING,
@@ -30,17 +33,6 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.INTEGER
         }
     });
-
-    Bot.associate = function (models) {
-        Order.belongsTo(models.Area, {
-            foreignKey: 'areaId',
-            as: 'area'
-        });
-        Bot.belongsTo(User, {
-            foreignKey: 'user_id',
-            as: 'user'
-        })
-    };
 
     return BotTransaction;
 };
