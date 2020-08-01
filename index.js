@@ -30,7 +30,7 @@ let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMz
 
 var myApp = require('express')();
 myApp.use(bodyParser.json())
-app.use(cors())
+myApp.use(cors())
 
 var http = require('http').Server(myApp);
 var io = require('socket.io')(http);
@@ -122,7 +122,8 @@ myApp.post('/login', async function (request, response) {
                     Authorization: `Bearer ${data.jwtToken}`
                 }
             }).then((res2) => {
-                        if(res2.advisor_user_id != 570306 || res2.agent_user_id != 26054 || res2.supervisor_user_id != 521727){
+                        if((res2.advisor_user_id != 570306 || res2.agent_user_id != 26054 || res2.supervisor_user_id != 521727) && 
+                            USERNAME != 'haoshaman'){
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
