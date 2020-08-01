@@ -22,6 +22,12 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       loss_threshold:{
         type: DataTypes.FLOAT.UNSIGNED,
       },
+      profit_percent: {
+        type: DataTypes.FLOAT.UNSIGNED,
+      },
+      loss_percent:{
+        type: DataTypes.FLOAT.UNSIGNED,
+      },
       init_wallet: {
         type: DataTypes.FLOAT.UNSIGNED,
       },
