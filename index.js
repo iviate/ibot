@@ -405,6 +405,50 @@ myApp.post('/pause', async function (request, response) {
 
 });
 
+myApp.get('/user_bot/:id', async function (request, response) {
+    db.user.findOne({
+        where: {
+            id: request.params.id,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where:{
+                    status: {
+                        [Op.ne]: 3
+                        
+                    },
+                    userId: user.id
+                }
+                 
+            }).then((res2) => {
+                let hasBot = null
+                if(res2){
+                    hasBot = res2
+                    response.json({
+                        success: true,
+                        data: {bot: res2}
+                    });
+                }else{
+                    response.json({
+                        success: true,
+                        data: {bot: null}
+                    });
+                }
+                
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+
+});
+
 myApp.get('/user_transaction/:id', async function (request, response) {
     let page = request.query.page || 1
     db.user.findOne({
