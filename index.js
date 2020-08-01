@@ -53,9 +53,14 @@ myApp.post('/login', async function (request, response) {
         bcrypt.compare(PASSWORD, user.password).then(function (result) {
             if (result) {
                 db.bot.findOne({
-                    status: {
-                        [Op.ne]: 3
+                    where:{
+                        status: {
+                            [Op.ne]: 3
+                            
+                        },
+                        userId: user.id
                     }
+                     
                 }).then((res2) => {
                     let hasBot = null
                     if(res2){
@@ -63,7 +68,7 @@ myApp.post('/login', async function (request, response) {
                     }
                     response.json({
                         success: true,
-                        data: {user_id: user.id, has_bot: true}
+                        data: {user_id: user.id, bot: res2}
                     });
                 })
                 
