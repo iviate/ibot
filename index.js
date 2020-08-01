@@ -747,6 +747,10 @@ function initiateWorker(table) {
             currentList.push(result)
         }
         if (result.action == 'played') {
+            if(result.status == 'FAILED' || result.status == null){
+                return
+            }
+
             botTransactionData = {
                 bot_type: result.bot_type,
                 table_id: result.table.id,
