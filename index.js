@@ -478,11 +478,11 @@ myApp.get('/bot_transaction', function(request, response){
     })  
 })
 
-myApp.get('/wallet', function (request, response) {
-    const USERNAME = request.body.username
+myApp.get('/wallet/id', function (request, response) {
+    const user_id = request.params.id
     db.user.findOne({
         where: {
-            username: USERNAME,
+            id: user_id,
         },
     }).then((user) => {
         if (user) {
