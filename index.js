@@ -574,7 +574,7 @@ myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
             botId: request.params.bot_id
         },
         order: [
-            ['id', 'ASC']
+            ['id', 'desc']
         ],
 
         include: [{
