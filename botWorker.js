@@ -75,8 +75,8 @@ function bet(data) {
                 parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current } })
             })
             .catch(error => {
-                console.log(`bot ${workerData.id} bet: ${error}`);
-                parentPort.postMessage({ action: 'bet_failed' })
+                // console.log(`bot ${workerData.id} bet: ${error.response.data.error}`);
+                parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error})
             });
     }
 

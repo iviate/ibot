@@ -318,7 +318,7 @@ myApp.post('/bot', async function (request, response) {
             botData.data = JSON.stringify(playData)
 
             db.bot.create(botData).then((created) => {
-                console.log(created)
+                // console.log(created)
                 db.bot.findOne({
                     where: {
                         userId: user.id,
@@ -677,7 +677,7 @@ function createBotWorker(obj, playData) {
             console.log(`bot ${result.id} bet success`)
         }
         if (result.action == 'bet_failed') {
-            console.log(`bot ${result.id} bet failed`)
+            console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         // if (result.action == 'stop') {
 
