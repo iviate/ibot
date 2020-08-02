@@ -98,6 +98,7 @@ function processResultBet(status, botTransactionId, botTransaction) {
         }
     })
         .then(res => {
+            console.log(playData)
             parentPort.postMessage({
                 action: 'process_result',
                 status: status,
