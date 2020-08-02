@@ -672,10 +672,8 @@ function createBotWorker(obj, playData) {
             return console.error(err);
         }
         if (result.action == 'bet_success') {
-            io.emit(`user${result.data.current.botObj.userId}`, {
-                ...result,
-                win_percent: win_percent
-            })
+            result.win_percent = win_percent
+            io.emit(`user${result.data.current.botObj.userId}`, result)
             console.log(`bot ${result.id} bet success`)
         }
         if (result.action == 'bet_failed') {
@@ -857,10 +855,10 @@ function playCasino() {
         // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
         // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
         if (current.winner_percent != 0 && current.bot != null) {
-            if (current.win_percent < 50) {
-                win_percent = 100 - current.win_percent
+            if (current.winner_percent < 50) {
+                win_percent = 100 - current.winner_percent
             } else {
-                win_percent = current.win_percent
+                win_percent = current.winner_percent
             }
             console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
             isPlay = true
