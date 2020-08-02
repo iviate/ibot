@@ -65,14 +65,22 @@ myApp.post('/login', async function (request, response) {
                     }
                      
                 }).then((res2) => {
-                    let hasBot = null
-                    if(res2){
-                        hasBot = res2
+                    if(botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id]){
+                        let hasBot = null
+                        if(res2){
+                            hasBot = res2
+                        }
+                        response.json({
+                            success: true,
+                            data: {user_id: user.id, bot: hasBot, username: USERNAME}
+                        });
+                    }else{
+                        response.json({
+                            success: true,
+                            data: {user_id: user.id, bot: null, username: USERNAME}
+                        });
                     }
-                    response.json({
-                        success: true,
-                        data: {user_id: user.id, bot: res2, username: USERNAME}
-                    });
+                    
                 })
                 
             } else {
@@ -424,8 +432,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
                  
             }).then((res2) => {
-                let hasBot = null
-                if(res2){
+                if(res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id]){
                     hasBot = res2
                     response.json({
                         success: true,
@@ -639,8 +646,10 @@ function createBotWorker(obj, playData) {
         }
         if (result.action == 'stop') {
             console.log(`bot ${result.user_id} stop`)
-            botWorkerDict[res.userId].terminate()
-            delete botWorkerDict[res.userId]
+            if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+                botWorkerDict[res.userId].terminate()
+                delete botWorkerDict[res.userId]
+            }
         }
         if (result.action == 'process_result') {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
@@ -679,8 +688,11 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.save()
-                    botWorkerDict[res.userId].terminate()
-                    delete botWorkerDict[res.userId]
+                    if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+                        botWorkerDict[res.userId].terminate()
+                        delete botWorkerDict[res.userId]
+                    }
+                   
                 })
             }
             
