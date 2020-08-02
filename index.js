@@ -67,7 +67,7 @@ myApp.post('/login', async function (request, response) {
                     }
                      
                 }).then((res2) => {
-                    if(botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id]){
+                    if(botWorkerDict.hasOwnProperty(user.id)){
                         let hasBot = null
                         if(res2){
                             hasBot = res2
@@ -434,7 +434,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
                  
             }).then((res2) => {
-                if(res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id]){
+                if(res2 && botWorkerDict.hasOwnProperty(user.id)){
                     hasBot = res2
                     response.json({
                         success: true,
@@ -704,7 +704,7 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.save()
-                    if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+                    if(botWorkerDict.hasOwnProperty(res.userId)){
                         botWorkerDict[res.userId].terminate()
                         delete botWorkerDict[res.userId]
                     }
