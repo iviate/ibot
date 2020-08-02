@@ -738,7 +738,7 @@ function createBotWorker(obj, playData) {
 
     // for exit
     w.on('exit', (code) => {
-        console.log(botWorkerDict)
+        // console.log(botWorkerDict)
         if (code !== 0) {
             console.error(new Error(`Worker stopped Code ${code}`))
         }
@@ -801,7 +801,7 @@ function playCasinoRandom(){
 }
 
 function playCasino() {
-    console.log(botWorkerDict)
+    console.log(Object.keys(botWorkerDict))
     // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
     if (isPlay == true) return;
     if (isPlay == false && currentList.length == 0) {
