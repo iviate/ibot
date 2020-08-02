@@ -72,7 +72,7 @@ function bet(data) {
 
 }
 
-function processResultBet(status, botTransactionId) {
+function processResultBet(status, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     if (botObj.money_system == 2) {
         if (status == 'WIN') {
@@ -106,6 +106,7 @@ function processResultBet(status, botTransactionId) {
                 botObj: botObj,
                 playData: playData,
                 botTransactionId: botTransactionId,
+                botTransaction: botTransaction,
                 isStop: isStop
             })
         })
@@ -127,7 +128,7 @@ function registerForEventListening() {
         }
         if (result.action == 'result_bet') {
             if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
-                processResultBet(result.status, result.botTransactionId)
+                processResultBet(result.status, result.botTransactionId, result.botTransaction)
             }
         }
         if (result.action == 'pause') {

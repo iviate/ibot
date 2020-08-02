@@ -660,7 +660,12 @@ function createBotWorker(obj, playData) {
                 wallet: result.wallet, 
                 playData: result.playData, 
                 status: result.status,
-                isStop: userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop
+                isStop: userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop,
+                value: result.betVal,
+                wallet: result.wallet.myWallet.MAIN_WALLET.chips.credit,
+                botId: result.botObj.id,
+                botTransactionId: result.botTransactionId,
+                botTransaction: result.botTransaction
             })
 
             console.log(`isStop ${result.isStop}`)
@@ -864,7 +869,9 @@ function initiateWorker(table) {
                                 result: JSON.stringify(result.stats),
                                 status: result.status,
                                 user_count: 0,
-                                botTransactionId: res.id
+                                botTransactionId: res.id,
+                                botTransaction: botTransactionData
+                                
                             })
                         });
                     }
