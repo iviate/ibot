@@ -23,6 +23,8 @@ const {
 db.sequelize.sync({
     alter: true
 });
+
+let win_percent;
 //db.sequelize.sync();
 let botNumber = 0;
 let botWorkerDict = {};
@@ -638,19 +640,33 @@ function createBotWorker(obj, playData) {
             return console.error(err);
         }
         if (result.action == 'bet_success') {
-            io.emit(`user${result.data.current.botObj.userId}`, result)
+            io.emit(`user${result.data.current.botObj.userId}`, { ...result, win_percent: win_percent})
             console.log(`bot ${result.id} bet success`)
         }
         if (result.action == 'bet_failed') {
             console.log(`bot ${result.id} bet failed`)
         }
-        if (result.action == 'stop') {
-            console.log(`bot ${result.user_id} stop`)
-            if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
-                botWorkerDict[res.userId].terminate()
-                delete botWorkerDict[res.userId]
-            }
-        }
+        // if (result.action == 'stop') {
+
+        //     db.bot.findOne({
+        //         where: {
+        //             id: result.botObj.id
+        //         }
+        //     }).then((res) => {
+        //         res.status = 3
+        //         res.save()
+        //         if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+        //             botWorkerDict[res.userId].terminate()
+        //             delete botWorkerDict[res.userId]
+        //         }
+               
+        //     })
+        //     console.log(`bot ${result.user_id} stop`)
+        //     if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+        //         botWorkerDict[res.userId].terminate()
+        //         delete botWorkerDict[res.userId]
+        //     }
+        // }
         if (result.action == 'process_result') {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
@@ -807,6 +823,11 @@ function playCasino() {
         // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
         // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
         if (current.winner_percent != 0 && current.bot != null) {
+            if(current.win_percent < 50){
+                win_percent = 100 - current.win_percent
+            }else{
+                win_percent = current.win_percent
+            }
             console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
             isPlay = true
             console.log('post play')
