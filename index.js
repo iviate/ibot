@@ -679,7 +679,7 @@ function createBotWorker(obj, playData) {
 
             // console.log(userTransactionData)
 
-            userTransactionObj = db.userTransaction.create(userTransactionData)
+            let userTransactionObj = db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
                 action: "bet_result",
                 wallet: result.wallet, 
