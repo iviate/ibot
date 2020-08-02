@@ -23,8 +23,18 @@ function getBetVal() {
     if (botObj.money_system == 2) {
         return playData[playTurn - 1]
     }
-    if (botObj.money_system == 3 || botObj.money_system == 4) {
+    if (botObj.money_system == 3) {
+        if(playData.length == 1){
+            return playData[0] * (botObj.init_bet / 2)
+        }
         return (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
+    }
+    if (botObj.money_system == 4) {
+        if(playData.length == 1){
+            return playData[0] * botObj.init_bet
+        }
+
+        return (playData[0] + playData[playData.length - 1]) * botObj.init_bet
     }
 }
 
@@ -99,6 +109,9 @@ function processResultBet(status, botTransactionId, botTransaction) {
     })
         .then(res => {
             console.log(playData)
+            if(playData.length == 0){
+                isStop = true
+            }
             parentPort.postMessage({
                 action: 'process_result',
                 status: status,

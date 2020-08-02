@@ -212,7 +212,7 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         let s = 1
 
         let profit = profit_threshold - init_wallet
-        let turn = Math.ceil(profit / half_bet)
+        let turn = Math.ceil(profit / init_bet)
         let left = turn
         let ret = []
         let state = 1
