@@ -298,28 +298,31 @@ myApp.post('/bot', async function (request, response) {
             let playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
             botData.data = JSON.stringify(playData)
 
-            let botObj = db.bot.create(botData)
-            db.bot.findOne({
-                where: {
-                    userId: user.id,
-                },
-                order: [
-                    ['id', 'DESC']
-                ]
-            }).then((res) => {
-                // console.log(res)
-                if(res){
-                    botData.id = res.id
-                    console.log(botData)
-                    createBotWorker(botData, playData)
-
-                    response.json({
-                        success: true,
-                        error_code: 0,
-                        data: botData
-                    })
-                }
+            db.bot.create(botData).then((created) => {
+                console.log(created)
+                db.bot.findOne({
+                    where: {
+                        userId: user.id,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((res) => {
+                    // console.log(res)
+                    if(res){
+                        botData.id = res.id
+                        console.log(botData)
+                        createBotWorker(botData, playData)
+    
+                        response.json({
+                            success: true,
+                            error_code: 0,
+                            data: botData
+                        })
+                    }
+                })
             })
+            
 
             
            

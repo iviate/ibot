@@ -31,6 +31,10 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         },
         user_count: {
             type: DataTypes.INTEGER
+        },
+        point: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
         }
     });
 
