@@ -661,8 +661,10 @@ let workerDict = {};
 let isPlay = false;
 let playTable;
 let currentList = [];
-
 let botList = {}
+var startBet;
+var remainingBet;
+var betInt;
 
 mainBody();
 
@@ -822,7 +824,7 @@ function mainBody() {
 
     interval = setInterval(function () {
         playCasino();
-    }, 10000);
+    }, 7000);
 
     // filling array with 100 items
 
@@ -830,6 +832,17 @@ function mainBody() {
 
 function playCasinoRandom() {
     if (isPlay == true) return;
+}
+
+function betInterval(){
+    let n = new Date().getTime()
+    console.log(n, remainingBet, n - remainingBet, remainingBet * 1000)
+    if( n - startBet > remainingBet * 1000){
+        clearInterval(betInt)
+    }
+    else{
+        console.log('betting')
+    }
 }
 
 function playCasino() {
@@ -970,6 +983,12 @@ function initiateWorker(table) {
             currentList = []
         }
         if (result.action == 'bet') {
+            startBet = new Date().getTime()
+            console.log('start bet')
+            betInt = setInterval(function () {
+                betInterval();
+            }, 2000);
+            remainingBet = result.remaining
             if (Object.keys(botWorkerDict).length > 0) {
                 Object.keys(botWorkerDict).forEach(function (key) {
                     var val = botWorkerDict[key];

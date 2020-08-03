@@ -106,7 +106,7 @@ function registerForEventListening() {
 
 
         // //  setting up interval to call method to multiple with factor
-        setInterval(predictPlay, 8000);
+        setInterval(predictPlay, 5000);
     };
 
     // registering to events to receive messages from the main thread
@@ -155,7 +155,7 @@ function inititalInfo() {
 async function predictPlay() {
     
     let current = new Date().getTime()
-    if(current - last_pull_timestamp < 7000){
+    if(current - last_pull_timestamp < 4800){
         // console.log(`${workerData.title} not pull`)
         return
     }else{
@@ -256,8 +256,17 @@ function botplay(currentInfo) {
                         // console.log(`round = ${response.data.info.detail.round}`)
                         let current = response.data.game
                         console.log(current)
-                        if (current.round == currentInfo.round && current.remaining > 5) {
-                            parentPort.postMessage({ action: 'bet', data: { bot: bot, table: workerData, shoe: shoe, round: current.round, game_id: current.id } })
+                        if (current.round == currentInfo.round && current.remaining > 10) {
+                            parentPort.postMessage({ action: 'bet', data: { 
+                                bot: bot, 
+                                table: workerData, 
+                                shoe: shoe, 
+                                round: current.round, 
+                                game_id: current.id, 
+                                remaining: current.remaining 
+                            } })
+                        }else{
+                            parentPort.postMessage({ action: 'played', status: 'FAILED' })
                         }
 
                     })

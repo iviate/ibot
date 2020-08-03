@@ -11,6 +11,7 @@ let current = {}
 let playData;
 let botObj;
 let token = null
+let betFailed = false;
 let playTurn = 1
 let status = 1
 var isStop = false;
