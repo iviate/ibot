@@ -13,7 +13,7 @@ let botObj;
 let token = null
 let betFailed = false;
 let playTurn = 1
-let status = 1
+let status = 2
 var isStop = false;
 registerForEventListening();
 
@@ -81,7 +81,11 @@ function bet(data) {
                 betFailed = true
             })
             .catch(error => {
-                // console.log(`bot ${workerData.id} bet: ${error.response.data.error}`);
+                if(error.response.data.code != 500){
+                    betFailed = true
+                }else{
+                    betFailed = false
+                }
                 parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error})
             });
     }

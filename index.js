@@ -27,7 +27,11 @@ db.sequelize.sync({
 });
 
 
-let botTransactionObj;
+let botTransactionObj = {
+    'DEFAULT': null,
+    'BANKER': null,
+    'PLAYER': null
+}
 
 let win_percent;
 //db.sequelize.sync();
@@ -304,7 +308,7 @@ myApp.post('/bot', async function (request, response) {
                 userId: user.id,
                 token: user.truthbet_token,
                 token_at: user.truthbet_token_at,
-                status: 1,
+                status: 2,
                 bot_type: request.body.bot_type,
                 money_system: request.body.money_system,
                 profit_threshold: request.body.profit_threshold,
@@ -597,27 +601,49 @@ myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
 })
 
 myApp.get('/bot_transaction', function (request, response) {
-    if(botTransactionObj == null)
+    let BET = (request.query.type || 'DEFAULT').toUpperCase()
+    console.log(BET)
+    if(botTransactionObj[BET] == null)
     {
-        db.botTransction.findAll({
-            limit: 100,
-            order: [
-                ['id', 'DESC']
-            ],
-        }).then((res) => {
-            botTransactionObj = res
-            response.json({
-                success: true,
-                error_code: null,
-                data: res
+        if(BET == 'DEFAULT'){
+            db.botTransction.findAll({
+                limit: 100,
+                order: [
+                    ['id', 'DESC']
+                ],
+            }).then((res) => {
+                botTransactionObj[BET] = res
+                response.json({
+                    success: true,
+                    error_code: null,
+                    data: res
+                })
             })
-        })
+        }else{
+            db.botTransction.findAll({
+                limit: 100,
+                where: {
+                    bet: BET
+                },
+                order: [
+                    ['id', 'DESC']
+                ],
+            }).then((res) => {
+                botTransactionObj[BET] = res
+                response.json({
+                    success: true,
+                    error_code: null,
+                    data: res
+                })
+            })
+        }
+        
     }else{
         console.log('cache bot trasaction')
         response.json({
             success: true,
             error_code: null,
-            data: botTransactionObj
+            data: botTransactionObj[BET]
         })
     }
 })
@@ -944,7 +970,8 @@ function initiateWorker(table) {
                 ]
             }).then((latest) => {
                 let point = latest.point
-                botTransactionObj = null
+                botTransactionObj['DEFAULT'] = null
+                botTransactionObj[bet] = null
                 if(result.status == 'WIN'){
                     point += 1
                 }else if(result.status == 'LOSE'){
