@@ -26,6 +26,9 @@ db.sequelize.sync({
     alter: true
 });
 
+
+let botTransactionObj;
+
 let win_percent;
 //db.sequelize.sync();
 let botNumber = 0;
@@ -569,7 +572,7 @@ myApp.post('/stop', function (request, response) {
 
 myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
     db.userTransaction.findAll({
-        limit: 50,
+        limit: 25,
         where: {
             botId: request.params.bot_id
         },
@@ -594,18 +597,29 @@ myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
 })
 
 myApp.get('/bot_transaction', function (request, response) {
-    db.botTransction.findAll({
-        limit: 100,
-        order: [
-            ['id', 'DESC']
-        ],
-    }).then((res) => {
+    if(botTransactionObj == null)
+    {
+        db.botTransction.findAll({
+            limit: 100,
+            order: [
+                ['id', 'DESC']
+            ],
+        }).then((res) => {
+            botTransactionObj = res
+            response.json({
+                success: true,
+                error_code: null,
+                data: res
+            })
+        })
+    }else{
+        console.log('cache bot trasaction')
         response.json({
             success: true,
             error_code: null,
-            data: res
+            data: botTransactionObj
         })
-    })
+    }
 })
 
 myApp.get('/wallet/:id', function (request, response) {
@@ -665,6 +679,7 @@ let botList = {}
 var startBet;
 var remainingBet;
 var betInt;
+var currentBetData;
 
 mainBody();
 
@@ -676,7 +691,7 @@ function createBotWorker(obj, playData) {
         if (result.action == 'bet_success') {
             result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            console.log(`bot ${result.id} bet success`)
+            console.log(`bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
             console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
@@ -836,12 +851,22 @@ function playCasinoRandom() {
 
 function betInterval(){
     let n = new Date().getTime()
-    console.log(n, remainingBet, n - remainingBet, remainingBet * 1000)
-    if( n - startBet > remainingBet * 1000){
+    console.log(n, n - startBet, (remainingBet - 2) * 1000 )
+    if( n - startBet > (remainingBet - 2) * 1000){
         clearInterval(betInt)
     }
     else{
-        console.log('betting')
+        // console.log('betting')
+        if (Object.keys(botWorkerDict).length > 0) {
+            Object.keys(botWorkerDict).forEach(function (key) {
+                var val = botWorkerDict[key];
+                // console.log(key, val)
+                val.postMessage({
+                    action: 'bet',
+                    data: currentBetData
+                })
+            });
+        }
     }
 }
 
@@ -909,7 +934,7 @@ function initiateWorker(table) {
                 return
             }
 
-
+            
             db.botTransction.findOne({
                 where: {
                     bot_type: 1,
@@ -919,6 +944,7 @@ function initiateWorker(table) {
                 ]
             }).then((latest) => {
                 let point = latest.point
+                botTransactionObj = null
                 if(result.status == 'WIN'){
                     point += 1
                 }else if(result.status == 'LOSE'){
@@ -976,29 +1002,16 @@ function initiateWorker(table) {
                 })
             })
 
-
-
-
             isPlay = false
             currentList = []
         }
         if (result.action == 'bet') {
             startBet = new Date().getTime()
-            console.log('start bet')
             betInt = setInterval(function () {
                 betInterval();
-            }, 2000);
-            remainingBet = result.remaining
-            if (Object.keys(botWorkerDict).length > 0) {
-                Object.keys(botWorkerDict).forEach(function (key) {
-                    var val = botWorkerDict[key];
-                    // console.log(key, val)
-                    val.postMessage({
-                        action: 'bet',
-                        data: result.data
-                    })
-                });
-            }
+            }, 3500);
+            remainingBet = result.data.remaining
+            currentBetData = result.data
         }
         // // if worker thread is still working on list then write index and updated value
         // if (result.isInProgress) {

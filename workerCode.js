@@ -155,7 +155,7 @@ function inititalInfo() {
 async function predictPlay() {
     
     let current = new Date().getTime()
-    if(current - last_pull_timestamp < 4800){
+    if(current - last_pull_timestamp < 4500){
         // console.log(`${workerData.title} not pull`)
         return
     }else{

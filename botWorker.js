@@ -40,6 +40,10 @@ function getBetVal() {
 }
 
 function bet(data) {
+    if(betFailed){
+        return
+    }
+
     if (status == 2) {
         console.log(`bot ${workerData.obj.id} pause`)
     } else if (status == 3) {
@@ -73,7 +77,8 @@ function bet(data) {
             .then(response => {
                 // console.log(response.data);
                 current = { bot: data.bot, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
-                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current } })
+                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj } })
+                betFailed = true
             })
             .catch(error => {
                 // console.log(`bot ${workerData.id} bet: ${error.response.data.error}`);
@@ -144,6 +149,7 @@ function registerForEventListening() {
         if (result.action == 'result_bet') {
             if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
                 processResultBet(result.status, result.botTransactionId, result.botTransaction)
+                betFailed = false
             }
         }
         if (result.action == 'pause') {
@@ -151,6 +157,7 @@ function registerForEventListening() {
         }
         if (result.action == 'start') {
             status = 1
+            betFailed = false
         }
         if (result.action == 'stop') {
             console.log('action stop')
