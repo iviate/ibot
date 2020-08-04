@@ -76,7 +76,8 @@ myApp.post('/login', async function (request, response) {
                     }
 
                 }).then((res2) => {
-                    if (botWorkerDict.hasOwnProperty(user.id)) {
+                    if (botWorkerDict.hasOwnProperty(user.id) || botWorkerDict[user.id] == undefined) {
+                        delete botWorkerDict[user.id]
                         let hasBot = null
                         if (res2) {
                             hasBot = res2
@@ -467,7 +468,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && botWorkerDict.hasOwnProperty(user.id)) {
+                if (res2 && botWorkerDict.hasOwnProperty(user.id) &&  botWorkerDict[user.id] != undefined) {
                     hasBot = res2
                     response.json({
                         success: true,
@@ -476,6 +477,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                         }
                     });
                 } else {
+                    delete botWorkerDict[user.id]
                     response.json({
                         success: true,
                         data: {
@@ -548,9 +550,13 @@ myApp.post('/stop', function (request, response) {
                 if (botObj) {
                     botObj.status = 3
                     botObj.save()
-                    botWorkerDict[user.id].postMessage({
-                        action: 'stop'
-                    })
+                    if(botWorkerDict[user.id] != undefined){
+                        botWorkerDict[user.id].postMessage({
+                            action: 'stop'
+                        })
+                        delete botWorkerDict[user.id]
+                    }
+                   
                     response.json({
                         success: true,
                         error_code: null
@@ -780,8 +786,10 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.save()
-                    if (botWorkerDict.hasOwnProperty(res.userId)) {
+                    if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()
+                        delete botWorkerDict[res.userId]
+                    }else{
                         delete botWorkerDict[res.userId]
                     }
 
