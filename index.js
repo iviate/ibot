@@ -76,8 +76,9 @@ myApp.post('/login', async function (request, response) {
                     }
 
                 }).then((res2) => {
-                    if (botWorkerDict.hasOwnProperty(user.id) || botWorkerDict[user.id] == undefined) {
-                        delete botWorkerDict[user.id]
+                    console.log(res2)
+                    if (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                        
                         let hasBot = null
                         if (res2) {
                             hasBot = res2
@@ -91,6 +92,7 @@ myApp.post('/login', async function (request, response) {
                             }
                         });
                     } else {
+                        delete botWorkerDict[user.id]
                         response.json({
                             success: true,
                             data: {
@@ -298,13 +300,7 @@ myApp.post('/bot', async function (request, response) {
         },
     }).then((user) => {
         if (user) {
-            db.bot.update({
-                status: 3
-            }, {
-                where: {
-                    userId: user.id
-                }
-            });
+            
             botData = {
                 userId: user.id,
                 token: user.truthbet_token,
@@ -336,6 +332,20 @@ myApp.post('/bot', async function (request, response) {
                     ]
                 }).then((res) => {
                     // console.log(res)
+
+                    db.bot.update({
+                        status: 3
+                    }, {
+                        where: {
+                            userId: user.id,
+                            id : {
+                                [Op.ne]: res.id
+                            }
+                            
+                        }
+                    }).then((b) = {
+                        
+                    });
                     if (res) {
                         botData.id = res.id
                         console.log(botData)
@@ -549,6 +559,8 @@ myApp.post('/stop', function (request, response) {
             }).then((botObj) => {
                 if (botObj) {
                     botObj.status = 3
+                    botObj.stop_by = 1
+                    botObj.stop_wallet = request.body.wallet
                     botObj.save()
                     if(botWorkerDict[user.id] != undefined){
                         botWorkerDict[user.id].postMessage({
@@ -776,7 +788,7 @@ function createBotWorker(obj, playData) {
                 botTransaction: result.botTransaction
             })
 
-            console.log(`isStop ${result.isStop}`)
+            // console.log(`isStop ${result.isStop}`)
 
             if (userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop) {
                 db.bot.findOne({
@@ -785,6 +797,8 @@ function createBotWorker(obj, playData) {
                     }
                 }).then((res) => {
                     res.status = 3
+                    res.stop_wallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
+                    res.stop_by = userWallet <= result.botObj.loss_threshold? 3: userWallet >= result.botObj.profit_threshold? 2 : isStop? 1 : 4
                     res.save()
                     if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()
