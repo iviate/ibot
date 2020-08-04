@@ -706,6 +706,7 @@ var startBet;
 var remainingBet;
 var betInt;
 var currentBetData;
+var latestBotTransactionId;
 
 mainBody();
 
@@ -786,10 +787,6 @@ function createBotWorker(obj, playData) {
 
                 })
             }
-
-
-
-
         }
     };
 
@@ -960,7 +957,6 @@ function initiateWorker(table) {
                 return
             }
 
-            
             db.botTransction.findOne({
                 where: {
                     bot_type: 1,
@@ -971,7 +967,7 @@ function initiateWorker(table) {
             }).then((latest) => {
                 let point = latest.point
                 botTransactionObj['DEFAULT'] = null
-                botTransactionObj[bet] = null
+                botTransactionObj[result.bet] = null
                 if(result.status == 'WIN'){
                     point += 1
                 }else if(result.status == 'LOSE'){
@@ -999,8 +995,16 @@ function initiateWorker(table) {
                             ['id', 'DESC']
                         ]
                     }).then((res) => {
+
+                        
                         // console.log(res)
                         if (res) {
+
+                            if(latestBotTransactionId != res.id){
+                                io.emit('all', {bet: res.bet})
+                                latestBotTransactionId = res.id
+                            }
+
                             botTransactionData.id = res.id
 
                             if (Object.keys(botWorkerDict).length > 0) {
