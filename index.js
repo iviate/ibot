@@ -70,41 +70,52 @@ myApp.post('/login', async function (request, response) {
                     where: {
                         status: {
                             [Op.ne]: 3
-
                         },
                         userId: user.id
                     }
 
                 }).then((res2) => {
-                    console.log(res2)
-                    if (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
-                        
-                        let hasBot = null
-                        if (res2) {
-                            hasBot = res2
+                    // console.log(res2)
+
+                    axios.get('https://truthbet.com/api/m/account/edit', {
+                        headers: {
+                            Authorization: `Bearer ${user.truthbet_token}`
                         }
-                        response.json({
-                            success: true,
-                            data: {
-                                user_id: user.id,
-                                bot: hasBot,
-                                username: USERNAME
+                    }).then((res2) => {
+                        console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
+                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) && 
+                            (USERNAME != 'haoshaman' && USERNAME != 'testf111')) {
+                            response.json({
+                                success: false,
+                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                            });
+                        } else {
+                            if (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                                let hasBot = null
+                                if (res2) {
+                                    hasBot = res2
+                                }
+                                response.json({
+                                    success: true,
+                                    data: {
+                                        user_id: user.id,
+                                        bot: hasBot,
+                                        username: USERNAME
+                                    }
+                                });
+                            }else{
+                                response.json({
+                                    success: true,
+                                    data: {
+                                        user_id: user.id,
+                                        bot: null,
+                                        username: USERNAME
+                                    }
+                                });
                             }
-                        });
-                    } else {
-                        delete botWorkerDict[user.id]
-                        response.json({
-                            success: true,
-                            data: {
-                                user_id: user.id,
-                                bot: null,
-                                username: USERNAME
-                            }
-                        });
-                    }
-
+                        }
+                    })
                 })
-
             } else {
                 response.json({
                     success: false,
@@ -152,38 +163,37 @@ myApp.post('/login', async function (request, response) {
                             Authorization: `Bearer ${data.jwtToken}`
                         }
                     }).then((res2) => {
-                        // if((res2.advisor_user_id != 570306 || res2.agent_user_id != 26054 || res2.supervisor_user_id != 521727) && 
-                        //     USERNAME != 'haoshaman'){
-                        //     response.json({
-                        //         success: false,
-                        //         message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
-                        //     });
-                        // }
-                        // else{
-                        bcrypt.hash(PASSWORD, 12, function (err, hash) {
-                            db.user.create({
-                                username: USERNAME,
-                                password: hash,
-                                truthbet_token: data.jwtToken,
-                                truthbet_token_at: db.sequelize.fn('NOW')
-                            }).then((result) => {
-                                db.user.findOne({
-                                    where: {
-                                        username: USERNAME
-                                    }
-                                }).then((res) => {
-                                    response.json({
-                                        success: true,
-                                        data: {
-                                            user_id: res.id,
+                        console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
+                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)) {
+                            response.json({
+                                success: false,
+                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                            });
+                        } else {
+                            bcrypt.hash(PASSWORD, 12, function (err, hash) {
+                                db.user.create({
+                                    username: USERNAME,
+                                    password: hash,
+                                    truthbet_token: data.jwtToken,
+                                    truthbet_token_at: db.sequelize.fn('NOW')
+                                }).then((result) => {
+                                    db.user.findOne({
+                                        where: {
                                             username: USERNAME
                                         }
-                                    });
+                                    }).then((res) => {
+                                        response.json({
+                                            success: true,
+                                            data: {
+                                                user_id: res.id,
+                                                username: USERNAME
+                                            }
+                                        });
+                                    })
                                 })
-                            })
 
-                        });
-                        // }
+                            });
+                        }
 
                     })
 
@@ -300,7 +310,7 @@ myApp.post('/bot', async function (request, response) {
         },
     }).then((user) => {
         if (user) {
-            
+
             botData = {
                 userId: user.id,
                 token: user.truthbet_token,
@@ -338,17 +348,17 @@ myApp.post('/bot', async function (request, response) {
                     }, {
                         where: {
                             userId: user.id,
-                            id : {
+                            id: {
                                 [Op.ne]: res.id
                             }
-                            
+
                         }
                     }).then((b) = {
-                        
+
                     });
                     if (res) {
                         botData.id = res.id
-                        console.log(botData)
+                        // console.log(botData)
                         createBotWorker(botData, playData)
 
                         response.json({
@@ -478,7 +488,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && botWorkerDict.hasOwnProperty(user.id) &&  botWorkerDict[user.id] != undefined) {
+                if (res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
                     hasBot = res2
                     response.json({
                         success: true,
@@ -562,13 +572,13 @@ myApp.post('/stop', function (request, response) {
                     botObj.stop_by = 1
                     botObj.stop_wallet = request.body.wallet
                     botObj.save()
-                    if(botWorkerDict[user.id] != undefined){
+                    if (botWorkerDict[user.id] != undefined) {
                         botWorkerDict[user.id].postMessage({
                             action: 'stop'
                         })
                         delete botWorkerDict[user.id]
                     }
-                   
+
                     response.json({
                         success: true,
                         error_code: null
@@ -621,9 +631,8 @@ myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
 myApp.get('/bot_transaction', function (request, response) {
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
     console.log(BET)
-    if(botTransactionObj[BET] == null)
-    {
-        if(BET == 'DEFAULT'){
+    if (botTransactionObj[BET] == null) {
+        if (BET == 'DEFAULT') {
             db.botTransction.findAll({
                 limit: 100,
                 order: [
@@ -637,7 +646,7 @@ myApp.get('/bot_transaction', function (request, response) {
                     data: res
                 })
             })
-        }else{
+        } else {
             db.botTransction.findAll({
                 limit: 100,
                 where: {
@@ -655,9 +664,9 @@ myApp.get('/bot_transaction', function (request, response) {
                 })
             })
         }
-        
-    }else{
-        console.log('cache bot trasaction')
+
+    } else {
+        // console.log('cache bot trasaction')
         response.json({
             success: true,
             error_code: null,
@@ -798,12 +807,12 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.stop_wallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
-                    res.stop_by = userWallet <= result.botObj.loss_threshold? 3: userWallet >= result.botObj.profit_threshold? 2 : isStop? 1 : 4
+                    res.stop_by = userWallet <= result.botObj.loss_threshold ? 3 : userWallet >= result.botObj.profit_threshold ? 2 : isStop ? 1 : 4
                     res.save()
                     if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()
                         delete botWorkerDict[res.userId]
-                    }else{
+                    } else {
                         delete botWorkerDict[res.userId]
                     }
 
@@ -894,13 +903,12 @@ function playCasinoRandom() {
     if (isPlay == true) return;
 }
 
-function betInterval(){
+function betInterval() {
     let n = new Date().getTime()
-    console.log(n, n - startBet, (remainingBet - 2) * 1000 )
-    if( n - startBet > (remainingBet - 2) * 1000){
+    console.log(n, n - startBet, (remainingBet - 2) * 1000)
+    if (n - startBet > (remainingBet - 2) * 1000) {
         clearInterval(betInt)
-    }
-    else{
+    } else {
         // console.log('betting')
         if (Object.keys(botWorkerDict).length > 0) {
             Object.keys(botWorkerDict).forEach(function (key) {
@@ -990,9 +998,9 @@ function initiateWorker(table) {
                 let point = latest.point
                 botTransactionObj['DEFAULT'] = null
                 botTransactionObj[result.bet] = null
-                if(result.status == 'WIN'){
+                if (result.status == 'WIN') {
                     point += 1
-                }else if(result.status == 'LOSE'){
+                } else if (result.status == 'LOSE') {
                     point -= 1
                 }
                 botTransactionData = {
@@ -1018,12 +1026,14 @@ function initiateWorker(table) {
                         ]
                     }).then((res) => {
 
-                        
+
                         // console.log(res)
                         if (res) {
 
-                            if(latestBotTransactionId != res.id){
-                                io.emit('all', {bet: res.bet})
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bet: res.bet
+                                })
                                 latestBotTransactionId = res.id
                             }
 
