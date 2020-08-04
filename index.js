@@ -956,7 +956,7 @@ function playCasino() {
                 win_percent = 92
             }
 
-            console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+            console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
             isPlay = true
             console.log('post play')
             workerDict[current.table_id].worker.postMessage({
