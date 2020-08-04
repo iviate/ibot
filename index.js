@@ -951,6 +951,11 @@ function playCasino() {
             } else {
                 win_percent = current.winner_percent
             }
+
+            if( win_percent == 100){
+                win_percent = 92
+            }
+
             console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
             isPlay = true
             console.log('post play')
@@ -997,7 +1002,7 @@ function initiateWorker(table) {
             }).then((latest) => {
                 let point = latest.point
                 botTransactionObj['DEFAULT'] = null
-                botTransactionObj[result.bet] = null
+                botTransactionObj[result.stats.bot] = null
                 if (result.status == 'WIN') {
                     point += 1
                 } else if (result.status == 'LOSE') {
