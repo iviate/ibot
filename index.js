@@ -65,6 +65,7 @@ myApp.post('/login', async function (request, response) {
     });
     if (user) {
         bcrypt.compare(PASSWORD, user.password).then(function (result) {
+            console.log(result)
             if (result) {
                 db.bot.findOne({
                     where: {
@@ -81,9 +82,9 @@ myApp.post('/login', async function (request, response) {
                         headers: {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
-                    }).then((res2) => {
-                        console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) && 
+                    }).then((res3) => {
+                        console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
+                        if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) && 
                             (USERNAME != 'haoshaman' && USERNAME != 'testf111')) {
                             response.json({
                                 success: false,
@@ -116,15 +117,8 @@ myApp.post('/login', async function (request, response) {
                         }
                     })
                 })
-            } else {
-                response.json({
-                    success: false,
-                    message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
-                });
-            }
-        });
+            }})
     } else {
-
         // require("dotenv").config();
         (async (USERNAME, PASSWORD) => {
 
@@ -186,6 +180,7 @@ myApp.post('/login', async function (request, response) {
                                             success: true,
                                             data: {
                                                 user_id: res.id,
+                                                bot: null,
                                                 username: USERNAME
                                             }
                                         });
@@ -630,7 +625,6 @@ myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
 
 myApp.get('/bot_transaction', function (request, response) {
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
-    console.log(BET)
     if (botTransactionObj[BET] == null) {
         if (BET == 'DEFAULT') {
             db.botTransction.findAll({
