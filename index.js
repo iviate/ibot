@@ -801,7 +801,7 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.stop_wallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
-                    res.stop_by = userWallet <= result.botObj.loss_threshold ? 3 : userWallet >= result.botObj.profit_threshold ? 2 : isStop ? 1 : 4
+                    res.stop_by = userWallet <= result.botObj.loss_threshold ? 3 : userWallet >= result.botObj.profit_threshold ? 2 : result.isStop ? 1 : 4
                     res.save()
                     if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()
