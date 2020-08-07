@@ -688,10 +688,19 @@ myApp.get('/wallet/:id', function (request, response) {
                     }
                 })
                 .then(res => {
+                    
+                    let profit_wallet = user.profit_wallet
+                    let all_wallet = res.data.wallet.myWallet.MAIN_WALLET.chips.credit
+                    let play_wallet = all_wallet - profit_wallet
+
                     response.json({
                         success: true,
                         error_code: null,
-                        data: res.data
+                        data: {
+                            profit_wallet: profit_wallet,
+                            all_wallet: all_wallet,
+                            play_wallet: play_wallet
+                        }
                     })
                 })
             // .catch(error => {
