@@ -60,6 +60,10 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true
       },
+      is_infinite: {
+        type: DataTypes.BOOLEAN,
+        default: false
+      },
     });
 
     Bot.associate = function(models) {

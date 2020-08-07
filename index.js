@@ -48,9 +48,14 @@ var io = require('socket.io')(http);
 
 io.on('connection', (socket) => {
     console.log('socket connection')
-    socket.on('chat message', (msg) => {
-        console.log(msg)
-        io.emit('chat message', msg);
+    socket.on('restart', (msg) => {
+        let userId = msg.userId
+        let type = msg.type
+        if(botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined){
+            botWorkerDict[userId].postMessage({action: 'restart', type: type, userId: userId})
+        }else{
+            io.emit(`user${userId}`, {action: 'restart_result': success: false, message: 'ยังไม่ได้สร้างบอท', data: null})
+        }
     });
 });
 
@@ -743,6 +748,9 @@ function createBotWorker(obj, playData) {
         }
         if (result.action == 'bet_failed') {
             console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
+        }
+        if(result.action == 'restart_result'){
+            io.emit(`user${result.userId}`, result)
         }
         // if (result.action == 'stop') {
 

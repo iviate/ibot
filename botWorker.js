@@ -17,25 +17,149 @@ let status = 2
 var isStop = false;
 registerForEventListening();
 
+function restartOnlyProfit(){
+    axios.get(`https://truthbet.com/api/wallet`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+        .then(res => {
+            
+            let wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+            if(wallet <= botObj.init_wallet){
+                playData = JSON.parse(botObj.data)
+                parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
+            }else{
+                let s = 1
+                let profit = botObj.profit_threshold - wallet
+                let turn = Math.ceil(profit / botObj.init_bet)
+                let left = turn
+                let ret = []
+                let state = 1
+                while (left > s) {
+                    ret.push(s)
+                    left -= s
+                    state = 1
+                    if (left < s) break;
+                    ret.push(s)
+                    left -= s
+                    state = 2
+                    if (left < s) break;
+                    ret.push(s)
+                    left -= s
+                    state = 3
+                    if (left < s) break;
+                    s++
+                }
+                if (left > 0) {
+                    ret.push(left)
+                }
+
+                if (ret.length > 21) {
+                    let turn_left = 0
+                    while (ret.length > 21) {
+                        if (state == 3) {
+                            s++
+                            state = 0
+                        }
+                        turn_left = ret.shift()
+                        if (turn_left + ret[ret.length - 1] > s) {
+                            let ses = turn_left + ret[ret.length - 1] - s
+                            ret[ret.length - 1] = s
+                            ret.push(ses)
+                            state++
+                        } else {
+                            ret[ret.length - 1] += turn_left
+                        }
+                    }
+                }
+
+                playData = ret
+                console.log(playData)
+                parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
+            }
+
+        })
+        .catch(error => {
+            console.log(error)
+            parentPort.postMessage({action: 'restart_result', data: {success: false, message: error}, userId: botObj.userId})
+        })
+}
+
+function restartAll(){
+    let s = 1
+    let turn = sum(playData)
+    let left = turn
+    while (left > s) {
+        ret.push(s)
+        left -= s
+        state = 1
+        if (left < s) break;
+        ret.push(s)
+        left -= s
+        state = 2
+        if (left < s) break;
+        ret.push(s)
+        left -= s
+        state = 3
+        if (left < s) break;
+        s++
+    }
+    if (left > 0) {
+        ret.push(left)
+    }
+
+    if (ret.length > 21) {
+        let turn_left = 0
+        while (ret.length > 21) {
+            if (state == 3) {
+                s++
+                state = 0
+            }
+            turn_left = ret.shift()
+            if (turn_left + ret[ret.length - 1] > s) {
+                let ses = turn_left + ret[ret.length - 1] - s
+                ret[ret.length - 1] = s
+                ret.push(ses)
+                state++
+            } else {
+                ret[ret.length - 1] += turn_left
+            }
+        }
+    }
+    playData = ret
+    console.log(playData)
+    parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
+}
+
+
+function restartXSystem(type){
+    if(type == 1){
+        restartOnlyProfit()
+    }else if(type == 2){
+        restartAll()
+    }
+}   
+
 function getBetVal() {
     if (botObj.money_system == 1) {
-        return botObj.init_bet
+        return round(botObj.init_bet, -1)
     }
     if (botObj.money_system == 2) {
-        return playData[playTurn - 1]
+        return round(playData[playTurn - 1], -1))
     }
     if (botObj.money_system == 3) {
         if(playData.length == 1){
-            return playData[0] * (botObj.init_bet / 2)
+            
+            return round(playData[0] * (botObj.init_bet / 2), -1)
         }
-        return (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
+        return round((playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2), -1)
     }
     if (botObj.money_system == 4) {
         if(playData.length == 1){
             return playData[0] * botObj.init_bet
         }
-
-        return (playData[0] + playData[playData.length - 1]) * botObj.init_bet
+        return round((playData[0] + playData[playData.length - 1]) * botObj.init_bet)
     }
 }
 
@@ -108,7 +232,10 @@ function processResultBet(status, botTransactionId, botTransaction) {
         if (status == 'WIN') {
             playData = playData.splice(1, playData.length - 2)
         } else if (status == 'LOSE') {
-            playData.push(playData[0] + playData[playData.length - 1])
+            if(len(playData) == 1):
+                playData.push(playData[0])
+            else:
+                playData.push(playData[0] + playData[playData.length - 1])
         }
     }
 
@@ -168,6 +295,16 @@ function registerForEventListening() {
             isStop = true
             status = 3
             process.exit(0)
+        }
+        if (result.action == 'restart'){
+            if( botObj.money_system != 4){
+                parentPort.postMessage({action: 'restart_result', data: {success: false, message: "บอทไม่ใด้เดินเงินแบบ X System"}, userId: botObj.userId})
+            }
+            else if( status != 2){
+                parentPort.postMessage({action: 'restart_result', data: {success: false, message: "โปรดหยุดบอทก่อนรีสตาร์ท"}, , userId: botObj.userId})
+            }else{
+                restartXSystem(result.type)
+            }
         }
         // console.log("Thread id ")
         // //  setting up interval to call method to multiple with factor

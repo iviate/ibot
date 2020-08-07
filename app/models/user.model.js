@@ -46,6 +46,10 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       truthbet_token_at: {
         type: DataTypes.DATE,
         allowNull: true,
+      },
+      profit_wallet: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
       }
     });
   
