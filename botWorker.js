@@ -163,7 +163,7 @@ function getBetVal() {
         betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
     }
 
-    let mod = betval % 10
+    let mod = ~~(betval % 10)
     console.log(mod, betval)
     if(mod != 0 || mod != 5){
         if(mod < 5){
