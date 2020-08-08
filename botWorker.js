@@ -88,7 +88,11 @@ function restartOnlyProfit(){
 
 function restartAll(){
     let s = 1
-    let turn = sum(playData)
+    let turn = 0
+    for(let i = 0; i < playData.length; i++){
+        turn += playData[i]
+    }
+    // let turn = sum(playData)
     let left = turn
     while (left > s) {
         ret.push(s)
