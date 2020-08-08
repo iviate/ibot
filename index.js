@@ -691,7 +691,7 @@ myApp.get('/wallet/:id', function (request, response) {
                 .then(res => {
                     console.log(res.data)
                     let profit_wallet = user.profit_wallet
-                    let all_wallet = res.data.wallet.myWallet.MAIN_WALLET.chips.credit
+                    let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
                     let play_wallet = all_wallet - profit_wallet
 
                     response.json({
@@ -701,7 +701,7 @@ myApp.get('/wallet/:id', function (request, response) {
                             profit_wallet: profit_wallet,
                             all_wallet: all_wallet,
                             play_wallet: play_wallet,
-                            myWallet: res.data.myWallet.myWallet
+                            myWallet: res.data.myWallet
                         }
                     })
                 })
