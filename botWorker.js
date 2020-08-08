@@ -94,6 +94,7 @@ function restartAll(){
     }
     // let turn = sum(playData)
     let left = turn
+    let ret = []
     while (left > s) {
         ret.push(s)
         left -= s
