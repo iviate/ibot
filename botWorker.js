@@ -142,25 +142,37 @@ function restartXSystem(type){
 }   
 
 function getBetVal() {
+    let betval = 0
     if (botObj.money_system == 1) {
-        return round(botObj.init_bet, -1)
+        betval = botObj.init_bet
     }
     if (botObj.money_system == 2) {
-        return round(playData[playTurn - 1], -1))
+        betval = playData[playTurn - 1]
     }
     if (botObj.money_system == 3) {
         if(playData.length == 1){
             
-            return round(playData[0] * (botObj.init_bet / 2), -1)
+            betval = playData[0] * (botObj.init_bet / 2)
         }
-        return round((playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2), -1)
+        betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
     }
     if (botObj.money_system == 4) {
         if(playData.length == 1){
-            return playData[0] * botObj.init_bet
+            betval = playData[0] * botObj.init_bet
         }
-        return round((playData[0] + playData[playData.length - 1]) * botObj.init_bet)
+        betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
     }
+
+    let mod = betval % 10
+    if(mod != 0 || mode != 5){
+        if(mod < 5){
+            betval = Math.floor((betval / 10) * 10) + 5 
+        }else if(mode > 5){
+            betval = Math.ceil(betval / 10) * 10
+        }
+    }
+
+    return betval
 }
 
 function bet(data) {
@@ -232,10 +244,13 @@ function processResultBet(status, botTransactionId, botTransaction) {
         if (status == 'WIN') {
             playData = playData.splice(1, playData.length - 2)
         } else if (status == 'LOSE') {
-            if(len(playData) == 1):
+            if(len(playData) == 1){
                 playData.push(playData[0])
-            else:
+            }else{
                 playData.push(playData[0] + playData[playData.length - 1])
+            }
+            
+                
         }
     }
 

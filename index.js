@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
         if(botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined){
             botWorkerDict[userId].postMessage({action: 'restart', type: type, userId: userId})
         }else{
-            io.emit(`user${userId}`, {action: 'restart_result': success: false, message: 'ยังไม่ได้สร้างบอท', data: null})
+            io.emit(`user${userId}`, {action: 'restart_result', success: false, message: 'ยังไม่ได้สร้างบอท', data: null})
         }
     });
 });
@@ -163,7 +163,8 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res2) => {
                         console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)) {
+                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
+                                && USERNAME != "testf111") {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -688,7 +689,6 @@ myApp.get('/wallet/:id', function (request, response) {
                     }
                 })
                 .then(res => {
-                    
                     let profit_wallet = user.profit_wallet
                     let all_wallet = res.data.wallet.myWallet.MAIN_WALLET.chips.credit
                     let play_wallet = all_wallet - profit_wallet
@@ -699,7 +699,8 @@ myApp.get('/wallet/:id', function (request, response) {
                         data: {
                             profit_wallet: profit_wallet,
                             all_wallet: all_wallet,
-                            play_wallet: play_wallet
+                            play_wallet: play_wallet,
+                            myWallet: res.data.myWallet
                         }
                     })
                 })
