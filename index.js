@@ -700,7 +700,7 @@ myApp.get('/wallet/:id', function (request, response) {
                             profit_wallet: profit_wallet,
                             all_wallet: all_wallet,
                             play_wallet: play_wallet,
-                            myWallet: res.data.myWallet
+                            myWallet: res.myWallet
                         }
                     })
                 })
