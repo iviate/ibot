@@ -164,10 +164,10 @@ function getBetVal() {
     }
 
     let mod = betval % 10
-    if(mod != 0 || mode != 5){
+    if(mod != 0 || mod != 5){
         if(mod < 5){
             betval = Math.floor((betval / 10) * 10) + 5 
-        }else if(mode > 5){
+        }else if(mod > 5){
             betval = Math.ceil(betval / 10) * 10
         }
     }
