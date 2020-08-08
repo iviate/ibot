@@ -316,7 +316,7 @@ function registerForEventListening() {
                 parentPort.postMessage({action: 'restart_result', data: {success: false, message: "บอทไม่ใด้เดินเงินแบบ X System"}, userId: botObj.userId})
             }
             else if( status != 2){
-                parentPort.postMessage({action: 'restart_result', data: {success: false, message: "โปรดหยุดบอทก่อนรีสตาร์ท"}, , userId: botObj.userId})
+                parentPort.postMessage({action: 'restart_result', data: {success: false, message: "โปรดหยุดบอทก่อนรีสตาร์ท"}, userId: botObj.userId})
             }else{
                 restartXSystem(result.type)
             }

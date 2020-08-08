@@ -445,9 +445,14 @@ myApp.post('/pause', async function (request, response) {
             }).then((botObj) => {
                 if (botObj) {
                     botObj.status = 2
-                    botWorkerDict[user.id].postMessage({
-                        action: 'pause'
-                    })
+                    if(botWorkerDict[user.id != undefined]){
+                        botWorkerDict[user.id].postMessage({
+                            action: 'pause'
+                        })
+                    }else{
+                        delete botWorkerDict[user.id]
+                    }
+                    
                     botObj.save()
                     response.json({
                         success: true,
