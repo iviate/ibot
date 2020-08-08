@@ -436,14 +436,15 @@ myApp.post('/pause', async function (request, response) {
         where: {
             username: USERNAME,
         },
-    }).then((user) => {
-        if (user) {
+    }).then((u) => {
+        if (u) {
             db.bot.findOne({
                 where: {
-                    userId: user.id,
+                    userId: u.id,
                     status: 1
                 },
             }).then((botObj) => {
+                console.log(u.id)
                 if (botObj) {
                     botObj.status = 2
                     if(botWorkerDict[user.id] != undefined){
