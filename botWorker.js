@@ -245,7 +245,7 @@ function processResultBet(status, botTransactionId, botTransaction) {
         if (status == 'WIN') {
             playData = playData.splice(1, playData.length - 2)
         } else if (status == 'LOSE') {
-            if(len(playData) == 1){
+            if(playData.length == 1){
                 playData.push(playData[0])
             }else{
                 playData.push(playData[0] + playData[playData.length - 1])
