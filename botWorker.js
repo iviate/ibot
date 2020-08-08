@@ -164,6 +164,7 @@ function getBetVal() {
     }
 
     let mod = betval % 10
+    console.log(mod, betval)
     if(mod != 0 || mod != 5){
         if(mod < 5){
             betval = Math.floor((betval / 10) * 10) + 5 

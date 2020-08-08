@@ -790,6 +790,7 @@ function createBotWorker(obj, playData) {
         //     }
         // }
         if (result.action == 'process_result') {
+            console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
             let userTransactionData = {
