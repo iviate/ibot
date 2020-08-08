@@ -55,7 +55,7 @@ io.on('connection', (socket) => {
         if(botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined){
             botWorkerDict[userId].postMessage({action: 'restart', type: type, userId: userId})
         }else{
-            io.emit(`user${userId}`, {action: 'restart_result', success: false, message: 'ยังไม่ได้สร้างบอท', data: null})
+            io.emit(`user${userId}`, {action: 'restart_result', data : {success: false, message: 'ยังไม่ได้สร้างบอท', data: null}})
         }
     });
 });
