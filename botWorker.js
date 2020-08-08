@@ -173,7 +173,7 @@ function getBetVal() {
         }
     }
 
-    return betval
+    return ~~betval
 }
 
 function bet(data) {
