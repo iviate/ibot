@@ -49,6 +49,7 @@ var io = require('socket.io')(http);
 io.on('connection', (socket) => {
     console.log('socket connection')
     socket.on('restart', (msg) => {
+        console.log(msg)
         let userId = msg.userId
         let type = msg.type
         if(botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined){
