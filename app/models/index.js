@@ -40,12 +40,6 @@ db.userTransaction.belongsTo(db.botTransction, {
   as: "bot_transaction",
 });
 
-db.user.hasMany(db.wallet_transfer, {as: "wallet_transfer"});
-db.wallet_transfer.belongsTo(db.user, {
-  foreignKey: "userId",
-  as: "user"
-})
-
 db.bot.hasMany(db.wallet_transfer, {as: "profit_transfer"});
 db.wallet_transfer.belongsTo(db.bot, {
   foreignKey: "botId",

@@ -49,7 +49,7 @@ var io = require('socket.io')(http);
 io.on('connection', (socket) => {
     console.log('socket connection')
     socket.on('restart', (msg) => {
-        console.log(msg)
+        // console.log(msg)
         let userId = msg.userId
         let type = msg.type
         if(botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined){
@@ -71,7 +71,7 @@ myApp.post('/login', async function (request, response) {
     });
     if (user) {
         bcrypt.compare(PASSWORD, user.password).then(function (result) {
-            console.log(result)
+            // console.log(result)
             if (result) {
                 db.bot.findOne({
                     where: {
@@ -89,7 +89,7 @@ myApp.post('/login', async function (request, response) {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
                     }).then((res3) => {
-                        console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
+                        // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
                         if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) && 
                             (USERNAME != 'haoshaman' && USERNAME != 'testf111')) {
                             response.json({
@@ -163,7 +163,7 @@ myApp.post('/login', async function (request, response) {
                             Authorization: `Bearer ${data.jwtToken}`
                         }
                     }).then((res2) => {
-                        console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
+                        // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
                         if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
                                 && USERNAME != "testf111") {
                             response.json({
@@ -328,6 +328,9 @@ myApp.post('/bot', async function (request, response) {
                 init_bet: request.body.init_bet,
                 bet_side: request.body.bet_side,
                 max_turn: 0,
+                is_infinite: request.body.is_infinite,
+                deposite_count: 0,
+                profit_wallet: 0
             }
 
             let playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
@@ -444,7 +447,7 @@ myApp.post('/pause', async function (request, response) {
                     status: 1
                 },
             }).then((botObj) => {
-                console.log(u.id)
+                // console.log(u.id)
                 if (botObj) {
                     botObj.status = 2
                     if(botWorkerDict[u.id] != undefined){
@@ -696,7 +699,7 @@ myApp.get('/wallet/:id', function (request, response) {
                     }
                 })
                 .then(res => {
-                    console.log(res.data)
+                    // console.log(res.data)
                     let profit_wallet = user.profit_wallet
                     let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
                     let play_wallet = all_wallet - profit_wallet
@@ -719,6 +722,100 @@ myApp.get('/wallet/:id', function (request, response) {
             //         message: 'internal error'
             //     })
             // });
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+
+});
+
+myApp.post('/wallet/withdraw', function (request, response) {
+    const userId = request.body.userId
+    const amount = request.body.amount
+    db.user.findOne({
+        where: {
+            id: userId,
+        },
+    }).then((user) => {
+        if (user) {
+            axios.get(`https://truthbet.com/api/wallet`, {
+                    headers: {
+                        Authorization: `Bearer ${user.truthbet_token}`
+                    }
+                })
+                .then(res => {
+                    console.log(res.data)
+                    let profit_wallet = user.profit_wallet
+                    let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+                    let play_wallet = all_wallet - profit_wallet
+
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: {
+                            profit_wallet: profit_wallet,
+                            all_wallet: all_wallet,
+                            play_wallet: play_wallet,
+                            myWallet: res.data.myWallet
+                        }
+                    })
+                })
+            // .catch(error => {
+
+            //     response.json({
+            //         success: false,
+            //         error_code: 500,
+            //         message: 'internal error'
+            //     })
+            // });
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+
+});
+
+myApp.post('/wallet/deposite', function (request, response) {
+    const userId = request.body.userId
+    const amount = request.body.amount
+    db.user.findOne({
+        where: {
+            id: userId,
+        },
+    }).then((user) => {
+        if (user) {
+            axios.get(`https://truthbet.com/api/wallet`, {
+                    headers: {
+                        Authorization: `Bearer ${user.truthbet_token}`
+                    }
+                })
+                .then(res => {
+                    console.log(res.data)
+                    let profit_wallet = user.profit_wallet
+                    let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+                    let play_wallet = all_wallet - profit_wallet
+
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: {
+                            profit_wallet: profit_wallet,
+                            all_wallet: all_wallet,
+                            play_wallet: play_wallet,
+                            myWallet: res.data.myWallet
+                        }
+                    })
+                })
         } else {
             response.json({
                 success: false,
@@ -792,7 +889,7 @@ function createBotWorker(obj, playData) {
         //     }
         // }
         if (result.action == 'process_result') {
-            console.log(result.action)
+            // console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
             let userTransactionData = {
@@ -803,24 +900,31 @@ function createBotWorker(obj, playData) {
             }
 
             // console.log(userTransactionData)
-
+            let indexIsStop = result.isStop || ( result.botObj.is_infinite == false 
+                                    && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.init_wallet - result.botObj.profit_threshold) * 94) / 100))) ||
+                                    (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
                 action: "bet_result",
                 wallet: result.wallet,
                 playData: result.playData,
                 status: result.status,
-                isStop: userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop,
+                isStop: indexIsStop,
                 value: result.betVal,
                 wallet: result.wallet.myWallet.MAIN_WALLET.chips.credit,
                 botId: result.botObj.id,
                 botTransactionId: result.botTransactionId,
-                botTransaction: result.botTransaction
+                botTransaction: result.botTransaction,
+                botObj: result.botObj
             })
 
-            // console.log(`isStop ${result.isStop}`)
+            console.log(result.isStop, 
+                            result.botObj.is_infinite, userWallet, 
+                            result.botObj.init_wallet + Math.floor((((result.botObj.init_wallet - result.botObj.profit_threshold) * 94) / 100)), 
+                            userWallet - result.botObj.profit_wallet, 
+                            result.botObj.loss_threshold)
 
-            if (userWallet <= result.botObj.loss_threshold || userWallet >= result.botObj.profit_threshold || result.isStop) {
+            if (indexIsStop) {
                 db.bot.findOne({
                     where: {
                         id: result.botObj.id
@@ -828,7 +932,8 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.stop_wallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
-                    res.stop_by = userWallet <= result.botObj.loss_threshold ? 3 : userWallet >= result.botObj.profit_threshold ? 2 : result.isStop ? 1 : 4
+                    res.stop_by = userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
+                                    (result.botObj.is_infinite == false && userWallet >= ((result.botObj.profit_threshold * 94) / 100)) ? 2 : result.isStop ? 1 : 4
                     res.save()
                     if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()

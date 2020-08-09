@@ -4,6 +4,7 @@ const axios = require('axios');
 const { bot } = require('./app/models');
 const { POINT_CONVERSION_COMPRESSED } = require('constants');
 const e = require('express');
+const db = require('./app/models');
 
 let interval;
 let systemData;
@@ -169,7 +170,7 @@ function getBetVal() {
     }
 
     let mod = ~~(betval % 10)
-    console.log(mod, betval)
+    // console.log(mod, betval)
     if(mod != 0 && mod != 5){
         if(mod < 5){
             betval = (Math.floor((betval / 10)) * 10) + 5 
@@ -182,14 +183,15 @@ function getBetVal() {
 }
 
 function bet(data) {
+    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
     if(betFailed){
         return
     }
 
     if (status == 2) {
-        console.log(`bot ${workerData.obj.id} pause`)
+        console.log(`bot ${workerData.obj.userId} pause`)
     } else if (status == 3) {
-        console.log(`bot ${workerData.obj.id} stop`)
+        console.log(`bot ${workerData.obj.userId} stop`)
     } else if(botObj.bet_side == 2 && data.bot == 'BANKER'){
 
     } else if(botObj.bet_side == 3 && data.bot == 'PLAYER'){
@@ -251,9 +253,9 @@ function processResultBet(status, botTransactionId, botTransaction) {
             playData = playData.splice(1, playData.length - 2)
         } else if (status == 'LOSE') {
             if(playData.length == 1){
-                playData.push(playData[0])
+                playData.push(Math.ceil(playData[0] * 10) / 10)
             }else{
-                playData.push(playData[0] + playData[playData.length - 1])
+                playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
             }
             
                 
@@ -267,20 +269,59 @@ function processResultBet(status, botTransactionId, botTransaction) {
     })
         .then(res => {
             console.log(playData)
-            if(playData.length == 0){
+            if(botObj.is_infinite == false && playData.length == 0){
                 isStop = true
             }
-            parentPort.postMessage({
-                action: 'process_result',
-                status: status,
-                wallet: res.data,
-                betVal: current.betVal,
-                botObj: botObj,
-                playData: playData,
-                botTransactionId: botTransactionId,
-                botTransaction: botTransaction,
-                isStop: isStop
-            })
+            let currentWallet = res.data.myWallet.MAIN_WALLET.chips.credit
+            let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) *  94) / 100)
+            console.log(currentWallet, cutProfit)
+            if(botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit){
+                db.bot.findOne({
+                    where: {
+                        id: botObj.id
+                    }
+                }).then((b) => {
+                    let amount = currentWallet - botObj.profit_wallet - botObj.init_wallet
+                    console.log(amount)
+                    b.profit_wallet += amount
+                    b.deposite_count += 1
+                    b.save()
+                    botObj.profit_wallet += b.profit_wallet
+                    botObj.deposite_count += 1
+                    playData = JSON.parse(botObj.data)
+                    playTurn = 1
+                    console.log(botObj.profit_wallet, b.profit_wallet)
+
+                    db.wallet_transfer.create({botId: botObj.id, amount: amount}).then((created) => {
+                        
+                    })
+                    
+                    parentPort.postMessage({
+                        action: 'process_result',
+                        status: status,
+                        wallet: res.data,
+                        betVal: current.betVal,
+                        botObj: botObj,
+                        playData: playData,
+                        botTransactionId: botTransactionId,
+                        botTransaction: botTransaction,
+                        isStop: isStop
+                    })
+                })
+            }else{
+                parentPort.postMessage({
+                    action: 'process_result',
+                    status: status,
+                    wallet: res.data,
+                    betVal: current.betVal,
+                    botObj: botObj,
+                    playData: playData,
+                    botTransactionId: botTransactionId,
+                    botTransaction: botTransaction,
+                    isStop: isStop
+                })
+            }
+           
         })
         .catch(error => {
             console.log(error)
@@ -305,9 +346,11 @@ function registerForEventListening() {
             }
         }
         if (result.action == 'pause') {
+            botObj.status = 2
             status = 2
         }
         if (result.action == 'start') {
+            botObj.status = 1
             status = 1
             betFailed = false
         }
@@ -315,6 +358,7 @@ function registerForEventListening() {
             console.log('action stop')
             isStop = true
             status = 3
+            botObj.status = 3
             process.exit(0)
         }
         if (result.action == 'restart'){

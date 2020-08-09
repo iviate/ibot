@@ -64,6 +64,14 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         default: false
       },
+      profit_wallet: {
+        type: DataTypes.FLOAT,
+        default: 0
+      },
+      deposite_count: {
+        type: DataTypes.INTEGER,
+        default: 0
+      },
     });
 
     Bot.associate = function(models) {
