@@ -1126,7 +1126,10 @@ function initiateWorker(table) {
                     ['id', 'DESC']
                 ]
             }).then((latest) => {
-                let point = latest.point
+                let point = 0
+                if(latest){
+                    point = latest.point
+                }
                 botTransactionObj['DEFAULT'] = null
                 botTransactionObj[result.stats.bot] = null
                 if (result.status == 'WIN') {

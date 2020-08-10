@@ -236,7 +236,7 @@ function bet(data) {
 
 }
 
-function processResultBet(status, botTransactionId, botTransaction) {
+async function processResultBet(status, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     if (botObj.money_system == 2) {
         if (status == 'WIN') {
@@ -282,19 +282,17 @@ function processResultBet(status, botTransactionId, botTransaction) {
                     }
                 }).then((b) => {
                     let amount = currentWallet - botObj.profit_wallet - botObj.init_wallet
-                    console.log(amount)
                     b.profit_wallet += amount
                     b.deposite_count += 1
-                    b.save()
                     botObj.profit_wallet += b.profit_wallet
                     botObj.deposite_count += 1
                     playData = JSON.parse(botObj.data)
                     playTurn = 1
-                    console.log(botObj.profit_wallet, b.profit_wallet)
+                    // console.log(botObj.profit_wallet, b.profit_wallet)
+                    await b.save()
+                    
 
-                    db.wallet_transfer.create({botId: botObj.id, amount: amount}).then((created) => {
-                        
-                    })
+                    await db.wallet_transfer.create({botId: botObj.id, amount: amount})
                     
                     parentPort.postMessage({
                         action: 'process_result',
@@ -309,6 +307,9 @@ function processResultBet(status, botTransactionId, botTransaction) {
                     })
                 })
             }else{
+                if(botObj.is_infinite && playData.length === 0){
+                    playData = JSON.parse(botObj.data)
+                }
                 parentPort.postMessage({
                     action: 'process_result',
                     status: status,
