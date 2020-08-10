@@ -289,11 +289,9 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                     playData = JSON.parse(botObj.data)
                     playTurn = 1
                     // console.log(botObj.profit_wallet, b.profit_wallet)
-                    await b.save()
-                    
+                    b.save()
+                    db.wallet_transfer.create({botId: botObj.id, amount: amount}).then((created) => {})
 
-                    await db.wallet_transfer.create({botId: botObj.id, amount: amount})
-                    
                     parentPort.postMessage({
                         action: 'process_result',
                         status: status,
@@ -305,6 +303,8 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                         botTransaction: botTransaction,
                         isStop: isStop
                     })
+                    
+                    
                 })
             }else{
                 if(botObj.is_infinite && playData.length === 0){
