@@ -693,7 +693,7 @@ myApp.get('/wallet/:id', function (request, response) {
         },
     }).then((user) => {
         if (user) {
-            axios.get(`https://truthbet.com/api/wallet`, {
+            axios.get(`https://truthbet.com/api/users/owner`, {
                     headers: {
                         Authorization: `Bearer ${user.truthbet_token}`
                     }
