@@ -26,7 +26,7 @@ function restartOnlyProfit(){
     })
         .then(res => {
             
-            let wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+            let wallet = res.data.chips.credit
             if(wallet <= botObj.init_wallet){
                 playData = JSON.parse(botObj.data)
                 parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
@@ -262,7 +262,7 @@ function processResultBet(status, botTransactionId, botTransaction) {
         }
     }
 
-    axios.get(`https://truthbet.com/api/wallet`, {
+    axios.get(`https://truthbet.com/api/users/owner`, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -272,7 +272,7 @@ function processResultBet(status, botTransactionId, botTransaction) {
             if(botObj.is_infinite == false && playData.length == 0){
                 isStop = true
             }
-            let currentWallet = res.data.myWallet.MAIN_WALLET.chips.credit
+            let currentWallet = res.data.chips.credit
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) *  94) / 100)
             console.log(currentWallet, cutProfit)
             if(botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit){

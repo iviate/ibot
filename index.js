@@ -701,7 +701,7 @@ myApp.get('/wallet/:id', function (request, response) {
                 .then(res => {
                     // console.log(res.data)
                     let profit_wallet = user.profit_wallet
-                    let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+                    let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
 
                     response.json({
@@ -751,7 +751,7 @@ myApp.post('/wallet/withdraw', function (request, response) {
                 .then(res => {
                     console.log(res.data)
                     let profit_wallet = user.profit_wallet
-                    let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+                    let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
 
                     response.json({
@@ -802,7 +802,7 @@ myApp.post('/wallet/deposite', function (request, response) {
                 .then(res => {
                     console.log(res.data)
                     let profit_wallet = user.profit_wallet
-                    let all_wallet = res.data.myWallet.MAIN_WALLET.chips.credit
+                    let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
 
                     response.json({
@@ -891,10 +891,10 @@ function createBotWorker(obj, playData) {
         if (result.action == 'process_result') {
             // console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
-            let userWallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
+            let userWallet = result.wallet.chips.credit
             let userTransactionData = {
                 value: result.betVal,
-                wallet: result.wallet.myWallet.MAIN_WALLET.chips.credit,
+                wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 botTransactionId: result.botTransactionId
             }
@@ -911,7 +911,7 @@ function createBotWorker(obj, playData) {
                 status: result.status,
                 isStop: indexIsStop,
                 value: result.betVal,
-                wallet: result.wallet.myWallet.MAIN_WALLET.chips.credit,
+                wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 botTransactionId: result.botTransactionId,
                 botTransaction: result.botTransaction,
@@ -931,7 +931,7 @@ function createBotWorker(obj, playData) {
                     }
                 }).then((res) => {
                     res.status = 3
-                    res.stop_wallet = result.wallet.myWallet.MAIN_WALLET.chips.credit
+                    res.stop_wallet = result.wallet.chips.credit
                     res.stop_by = userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
                                     (result.botObj.is_infinite == false && userWallet >= ((result.botObj.profit_threshold * 94) / 100)) ? 2 : result.isStop ? 1 : 4
                     res.save()
