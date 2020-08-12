@@ -236,6 +236,73 @@ function bet(data) {
 
 }
 
+function genLeftProfitLabaushare(wallet){
+    let half_bet = botObj.init_bet / 2
+    let leftProfit =  botObj.profit_threshold - wallet
+    let turn = 2
+    let money = leftProfit / turn / half_bet
+    while (turn < 20 && (profit / turn / half_bet >= 1)) {
+        money = profit / turn / half_bet
+        turn++
+    }
+    turn -= 1
+    money = Math.ceil(money * 10) / 10
+    let ret = []
+    // console.log(`turn = ${turn} money = ${money * init_bet}`)
+    for (let i = 0; i < turn; i++) {
+        ret.push(money)
+    }
+
+    return ret
+}
+
+function genLeftProfitXSystem(wallet){
+    let s = 1
+    let leftProfit =  botObj.profit_threshold - wallet
+    let turn = Math.ceil(leftProfit / botObj.init_bet)
+    let left = turn
+    let ret = []
+    let state = 1
+    while (left > s) {
+        ret.push(s)
+        left -= s
+        state = 1
+        if (left < s) break;
+        ret.push(s)
+        left -= s
+        state = 2
+        if (left < s) break;
+        ret.push(s)
+        left -= s
+        state = 3
+        if (left < s) break;
+        s++
+    }
+    if (left > 0) {
+        ret.push(left)
+    }
+
+    if (ret.length > 21) {
+        let turn_left = 0
+        while (ret.length > 21) {
+            if (state == 3) {
+                s++
+                state = 0
+            }
+            turn_left = ret.shift()
+            if (turn_left + ret[ret.length - 1] > s) {
+                let ses = turn_left + ret[ret.length - 1] - s
+                ret[ret.length - 1] = s
+                ret.push(ses)
+                state++
+            } else {
+                ret[ret.length - 1] += turn_left
+            }
+        }
+    }
+    return ret
+}
+
 async function processResultBet(status, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     if (botObj.money_system == 2) {
@@ -243,7 +310,7 @@ async function processResultBet(status, botTransactionId, botTransaction) {
             playTurn = 1
         } else if (status == 'LOSE') {
             playTurn++
-            if (playTurn > 5) {
+            if (playTurn > playData.length) {
                 playTurn = 1
             }
         }
@@ -269,11 +336,21 @@ async function processResultBet(status, botTransactionId, botTransaction) {
     })
         .then(res => {
             console.log(playData)
-            if(botObj.is_infinite == false && playData.length == 0){
-                isStop = true
-            }
             let currentWallet = res.data.chips.credit
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) *  94) / 100)
+            if(playData.length == 0){
+                if(botObj.is_infinite == false && currentWallet - botObj.profit_wallet >= cutProfit)
+                {
+                    isStop = true
+                }else{
+                    if(botObj.money_system == 3){
+                        playData = genLeftProfitLabaushare(currentWallet)
+                    }else if(botObj.money_system == 4){
+                        playData = genLeftProfitXSystem(currentWallet)
+                    }
+                }
+            }
+
             console.log(currentWallet, cutProfit)
             if(botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit){
                 db.bot.findOne({
@@ -284,7 +361,7 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                     let amount = currentWallet - botObj.profit_wallet - botObj.init_wallet
                     b.profit_wallet += amount
                     b.deposite_count += 1
-                    botObj.profit_wallet += b.profit_wallet
+                    botObj.profit_wallet += amount
                     botObj.deposite_count += 1
                     playData = JSON.parse(botObj.data)
                     playTurn = 1

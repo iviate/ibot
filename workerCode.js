@@ -43,11 +43,13 @@ function getCurrent() {
             round: round,
             bot: bot,
             winner_percent: winner_percent,
-            bot: bot
+            bot: bot,
+            table_title: workerData.title
         })
     } else {
         parentPort.postMessage({
             table_id: workerData.id,
+            table_title: workerData.title,
             action: 'getCurrent',
             error: true,
             winner_percent: 0,
@@ -256,6 +258,22 @@ function botplay(currentInfo) {
                         // console.log(`round = ${response.data.info.detail.round}`)
                         let current = response.data.game
                         console.log(current)
+                        let sum = predictStats.correct + predictStats.wrong + predictStats.tie
+                        let win_percent = 0
+                        if (sum != 0) {
+                            win_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
+                        }
+
+                        if (win_percent < 50) {
+                            win_percent = 100 - win_percent
+                        } else {
+                            win_percent = win_percent
+                        }
+            
+                        if( win_percent == 100){
+                            win_percent = 92
+                        }
+
                         if (current.round == currentInfo.round && current.remaining > 10) {
                             parentPort.postMessage({ action: 'bet', data: { 
                                 bot: bot, 
@@ -263,7 +281,8 @@ function botplay(currentInfo) {
                                 shoe: shoe, 
                                 round: current.round, 
                                 game_id: current.id, 
-                                remaining: current.remaining 
+                                remaining: current.remaining,
+                                win_percent: win_percent
                             } })
                         }else{
                             parentPort.postMessage({ action: 'played', status: 'FAILED' })

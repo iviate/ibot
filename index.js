@@ -235,10 +235,23 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
     if (money_system == 1) {
         return [init_bet]
     } else if (money_system == 2) {
-        return [50, 100, 250, 600, 1500]
+        let martingel = [50, 100, 250, 600, 1500]
+        let ret = []
+        if( init_bet >= 1500 ){
+            martingel = [init_bet]
+        }else{
+            for(let i = 0; i < martingel.length; i++){
+                if(init_bet > martingel[i]){
+                    continue
+                }else{
+                    ret.push(martingel[i])
+                }
+            }
+        }
+        return ret
     } else if (money_system == 3) {
         let profit = profit_threshold - init_wallet
-        let turn = 6
+        let turn = 2
         let money = profit / turn / half_bet
         while (turn < 20 && (profit / turn / half_bet >= 1)) {
             money = profit / turn / half_bet
@@ -312,7 +325,7 @@ myApp.post('/bot', async function (request, response) {
         },
     }).then((user) => {
         if (user) {
-
+            console.log(request.body.is_infinite)
             botData = {
                 userId: user.id,
                 token: user.truthbet_token,
@@ -901,8 +914,9 @@ function createBotWorker(obj, playData) {
 
             // console.log(userTransactionData)
             let indexIsStop = result.isStop || ( result.botObj.is_infinite == false 
-                                    && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.init_wallet - result.botObj.profit_threshold) * 94) / 100))) ||
+                                    && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100))) ||
                                     (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
+
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
                 action: "bet_result",
@@ -918,9 +932,9 @@ function createBotWorker(obj, playData) {
                 botObj: result.botObj
             })
 
-            console.log(result.isStop, 
+            console.log(indexIsStop, 
                             result.botObj.is_infinite, userWallet, 
-                            result.botObj.init_wallet + Math.floor((((result.botObj.init_wallet - result.botObj.profit_threshold) * 94) / 100)), 
+                            result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)), 
                             userWallet - result.botObj.profit_wallet, 
                             result.botObj.loss_threshold)
 
@@ -933,7 +947,7 @@ function createBotWorker(obj, playData) {
                     res.status = 3
                     res.stop_wallet = result.wallet.chips.credit
                     res.stop_by = userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
-                                    (result.botObj.is_infinite == false && userWallet >= ((result.botObj.profit_threshold * 94) / 100)) ? 2 : result.isStop ? 1 : 4
+                                    (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
                     res.save()
                     if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()
@@ -1088,6 +1102,7 @@ function playCasino() {
             workerDict[current.table_id].worker.postMessage({
                 action: 'play',
             })
+
             // io.emit('bot_play', {
             //     current
             // });
@@ -1206,6 +1221,8 @@ function initiateWorker(table) {
             }, 3500);
             remainingBet = result.data.remaining
             currentBetData = result.data
+
+            io.emit('bot', {action: 'play', data: result.data})
         }
         // // if worker thread is still working on list then write index and updated value
         // if (result.isInProgress) {
