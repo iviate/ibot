@@ -343,11 +343,14 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                 {
                     isStop = true
                 }else{
+                    
                     if(botObj.money_system == 3){
                         playData = genLeftProfitLabaushare(currentWallet)
                     }else if(botObj.money_system == 4){
                         playData = genLeftProfitXSystem(currentWallet)
                     }
+                    console.log('re labuashare')
+                    console.log(playData)
                 }
             }
 
