@@ -241,8 +241,8 @@ function genLeftProfitLabaushare(wallet){
     let leftProfit =  (botObj.init_wallet + botObj.profit_wallet + (botObj.profit_threshold - botObj.init_wallet)) - wallet
     let turn = 2
     let money = leftProfit / turn / half_bet
-    while (turn < 20 && (profit / turn / half_bet >= 1)) {
-        money = profit / turn / half_bet
+    while (turn < 20 && (leftProfit / turn / half_bet >= 1)) {
+        money = leftProfit / turn / half_bet
         turn++
     }
     turn -= 1
