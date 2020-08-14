@@ -4,22 +4,25 @@ require('log-timestamp');
 const { parentPort, workerData } = require('worker_threads');
 const axios = require('axios');
 
-let interval;
-let index = -1;
-let tableObj;
-let tableStats = [];
+// let interval;
+// let index = -1;
+// let tableObj;
+// let tableStats = [];
 let info = [];
 let shoe;
 let round;
-let stats;
+// let stats;
 let predictStats = { shoe: '', correct: 0, wrong: 0, tie: 0, info: {}, predict: [] };
-let predictStatsHistory = [];
+// let predictStatsHistory = [];
 let statsCount;
 let bot = null;
 let playRound = null;
 let token = null
 let isPlay = false;
 var date = new Date();
+// var resultStats = ''
+// var threeCutPlay = {}
+// var fourCutPlay = {}
 
 var last_pull_timestamp = date.getTime();
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NDI4MjE5fSwiaWF0IjoxNTk1ODM2ODUzfQ.1YDXUwVIg7kIiYpxYlRPrn06jLtdQ6nG9dufe6MhIIM
@@ -131,14 +134,16 @@ function inititalInfo() {
             if (shoe != detail.shoe) {
                 shoe = detail.shoe
                 round = detail.round
-                predictStatsHistory.push({ ...predictStats })
+                // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
-
+                
                 if (predictStats.predict.length != detail.statistic.length) {
                     let i = 1
                     for (roundStat of detail.statistic) {
+                        // console.log(roundStat)
                         predictStats.predict.push({ ...roundStat, round: i, bot: null, isResult: true })
                         i++
+                        
                     }
                 }
 
@@ -186,7 +191,7 @@ function botplay(currentInfo) {
     if (shoe != currentInfo.shoe) {
         shoe = currentInfo.shoe
         round = currentInfo.round
-        predictStatsHistory.push({ ...predictStats })
+        // predictStatsHistory.push({ ...predictStats })
         predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
         return
     }
@@ -215,6 +220,7 @@ function botplay(currentInfo) {
             if (lastStat.winner == 'TIE') {
                 predictStats.tie++;
                 status = 'TIE'
+                
             }
             else if (lastPlay.bot == lastStat.winner) {
                 predictStats.correct++;
@@ -223,6 +229,7 @@ function botplay(currentInfo) {
                 predictStats.wrong++;
                 status = 'LOSE'
             }
+
             if (isPlay && playRound == statsCount) {
                 isPlay = false
                 parentPort.postMessage({
