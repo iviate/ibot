@@ -16,21 +16,23 @@ let betFailed = false;
 let playTurn = 1
 let status = 2
 var isStop = false;
+var minBet = 50
+var maxBet = 2500
 registerForEventListening();
 
-function restartOnlyProfit(){
+function restartOnlyProfit() {
     axios.get(`https://truthbet.com/api/wallet`, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     })
         .then(res => {
-            
+
             let wallet = res.data.chips.credit
-            if(wallet <= botObj.init_wallet){
+            if (wallet <= botObj.init_wallet) {
                 playData = JSON.parse(botObj.data)
-                parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
-            }else{
+                parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
+            } else {
                 let s = 1
                 let profit = botObj.profit_threshold - wallet
                 let turn = Math.ceil(profit / botObj.init_bet)
@@ -77,20 +79,20 @@ function restartOnlyProfit(){
 
                 playData = ret
                 console.log(playData)
-                parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
+                parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
             }
 
         })
         .catch(error => {
             console.log(error)
-            parentPort.postMessage({action: 'restart_result', data: {success: false, message: error}, userId: botObj.userId})
+            parentPort.postMessage({ action: 'restart_result', data: { success: false, message: error }, userId: botObj.userId })
         })
 }
 
-function restartAll(){
+function restartAll() {
     let s = 1
     let turn = 0
-    for(let i = 0; i < playData.length; i++){
+    for (let i = 0; i < playData.length; i++) {
         turn += playData[i]
     }
     // let turn = sum(playData)
@@ -135,17 +137,17 @@ function restartAll(){
     }
     playData = ret
     console.log(playData)
-    parentPort.postMessage({action: 'restart_result', data: {success: true, data: {playData: playData}}, userId: botObj.userId})
+    parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
 }
 
 
-function restartXSystem(type){
-    if(type == 1){
+function restartXSystem(type) {
+    if (type == 1) {
         restartOnlyProfit()
-    }else if(type == 2){
+    } else if (type == 2) {
         restartAll()
     }
-}   
+}
 
 function getBetVal() {
     let betval = 0
@@ -156,14 +158,14 @@ function getBetVal() {
         betval = playData[playTurn - 1]
     }
     if (botObj.money_system == 3) {
-        if(playData.length == 1){
-            
+        if (playData.length == 1) {
+
             betval = playData[0] * (botObj.init_bet / 2)
         }
         betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
     }
     if (botObj.money_system == 4) {
-        if(playData.length == 1){
+        if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
         }
         betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
@@ -171,10 +173,10 @@ function getBetVal() {
 
     let mod = ~~(betval % 10)
     // console.log(mod, betval)
-    if(mod != 0 && mod != 5){
-        if(mod < 5){
-            betval = (Math.floor((betval / 10)) * 10) + 5 
-        }else if(mod > 5){
+    if (mod != 0 && mod != 5) {
+        if (mod < 5) {
+            betval = (Math.floor((betval / 10)) * 10) + 5
+        } else if (mod > 5) {
             betval = Math.ceil(betval / 10) * 10
         }
     }
@@ -183,8 +185,8 @@ function getBetVal() {
 }
 
 function bet(data) {
-    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
-    if(betFailed){
+    console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
+    if (betFailed) {
         return
     }
 
@@ -192,16 +194,55 @@ function bet(data) {
         console.log(`bot ${workerData.obj.userId} pause`)
     } else if (status == 3) {
         console.log(`bot ${workerData.obj.userId} stop`)
-    } else if(botObj.bet_side == 2 && data.bot == 'BANKER'){
+    } else if (botObj.bet_side == 2 && data.bot == 'BANKER') {
 
-    } else if(botObj.bet_side == 3 && data.bot == 'PLAYER'){
+    } else if (botObj.bet_side == 3 && data.bot == 'PLAYER') {
 
     }
     else {
+
         let betVal = getBetVal()
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
+        }else if (betVal > 10000) {
+            betVal = 10000
         }
+
+        if (betVal > maxBet) {
+            console.log('upgrade bet limit')
+            let payload = { games: { baccarat: { range: "medium" } } }
+
+            axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
+                headers: {
+                    Authorization: `Bearer ${workerData.obj.token}`
+                }
+            }).then(res => {
+                minBet = 200
+                maxBet = 10000
+            })
+            .catch(error => {
+                // console.log(error)
+            })
+            return
+
+        } else if (betVal < minBet) {
+            console.log('dowgrade bet limit')
+            let payload = { games: { baccarat: { range: "newbie" } } }
+
+            axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
+                headers: {
+                    Authorization: `Bearer ${workerData.obj.token}`
+                }
+            }).then(res => {
+                minBet = 50
+                maxBet = 2500
+            })
+            .catch(error => {
+                // console.log(error)
+            })
+            return
+        }
+
         let payload = { table_id: data.table.id, game_id: data.game_id }
         if (data.bot == 'PLAYER') {
             payload.chip = { credit: { PLAYER: betVal } }
@@ -225,20 +266,20 @@ function bet(data) {
                 betFailed = true
             })
             .catch(error => {
-                if(error.response.data.code != 500){
+                if (error.response.data.code != 500) {
                     betFailed = true
-                }else{
+                } else {
                     betFailed = false
                 }
-                parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error})
+                parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error })
             });
     }
 
 }
 
-function genLeftProfitLabaushare(wallet){
+function genLeftProfitLabaushare(wallet) {
     let half_bet = botObj.init_bet / 2
-    let leftProfit =  (botObj.init_wallet + botObj.profit_wallet + (botObj.profit_threshold - botObj.init_wallet)) - wallet
+    let leftProfit = (botObj.init_wallet + botObj.profit_wallet + (botObj.profit_threshold - botObj.init_wallet)) - wallet
     let turn = 2
     let money = leftProfit / turn / half_bet
     while (turn < 20 && (leftProfit / turn / half_bet >= 1)) {
@@ -256,9 +297,9 @@ function genLeftProfitLabaushare(wallet){
     return ret
 }
 
-function genLeftProfitXSystem(wallet){
+function genLeftProfitXSystem(wallet) {
     let s = 1
-    let leftProfit =  (botObj.init_wallet + botObj.profit_wallet + (botObj.profit_threshold - botObj.init_wallet)) - wallet
+    let leftProfit = (botObj.init_wallet + botObj.profit_wallet + (botObj.profit_threshold - botObj.init_wallet)) - wallet
     let turn = Math.ceil(leftProfit / botObj.init_bet)
     let left = turn
     let ret = []
@@ -319,13 +360,13 @@ async function processResultBet(status, botTransactionId, botTransaction) {
         if (status == 'WIN') {
             playData = playData.splice(1, playData.length - 2)
         } else if (status == 'LOSE') {
-            if(playData.length == 1){
+            if (playData.length == 1) {
                 playData.push(Math.ceil(playData[0] * 10) / 10)
-            }else{
+            } else {
                 playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
             }
-            
-                
+
+
         }
     }
 
@@ -337,16 +378,15 @@ async function processResultBet(status, botTransactionId, botTransaction) {
         .then(res => {
             console.log(playData)
             let currentWallet = res.data.chips.credit
-            let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) *  94) / 100)
-            if(playData.length == 0){
-                if(botObj.is_infinite == false && currentWallet - botObj.profit_wallet >= cutProfit)
-                {
+            let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
+            if (playData.length == 0) {
+                if (botObj.is_infinite == false && currentWallet - botObj.profit_wallet >= cutProfit) {
                     isStop = true
-                }else{
-                    
-                    if(botObj.money_system == 3){
+                } else {
+
+                    if (botObj.money_system == 3) {
                         playData = genLeftProfitLabaushare(currentWallet)
-                    }else if(botObj.money_system == 4){
+                    } else if (botObj.money_system == 4) {
                         playData = genLeftProfitXSystem(currentWallet)
                     }
                     console.log('re labuashare')
@@ -355,7 +395,7 @@ async function processResultBet(status, botTransactionId, botTransaction) {
             }
 
             console.log(currentWallet, cutProfit)
-            if(botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit){
+            if (botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit) {
                 db.bot.findOne({
                     where: {
                         id: botObj.id
@@ -370,7 +410,7 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                     playTurn = 1
                     // console.log(botObj.profit_wallet, b.profit_wallet)
                     b.save()
-                    db.wallet_transfer.create({botId: botObj.id, amount: amount}).then((created) => {})
+                    db.wallet_transfer.create({ botId: botObj.id, amount: amount }).then((created) => { })
 
                     parentPort.postMessage({
                         action: 'process_result',
@@ -383,11 +423,11 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                         botTransaction: botTransaction,
                         isStop: isStop
                     })
-                    
-                    
+
+
                 })
-            }else{
-                if(botObj.is_infinite && playData.length === 0){
+            } else {
+                if (botObj.is_infinite && playData.length === 0) {
                     playData = JSON.parse(botObj.data)
                 }
                 parentPort.postMessage({
@@ -402,7 +442,7 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                     isStop: isStop
                 })
             }
-           
+
         })
         .catch(error => {
             console.log(error)
@@ -414,6 +454,25 @@ function registerForEventListening() {
     botObj = workerData.obj
     token = workerData.obj.token
     console.log(`${workerData.obj.id} hello`)
+
+    axios.get(`https://truthbet.com/api/m/settings/limit`, {
+        headers: {
+            Authorization: `Bearer ${workerData.obj.token}`
+        }
+    })
+        .then(res => {
+            let userConfig = res.data.userConfig
+            if (userConfig.package == 'rookie') {
+                minBet = 100
+                maxBet = 5000
+            } else if (userConfig.package == 'medium') {
+                minBet = 200
+                maxBet = 10000
+            }
+        })
+        .catch(error => {
+            // console.log(error)
+        })
     // callback method is defined to receive data from main thread
     let cb = (err, result) => {
         if (err) return console.error(err);
@@ -421,9 +480,10 @@ function registerForEventListening() {
             bet(result.data)
         }
         if (result.action == 'result_bet') {
+            console.log('action result_bet')
+            betFailed = false
             if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
                 processResultBet(result.status, result.botTransactionId, result.botTransaction)
-                betFailed = false
             }
         }
         if (result.action == 'pause') {
@@ -442,13 +502,13 @@ function registerForEventListening() {
             botObj.status = 3
             process.exit(0)
         }
-        if (result.action == 'restart'){
-            if( botObj.money_system != 4){
-                parentPort.postMessage({action: 'restart_result', data: {success: false, message: "บอทไม่ใด้เดินเงินแบบ X System"}, userId: botObj.userId})
+        if (result.action == 'restart') {
+            if (botObj.money_system != 4) {
+                parentPort.postMessage({ action: 'restart_result', data: { success: false, message: "บอทไม่ใด้เดินเงินแบบ X System" }, userId: botObj.userId })
             }
-            else if( status != 2){
-                parentPort.postMessage({action: 'restart_result', data: {success: false, message: "โปรดหยุดบอทก่อนรีสตาร์ท"}, userId: botObj.userId})
-            }else{
+            else if (status != 2) {
+                parentPort.postMessage({ action: 'restart_result', data: { success: false, message: "โปรดหยุดบอทก่อนรีสตาร์ท" }, userId: botObj.userId })
+            } else {
                 restartXSystem(result.type)
             }
         }
