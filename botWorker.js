@@ -18,6 +18,7 @@ let status = 2
 var isStop = false;
 var minBet = 50
 var maxBet = 2500
+var turnover = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -261,6 +262,7 @@ function bet(data) {
             })
             .then(response => {
                 // console.log(response.data);
+                turnover += betVal
                 current = { bot: data.bot, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
                 parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj } })
                 betFailed = true

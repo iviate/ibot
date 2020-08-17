@@ -19,8 +19,9 @@ db.bot = require("./bot.model.js")(sequelize, Sequelize, DataTypes);
 db.botTransction = require("./bot.transaction.model.js")(sequelize, Sequelize, DataTypes);
 db.userTransaction = require("./user_transaction.model.js")(sequelize, Sequelize, DataTypes);
 db.wallet_transfer = require("./wallet_transfer.model.js")(sequelize, Sequelize, DataTypes);
-
-
+db.member = require("./member.model.js")(sequelize, Sequelize, DataTypes)
+db.member_record = require("./member_record.model.js")(sequelize, Sequelize, DataTypes)
+db.agent_record = require("./agent_record.model.js")(sequelize, Sequelize, DataTypes)
 
 db.user.hasMany(db.bot, { as: "bots" });
 db.bot.belongsTo(db.user, {
@@ -45,6 +46,8 @@ db.wallet_transfer.belongsTo(db.bot, {
   foreignKey: "botId",
   as: "bot"
 })
+
+
 
 
 
