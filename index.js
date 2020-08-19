@@ -719,7 +719,7 @@ myApp.post('/stop', function (request, response) {
 
 myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
     db.userTransaction.findAll({
-        limit: 25,
+        limit: 75,
         where: {
             botId: request.params.bot_id
         },
