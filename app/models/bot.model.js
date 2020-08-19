@@ -72,6 +72,14 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         default: 0
       },
+      is_opposite: {
+        type: DataTypes.BOOLEAN,
+        default: false
+      },
+      turnover: {
+        type: DataTypes.FLOAT,
+        default: 0
+      }
     });
 
     Bot.associate = function(models) {

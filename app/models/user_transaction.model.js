@@ -6,6 +6,12 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       },
       wallet: {
           type: DataTypes.FLOAT 
+      },
+      user_bet:{
+          type: DataTypes.STRING
+      },
+      result:{
+        type: DataTypes.STRING
       }
     })
     return UserTransaction;

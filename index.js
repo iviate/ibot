@@ -21,6 +21,7 @@ const e = require('express');
 const {
     syncBuiltinESMExports
 } = require('module');
+const { bot } = require('./app/models');
 // const { USE } = require('sequelize/types/lib/index-hints');
 db.sequelize.sync({
     alter: true
@@ -34,6 +35,8 @@ let botTransactionObj = {
 }
 
 let win_percent;
+let isBet = false;
+let betData = null
 //db.sequelize.sync();
 let botNumber = 0;
 let botWorkerDict = {};
@@ -48,7 +51,7 @@ var http = require('http').Server(myApp);
 var io = require('socket.io')(http);
 
 io.on('connection', (socket) => {
-    console.log('socket connection')
+    // console.log('socket connection')
     socket.on('restart', (msg) => {
         // console.log(msg)
         let userId = msg.userId
@@ -317,6 +320,54 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
     }
 }
 
+myApp.post('/bot/set_opposite', async function (request, response) {
+
+    const USERNAME = request.body.username
+    const is_opposite = request.body.is_opposite
+    // console.log(USERNAME, is_opposite)
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    userId: user.id,
+                    status: 2
+                },
+            }).then((botObj) => {
+                if (botObj) {
+                    botObj.is_opposite = is_opposite
+                    botObj.save()
+                    if(botWorkerDict[user.id] != undefined){
+                        botWorkerDict[user.id].postMessage({
+                            action: 'set_opposite',
+                            is_opposite: is_opposite
+                        })
+                    }
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: null
+                    })
+                }
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+})
+
 myApp.post('/bot', async function (request, response) {
 
     const USERNAME = request.body.username
@@ -326,7 +377,7 @@ myApp.post('/bot', async function (request, response) {
         },
     }).then((user) => {
         if (user) {
-            console.log(request.body.is_infinite)
+            // console.log(request.body.is_infinite)
             botData = {
                 userId: user.id,
                 token: user.truthbet_token,
@@ -344,7 +395,8 @@ myApp.post('/bot', async function (request, response) {
                 max_turn: 0,
                 is_infinite: request.body.is_infinite,
                 deposite_count: 0,
-                profit_wallet: 0
+                profit_wallet: 0,
+                is_opposite: false
             }
 
             let playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
@@ -531,6 +583,44 @@ myApp.get('/user_bot/:id', async function (request, response) {
                     });
                 }
 
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+
+});
+
+myApp.get('/bot_info/:id', async function (request, response) {
+    db.user.findOne({
+        where: {
+            id: request.params.id,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    status: {
+                        [Op.ne]: 3
+
+                    },
+                    userId: user.id
+                }
+
+            }).then((res2) => {
+                if (res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                    botWorkerDict[user.id].postMessage({action:'info'})
+                }
+                response.json({
+                    success: true,
+                    error_code: null,
+                    data: {}
+                })
             })
         } else {
             response.json({
@@ -763,7 +853,7 @@ myApp.post('/wallet/withdraw', function (request, response) {
                     }
                 })
                 .then(res => {
-                    console.log(res.data)
+                    // console.log(res.data)
                     let profit_wallet = user.profit_wallet
                     let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
@@ -814,7 +904,7 @@ myApp.post('/wallet/deposite', function (request, response) {
                     }
                 })
                 .then(res => {
-                    console.log(res.data)
+                    // console.log(res.data)
                     let profit_wallet = user.profit_wallet
                     let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
@@ -862,6 +952,7 @@ var remainingBet;
 var betInt;
 var currentBetData;
 var latestBotTransactionId;
+let wPercent = 0
 
 mainBody();
 
@@ -880,6 +971,11 @@ function createBotWorker(obj, playData) {
         }
         if(result.action == 'restart_result'){
             io.emit(`user${result.userId}`, result)
+        }
+
+        if(result.action == 'info'){
+            // console.log('bot info')
+            io.emit(`user${result.userId}`, { ...result, isPlay: isBet, win_percent: win_percent, currentBetData: currentBetData})
         }
         // if (result.action == 'stop') {
 
@@ -906,10 +1002,20 @@ function createBotWorker(obj, playData) {
             // console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.chips.credit
+            let winner_result = result.botTransaction.win_result
+            if(result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet){
+                if(result.botTransaction.win_result == 'WIN'){
+                    winner_result = 'LOSE'
+                }else if(result.botTransaction.win_result == 'LOSE'){
+                    winner_result = 'WIN'
+                }
+            }
             let userTransactionData = {
                 value: result.betVal,
+                user_bet: result.bet,
                 wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
+                result: winner_result,
                 botTransactionId: result.botTransactionId
             }
 
@@ -947,6 +1053,7 @@ function createBotWorker(obj, playData) {
                 }).then((res) => {
                     res.status = 3
                     res.stop_wallet = result.wallet.chips.credit
+                    res.turnover = result.turnover
                     res.stop_by = userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
                                     (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
                     res.save()
@@ -1096,7 +1203,7 @@ function playCasino() {
 
             console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
             isPlay = true
-            console.log('post play')
+            // console.log('post play')
             workerDict[current.table_id].worker.postMessage({
                 action: 'play',
             })
@@ -1127,6 +1234,7 @@ function initiateWorker(table) {
         if (result.action == 'played') {
             if (result.status == 'FAILED' || result.status == null) {
                 isPlay = false
+                isBet = false
                 currentList = []
                 return
             }
@@ -1210,6 +1318,7 @@ function initiateWorker(table) {
             })
 
             isPlay = false
+            isBet = false
             currentList = []
         }
         if (result.action == 'bet') {
@@ -1219,6 +1328,7 @@ function initiateWorker(table) {
             }, 3500);
             remainingBet = result.data.remaining
             currentBetData = result.data
+            isBet = true
 
             io.emit('bot', {action: 'play', data: result.data})
         }
@@ -1348,6 +1458,7 @@ function initiateRotWorker(table){
             betInt = setInterval(function () {
                 betInterval();
             }, 3500);
+            isBet = true;
             remainingBet = result.data.remaining
             currentBetData = result.data
 

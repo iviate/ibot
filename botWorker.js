@@ -19,6 +19,8 @@ var isStop = false;
 var minBet = 50
 var maxBet = 2500
 var turnover = 0
+var is_opposite = false
+var table = null
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -186,6 +188,7 @@ function getBetVal() {
 }
 
 function bet(data) {
+    table = data.table
     console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
     if (betFailed) {
         return
@@ -245,10 +248,17 @@ function bet(data) {
         }
 
         let payload = { table_id: data.table.id, game_id: data.game_id }
-        if (data.bot == 'PLAYER') {
+        let realBet = data.bot
+        if (data.bot == 'PLAYER' && is_opposite == false) {
             payload.chip = { credit: { PLAYER: betVal } }
-        } else if (data.bot == 'BANKER') {
+        } else if (data.bot == 'BANKER' && is_opposite == false) {
             payload.chip = { credit: { BANKER: betVal } }
+        } else if (data.bot == 'PLAYER' && is_opposite == true) {
+            payload.chip = { credit: { BANKER: betVal } }
+            realBet = 'BANKER'
+        } else if (data.bot == 'BANKER' && is_opposite == true) {
+            payload.chip = { credit: { PLAYER: betVal } }
+            realBet = 'PLAYER'
         } else {
             return
         }
@@ -263,8 +273,8 @@ function bet(data) {
             .then(response => {
                 // console.log(response.data);
                 turnover += betVal
-                current = { bot: data.bot, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
-                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj } })
+                current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
+                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet }})
                 betFailed = true
             })
             .catch(error => {
@@ -346,12 +356,12 @@ function genLeftProfitXSystem(wallet) {
     return ret
 }
 
-async function processResultBet(status, botTransactionId, botTransaction) {
+async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     if (botObj.money_system == 2) {
-        if (status == 'WIN') {
+        if ((betStatus == 'WIN' && is_opposite == false) || (betStatus == 'LOSE' && is_opposite == true)) {
             playTurn = 1
-        } else if (status == 'LOSE') {
+        } else if ((betStatus == 'LOSE' && is_opposite == false) || (betStatus == 'WIN' && is_opposite == true)) {
             playTurn++
             if (playTurn > playData.length) {
                 playTurn = 1
@@ -359,9 +369,9 @@ async function processResultBet(status, botTransactionId, botTransaction) {
         }
     }
     if (botObj.money_system == 3 || botObj.money_system == 4) {
-        if (status == 'WIN') {
+        if ((betStatus == 'WIN' && is_opposite == false) || (betStatus == 'LOSE' && is_opposite == true)) {
             playData = playData.splice(1, playData.length - 2)
-        } else if (status == 'LOSE') {
+        } else if ((betStatus == 'LOSE' && is_opposite == false) || (betStatus == 'WIN' && is_opposite == true)) {
             if (playData.length == 1) {
                 playData.push(Math.ceil(playData[0] * 10) / 10)
             } else {
@@ -391,7 +401,7 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                     } else if (botObj.money_system == 4) {
                         playData = genLeftProfitXSystem(currentWallet)
                     }
-                    console.log('re labuashare')
+                    // console.log('re labuashare')
                     console.log(playData)
                 }
             }
@@ -413,17 +423,18 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                     // console.log(botObj.profit_wallet, b.profit_wallet)
                     b.save()
                     db.wallet_transfer.create({ botId: botObj.id, amount: amount }).then((created) => { })
-
                     parentPort.postMessage({
                         action: 'process_result',
-                        status: status,
+                        status: betStatus,
                         wallet: res.data,
                         betVal: current.betVal,
+                        bet: current.bet,
                         botObj: botObj,
                         playData: playData,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
-                        isStop: isStop
+                        isStop: isStop,
+                        turnover: turnover
                     })
 
 
@@ -434,14 +445,16 @@ async function processResultBet(status, botTransactionId, botTransaction) {
                 }
                 parentPort.postMessage({
                     action: 'process_result',
-                    status: status,
+                    status: betStatus,
                     wallet: res.data,
                     betVal: current.betVal,
+                    bet: current.bet,
                     botObj: botObj,
                     playData: playData,
                     botTransactionId: botTransactionId,
                     botTransaction: botTransaction,
-                    isStop: isStop
+                    isStop: isStop,
+                    turnover: turnover
                 })
             }
 
@@ -481,12 +494,20 @@ function registerForEventListening() {
         if (result.action == 'bet') {
             bet(result.data)
         }
+        if (result.action == 'info') {
+            parentPort.postMessage({action:'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current})
+        }
         if (result.action == 'result_bet') {
-            console.log('action result_bet')
+            // console.log('action result_bet')
             betFailed = false
             if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
                 processResultBet(result.status, result.botTransactionId, result.botTransaction)
             }
+        }
+        if (result.action == 'set_opposite') {
+            // console.log(`set_opposite ${result.is_opposite}`)
+            botObj.is_opposite = result.is_opposite
+            is_opposite = result.is_opposite
         }
         if (result.action == 'pause') {
             botObj.status = 2
@@ -498,11 +519,21 @@ function registerForEventListening() {
             betFailed = false
         }
         if (result.action == 'stop') {
-            console.log('action stop')
+            // console.log('action stop')
             isStop = true
             status = 3
             botObj.status = 3
-            process.exit(0)
+            db.bot.findOne({
+                where:{
+                    id: botObj.id,
+                }
+            }).then((b) => {
+                b.turnover = turnover
+                // console.log(`turn over stop ${turnover}`)
+                b.save()
+                process.exit(0)
+            })
+            
         }
         if (result.action == 'restart') {
             if (botObj.money_system != 4) {
