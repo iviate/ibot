@@ -396,11 +396,12 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                     isStop = true
                 } else {
 
-                    if (botObj.money_system == 3) {
-                        playData = genLeftProfitLabaushare(currentWallet)
-                    } else if (botObj.money_system == 4) {
-                        playData = genLeftProfitXSystem(currentWallet)
-                    }
+                    // if (botObj.money_system == 3) {
+                    //     playData = genLeftProfitLabaushare(currentWallet)
+                    // } else if (botObj.money_system == 4) {
+                    //     playData = genLeftProfitXSystem(currentWallet)
+                    // }
+                    playData = JSON.parse(botObj.data)
                     // console.log('re labuashare')
                     console.log(playData)
                 }
