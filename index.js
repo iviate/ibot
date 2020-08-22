@@ -95,7 +95,7 @@ myApp.post('/login', async function (request, response) {
                     }).then((res3) => {
                         // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
                         if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) && 
-                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233')) {
+                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1')) {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -169,7 +169,7 @@ myApp.post('/login', async function (request, response) {
                     }).then((res2) => {
                         // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
                         if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
-                                && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman')) {
+                                && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1')) {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -344,6 +344,105 @@ myApp.post('/bot/set_opposite', async function (request, response) {
                         botWorkerDict[user.id].postMessage({
                             action: 'set_opposite',
                             is_opposite: is_opposite
+                        })
+                    }
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: null
+                    })
+                }
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+})
+
+myApp.post('/bot/set_stoploss', async function (request, response) {
+
+    const USERNAME = request.body.username
+    const loss_threshold = request.body.loss_threshold
+    const loss_percent = request.body.loss_percent
+    // console.log(USERNAME, is_opposite)
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    userId: user.id,
+                    status: 2
+                },
+            }).then((botObj) => {
+                if (botObj) {
+                    botObj.loss_threshold = loss_threshold
+                    botObj.loss_percent = loss_percent
+                    botObj.save()
+                    if(botWorkerDict[user.id] != undefined){
+                        botWorkerDict[user.id].postMessage({
+                            action: 'set_stoploss',
+                            loss_threshold: loss_threshold,
+                            loss_percent: loss_percent
+                        })
+                    }
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: null
+                    })
+                }
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+})
+
+myApp.post('/bot/set_bet_side', async function (request, response) {
+
+    const USERNAME = request.body.username
+    const bet_side = request.body.bet_side
+    // console.log(USERNAME, is_opposite)
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    userId: user.id,
+                    status: 2
+                },
+            }).then((botObj) => {
+                if (botObj) {
+                    botObj.bet_side = bet_side
+                    botObj.save()
+                    if(botWorkerDict[user.id] != undefined){
+                        botWorkerDict[user.id].postMessage({
+                            action: 'set_bet_side',
+                            bet_side: bet_side
                         })
                     }
                     response.json({
@@ -1021,8 +1120,9 @@ function createBotWorker(obj, playData) {
 
             // console.log(userTransactionData)
             let indexIsStop = result.isStop || ( result.botObj.is_infinite == false 
-                                    && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100))) ||
-                                    (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
+                                    && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100))) 
+                                    // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
+            console.log(`isStop ${result.isStop}`)
 
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
@@ -1054,8 +1154,8 @@ function createBotWorker(obj, playData) {
                     res.status = 3
                     res.stop_wallet = result.wallet.chips.credit
                     res.turnover = result.turnover
-                    res.stop_by = userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
-                                    (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
+                    res.stop_by = (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
+                    // userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
                     res.save()
                     if (botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId] != undefined) {
                         botWorkerDict[res.userId].terminate()

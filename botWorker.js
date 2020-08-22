@@ -21,6 +21,8 @@ var maxBet = 2500
 var turnover = 0
 var is_opposite = false
 var table = null
+var stopLoss = 0
+var stopLossPercent = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -206,9 +208,10 @@ function bet(data) {
     else {
 
         let betVal = getBetVal()
+        console.log(`betVal : ${betVal}`)
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
-        }else if (betVal > 10000) {
+        } else if (betVal > 10000) {
             betVal = 10000
         }
 
@@ -224,9 +227,9 @@ function bet(data) {
                 minBet = 200
                 maxBet = 10000
             })
-            .catch(error => {
-                // console.log(error)
-            })
+                .catch(error => {
+                    // console.log(error)
+                })
             return
 
         } else if (betVal < minBet) {
@@ -241,9 +244,9 @@ function bet(data) {
                 minBet = 50
                 maxBet = 2500
             })
-            .catch(error => {
-                // console.log(error)
-            })
+                .catch(error => {
+                    // console.log(error)
+                })
             return
         }
 
@@ -274,7 +277,7 @@ function bet(data) {
                 // console.log(response.data);
                 turnover += betVal
                 current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
-                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet }})
+                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                 betFailed = true
             })
             .catch(error => {
@@ -387,7 +390,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             Authorization: `Bearer ${token}`
         }
     })
-        .then(res => {
+        .then(async (res) => {
             console.log(playData)
             let currentWallet = res.data.chips.credit
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
@@ -402,10 +405,12 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                     //     playData = genLeftProfitXSystem(currentWallet)
                     // }
                     playData = JSON.parse(botObj.data)
-                    // console.log('re labuashare')
+                    console.log('re labuashare')
                     console.log(playData)
                 }
             }
+
+
 
             console.log(currentWallet, cutProfit)
             if (botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit) {
@@ -444,19 +449,70 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                 if (botObj.is_infinite && playData.length === 0) {
                     playData = JSON.parse(botObj.data)
                 }
-                parentPort.postMessage({
-                    action: 'process_result',
-                    status: betStatus,
-                    wallet: res.data,
-                    betVal: current.betVal,
-                    bet: current.bet,
-                    botObj: botObj,
-                    playData: playData,
-                    botTransactionId: botTransactionId,
-                    botTransaction: botTransaction,
-                    isStop: isStop,
-                    turnover: turnover
-                })
+                // console.log(currentWallet - botObj.profit_wallet <= botObj.loss_threshold, currentWallet > 50)
+                if (parseInt(currentWallet) - parseInt(botObj.profit_wallet) <= parseInt(botObj.loss_threshold) + 1) {
+                    let currentBot = await db.bot.findOne({
+                        where: {
+                            id: botObj.id
+                        }
+                    })
+                    let new_loss = currentBot.loss_threshold - stopLoss
+                    let new_loss_percent = currentBot.loss_percent + stopLossPercent
+                    // console.log(currentWallet, new_loss, currentWallet <= new_loss, currentWallet - botObj.profit_wallet > 50)
+                    while (parseInt(currentWallet) <= new_loss + 1 + 10 && currentWallet - botObj.profit_wallet > 50) {
+                        new_loss -= stopLoss
+                        new_loss_percent += currentBot.stopLossPercent
+                    }
+
+                    if (new_loss_percent > 100 || new_loss < 0) {
+                        new_loss_percent = 100
+                        new_loss = 0
+                    }
+
+                    currentBot.loss_threshold = new_loss
+                    currentBot.loss_percent = new_loss_percent
+                    currentBot.status = 2
+                    
+                    await currentBot.save()
+                    botObj.loss_threshold = new_loss
+                    botObj.loss_percent = new_loss_percent
+                    botObj.status = 2
+                    status = 2
+                    if(currentWallet - botObj.profit_wallet < 50){
+                        isStop = true
+                    }
+                    parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
+                    parentPort.postMessage({
+                        action: 'process_result',
+                        status: betStatus,
+                        wallet: res.data,
+                        betVal: current.betVal,
+                        bet: current.bet,
+                        botObj: botObj,
+                        playData: playData,
+                        botTransactionId: botTransactionId,
+                        botTransaction: botTransaction,
+                        isStop: currentWallet - botObj.profit_wallet < 50? true: false,
+                        turnover: turnover
+                    })
+                }else{
+                    parentPort.postMessage({
+                        action: 'process_result',
+                        status: betStatus,
+                        wallet: res.data,
+                        betVal: current.betVal,
+                        bet: current.bet,
+                        botObj: botObj,
+                        playData: playData,
+                        botTransactionId: botTransactionId,
+                        botTransaction: botTransaction,
+                        isStop: isStop,
+                        turnover: turnover
+                    })
+                }
+
+                
+                
             }
 
         })
@@ -468,6 +524,8 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 function registerForEventListening() {
     playData = workerData.playData
     botObj = workerData.obj
+    stopLoss = botObj.init_wallet - botObj.loss_threshold
+    stopLossPercent = botObj.loss_percent
     token = workerData.obj.token
     console.log(`${workerData.obj.id} hello`)
 
@@ -496,7 +554,7 @@ function registerForEventListening() {
             bet(result.data)
         }
         if (result.action == 'info') {
-            parentPort.postMessage({action:'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current})
+            parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
         }
         if (result.action == 'result_bet') {
             // console.log('action result_bet')
@@ -509,6 +567,14 @@ function registerForEventListening() {
             // console.log(`set_opposite ${result.is_opposite}`)
             botObj.is_opposite = result.is_opposite
             is_opposite = result.is_opposite
+            parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
+        }
+
+        if (result.action == 'set_bet_side') {
+            // console.log(`set_opposite ${result.is_opposite}`)
+            botObj.bet_side = result.bet_side
+            parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
+            // bet_side = result.bet_side
         }
         if (result.action == 'pause') {
             botObj.status = 2
@@ -525,7 +591,7 @@ function registerForEventListening() {
             status = 3
             botObj.status = 3
             db.bot.findOne({
-                where:{
+                where: {
                     id: botObj.id,
                 }
             }).then((b) => {
@@ -534,7 +600,7 @@ function registerForEventListening() {
                 b.save()
                 process.exit(0)
             })
-            
+
         }
         if (result.action == 'restart') {
             if (botObj.money_system != 4) {
