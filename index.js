@@ -127,7 +127,105 @@ myApp.post('/login', async function (request, response) {
                         }
                     })
                 })
-            }})
+            }else{
+                (async (USERNAME, PASSWORD) => {
+
+                    const browser = await puppeteer.launch({
+                        headless: true,
+                        devtools: false,
+                        args: ['--no-sandbox']
+                    });
+                    const page = await browser.newPage();
+                    await page.goto("https://truthbet.com/login?redirect=/m", {
+                        waitUntil: "networkidle2"
+                    });
+        
+                    await page.evaluate((USERNAME, PASSWORD) => {
+                        document.querySelector('[name="username"]').value = USERNAME;
+                        document.querySelector('[name="password"]').value = PASSWORD;
+                        document.querySelector('[name="remember_username"]').checked = true;
+                    }, USERNAME, PASSWORD);
+        
+                    // login
+                    await page.evaluate(() => {
+                        document.querySelector("form").submit();
+                    });
+        
+        
+                    try {
+                        await page.waitForSelector('.fa-coins', {
+                            visible: false,
+                            timeout: 5000
+                        })
+                        let data = await page.evaluate(() => window.App);
+        
+                        if (data.jwtToken != '') {
+                            axios.get('https://truthbet.com/api/m/account/edit', {
+                                headers: {
+                                    Authorization: `Bearer ${data.jwtToken}`
+                                }
+                            }).then((res2) => {
+                                // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
+                                if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
+                                        && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1')) {
+                                    response.json({
+                                        success: false,
+                                        message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                                    });
+                                } else {
+                                    bcrypt.hash(PASSWORD, 12, function (err, hash) {
+                                        
+                                            db.user.findOne({
+                                                where: {
+                                                    username: USERNAME
+                                                }
+                                            }).then((existRes) => {
+                                                existRes.password = hash,
+                                                existRes.truthbet_token = data.jwtToken,
+                                                existRes.truthbet_token_at = db.sequelize.fn('NOW')
+                                                existRes.save()
+                                                response.json({
+                                                    success: true,
+                                                    data: {
+                                                        user_id: existRes.id,
+                                                        bot: null,
+                                                        username: USERNAME
+                                                    }
+                                                });
+                                            })
+        
+                                    });
+                                }
+        
+                            })
+        
+        
+        
+                        } else {
+                            response.json({
+                                success: false,
+                                message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+                            });
+                        }
+                    } catch (e) {
+                        response.json({
+                            success: false,
+                            message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+                        });
+                    }
+        
+                    //   response.json(data);
+        
+        
+                    // access baccarat room 2
+                    // await page.goto("https://truthbet.com/g/live/baccarat/22", {
+                    //   waitUntil: "networkidle2",
+                    // });
+                    // await browser.close();
+                })(USERNAME, PASSWORD);
+            }
+        
+        })
     } else {
         // require("dotenv").config();
         (async (USERNAME, PASSWORD) => {
