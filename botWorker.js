@@ -276,7 +276,7 @@ function bet(data) {
             .then(response => {
                 // console.log(response.data);
                 turnover += betVal
-                current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj }
+                current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
                 parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                 betFailed = true
             })
@@ -362,9 +362,9 @@ function genLeftProfitXSystem(wallet) {
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     if (botObj.money_system == 2) {
-        if ((betStatus == 'WIN' && is_opposite == false) || (betStatus == 'LOSE' && is_opposite == true)) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn = 1
-        } else if ((betStatus == 'LOSE' && is_opposite == false) || (betStatus == 'WIN' && is_opposite == true)) {
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             playTurn++
             if (playTurn > playData.length) {
                 playTurn = 1
@@ -372,9 +372,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         }
     }
     if (botObj.money_system == 3 || botObj.money_system == 4) {
-        if ((betStatus == 'WIN' && is_opposite == false) || (betStatus == 'LOSE' && is_opposite == true)) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playData = playData.splice(1, playData.length - 2)
-        } else if ((betStatus == 'LOSE' && is_opposite == false) || (betStatus == 'WIN' && is_opposite == true)) {
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             if (playData.length == 1) {
                 playData.push(Math.ceil(playData[0] * 10) / 10)
             } else {
@@ -583,7 +583,7 @@ function registerForEventListening() {
         if (result.action == 'start') {
             botObj.status = 1
             status = 1
-            betFailed = false
+            // betFailed = false
         }
         if (result.action == 'stop') {
             // console.log('action stop')

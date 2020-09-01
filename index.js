@@ -95,7 +95,7 @@ myApp.post('/login', async function (request, response) {
                     }).then((res3) => {
                         // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
                         if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) && 
-                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1')) {
+                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -167,7 +167,7 @@ myApp.post('/login', async function (request, response) {
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
                                 if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
-                                        && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1')) {
+                                        && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
                                     response.json({
                                         success: false,
                                         message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -267,7 +267,7 @@ myApp.post('/login', async function (request, response) {
                     }).then((res2) => {
                         // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
                         if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
-                                && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1')) {
+                                && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
