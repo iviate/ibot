@@ -8,6 +8,29 @@ const axios = require('axios');
 // let index = -1;
 // let tableObj;
 // let tableStats = [];
+let HalfRB = ['HALFxBLACK', 'HALFxRED']
+let HalfED = ['HALFxEVEN', 'HALFxODD']
+let HalfSB = ['HALFxSMALL', 'HALFxBIG']
+let Dozen = ['DOZENx1st', 'DOZENx2nd', 'DOZENx3rd']
+
+let isPlayHalfRB = false
+let isPlayHalfED = false
+let isPlayHalfSB = false
+let isPlayZone = false
+
+let statCount = {
+    rbCorrect : 0,
+    rbWrong: 0, 
+    edCorrect: 0,
+    edWrong: 0,
+    sbCorrect: 0,
+    sbWrong: 0,
+    twoZoneCorrect: 0,
+    twoZoneWrong: 0,
+    oneZoneCorrect: 0,
+    oneZoneWrong: 0
+}
+
 let info = [];
 let shoe;
 let round;
@@ -29,27 +52,27 @@ var last_pull_timestamp = date.getTime();
 registerForEventListening();
 
 function getCurrent() {
-    // console.log(current)
-    let sum = predictStats.correct + predictStats.wrong + predictStats.tie
-    let winner_percent = 0
-    if (sum != 0) {
-        winner_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
-    }
+    // // console.log(current)
+    // let sum = predictStats.correct + predictStats.wrong + predictStats.tie
+    // let winner_percent = 0
+    // if (sum != 0) {
+    //     winner_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
+    // }
 
-    if (bot != null && round != 0) {
-        parentPort.postMessage({
-            error: false,
-            action: 'getCurrent',
-            table_id: workerData.id,
-            info: info,
-            predictStats: predictStats,
-            round: round,
-            bot: bot,
-            winner_percent: winner_percent,
-            bot: bot,
-            table_title: workerData.title
-        })
-    } else {
+    // if (bot != null && round != 0) {
+    //     parentPort.postMessage({
+    //         error: false,
+    //         action: 'getCurrent',
+    //         table_id: workerData.id,
+    //         info: info,
+    //         predictStats: predictStats,
+    //         round: round,
+    //         bot: bot,
+    //         winner_percent: winner_percent,
+    //         bot: bot,
+    //         table_title: workerData.title
+    //     })
+    // } else {
         parentPort.postMessage({
             table_id: workerData.id,
             table_title: workerData.title,
@@ -58,7 +81,7 @@ function getCurrent() {
             winner_percent: 0,
             bot: null
         })
-    }
+    // }
 
 
 }
@@ -93,6 +116,7 @@ function betting(betCurrent) {
 }
 
 function registerForEventListening() {
+    console.log('start rot')
     token = workerData.token
     inititalInfo()
     // callback method is defined to receive data from main thread
@@ -111,9 +135,10 @@ function registerForEventListening() {
 
 
         // //  setting up interval to call method to multiple with factor
-        setInterval(predictPlay, 5000);
+        
     };
 
+    setInterval(rotPredictPlay, 5000);
     // registering to events to receive messages from the main thread
     parentPort.on('error', cb);
     parentPort.on('message', (msg) => {
@@ -129,7 +154,7 @@ function inititalInfo() {
             }
         })
         .then(response => {
-            // console.log(response.data);
+            console.log(response.data);
             let detail = response.data.info.detail
             if (shoe != detail.shoe) {
                 shoe = detail.shoe
@@ -143,7 +168,6 @@ function inititalInfo() {
                         // console.log(roundStat)
                         predictStats.predict.push({ ...roundStat, round: i, bot: null, isResult: true })
                         i++
-                        
                     }
                 }
 
@@ -159,8 +183,8 @@ function inititalInfo() {
 }
 
 
-async function predictPlay() {
-    
+async function rotPredictPlay() {
+    console.log('rotPredictPlay')
     let current = new Date().getTime()
     if(current - last_pull_timestamp < 4500){
         // console.log(`${workerData.title} not pull`)
@@ -188,6 +212,7 @@ async function predictPlay() {
 }
 
 function botplay(currentInfo) {
+    console.log('roulette')
     if (shoe != currentInfo.shoe) {
         shoe = currentInfo.shoe
         round = currentInfo.round
@@ -196,7 +221,6 @@ function botplay(currentInfo) {
         return
     }
     round = currentInfo.round
-    let botChoice = ["BANKER", "PLAYER"]
     let statsCount = currentInfo.statistic.length
     let playCount = predictStats.predict.length
     let currentRound = currentInfo.round
@@ -212,100 +236,101 @@ function botplay(currentInfo) {
     // console.log(shoe, round, currentInfo.round, currentInfo.statistic.length, bot)
     let lastPlay = { ...predictStats.predict[playCount - 1] }
     let lastStat = { ...currentInfo.statistic[statsCount - 1] }
-    if (playCount == statsCount && lastPlay.isResult == false) {
-        // cal correct wrong and collect stats
-        predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
-        if (bot != null) {
-            let status = ''
-            if (lastStat.winner == 'TIE') {
-                predictStats.tie++;
-                status = 'TIE'
+    console.log(lastStat)
+    // if (playCount == statsCount && lastPlay.isResult == false) {
+    //     // cal correct wrong and collect stats
+    //     predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
+    //     if (bot != null) {
+    //         let status = ''
+    //         if (lastStat.winner == 'TIE') {
+    //             predictStats.tie++;
+    //             status = 'TIE'
                 
-            }
-            else if (lastPlay.bot == lastStat.winner) {
-                predictStats.correct++;
-                status = 'WIN'
-            } else {
-                predictStats.wrong++;
-                status = 'LOSE'
-            }
+    //         }
+    //         else if (lastPlay.bot == lastStat.winner) {
+    //             predictStats.correct++;
+    //             status = 'WIN'
+    //         } else {
+    //             predictStats.wrong++;
+    //             status = 'LOSE'
+    //         }
 
-            if (isPlay && playRound == statsCount) {
-                isPlay = false
-                parentPort.postMessage({
-                    action: 'played',
-                    status: status, 
-                    stats: predictStats.predict[playCount - 1], 
-                    shoe: shoe, 
-                    table: workerData,
-                    bot_type: 1 
-                })
-            }
-            bot = null
-        }
-    }
+    //         if (isPlay && playRound == statsCount) {
+    //             isPlay = false
+    //             parentPort.postMessage({
+    //                 action: 'played',
+    //                 status: status, 
+    //                 stats: predictStats.predict[playCount - 1], 
+    //                 shoe: shoe, 
+    //                 table: workerData,
+    //                 bot_type: 1 
+    //             })
+    //         }
+    //         bot = null
+    //     }
+    // }
 
 
-    if (currentInfo.round > playCount) {
-        if (currentInfo.round < 5) {
-            bot = null
-            predictStats.predict.push({ round: currentInfo.round, bot: null, isResult: false })
-        } else {
-            bot = botChoice[Math.floor(Math.random() * botChoice.length)]
-            predictStats.predict.push({ round: currentInfo.round, bot: bot, isResult: false })
-            if (isPlay && playRound == currentInfo.round) {
-                axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    })
-                    .then(response => {
-                        // console.log(response.data);
-                        // console.log(`round = ${response.data.info.detail.round}`)
-                        let current = response.data.game
-                        console.log(current)
-                        let sum = predictStats.correct + predictStats.wrong + predictStats.tie
-                        let win_percent = 0
-                        if (sum != 0) {
-                            win_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
-                        }
+    // if (currentInfo.round > playCount) {
+    //     if (currentInfo.round < 5) {
+    //         bot = null
+    //         predictStats.predict.push({ round: currentInfo.round, bot: null, isResult: false })
+    //     } else {
+    //         bot = botChoice[Math.floor(Math.random() * botChoice.length)]
+    //         predictStats.predict.push({ round: currentInfo.round, bot: bot, isResult: false })
+    //         if (isPlay && playRound == currentInfo.round) {
+    //             axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
+    //                 {
+    //                     headers: {
+    //                         Authorization: `Bearer ${token}`
+    //                     }
+    //                 })
+    //                 .then(response => {
+    //                     // console.log(response.data);
+    //                     // console.log(`round = ${response.data.info.detail.round}`)
+    //                     let current = response.data.game
+    //                     console.log(current)
+    //                     let sum = predictStats.correct + predictStats.wrong + predictStats.tie
+    //                     let win_percent = 0
+    //                     if (sum != 0) {
+    //                         win_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
+    //                     }
 
-                        if (win_percent < 50) {
-                            win_percent = 100 - win_percent
-                        } else {
-                            win_percent = win_percent
-                        }
+    //                     if (win_percent < 50) {
+    //                         win_percent = 100 - win_percent
+    //                     } else {
+    //                         win_percent = win_percent
+    //                     }
             
-                        if( win_percent == 100){
-                            win_percent = 92
-                        }
+    //                     if( win_percent == 100){
+    //                         win_percent = 92
+    //                     }
 
-                        if (current.round == currentInfo.round && current.remaining > 10) {
-                            parentPort.postMessage({ action: 'bet', data: { 
-                                bot: bot, 
-                                table: workerData, 
-                                shoe: shoe, 
-                                round: current.round, 
-                                game_id: current.id, 
-                                remaining: current.remaining,
-                                win_percent: win_percent
-                            } })
-                        }else{
-                            parentPort.postMessage({ action: 'played', status: 'FAILED' })
-                        }
+    //                     if (current.round == currentInfo.round && current.remaining > 10) {
+    //                         parentPort.postMessage({ action: 'bet', data: { 
+    //                             bot: bot, 
+    //                             table: workerData, 
+    //                             shoe: shoe, 
+    //                             round: current.round, 
+    //                             game_id: current.id, 
+    //                             remaining: current.remaining,
+    //                             win_percent: win_percent
+    //                         } })
+    //                     }else{
+    //                         parentPort.postMessage({ action: 'played', status: 'FAILED' })
+    //                     }
 
-                    })
-                    .catch(error => {
-                        console.log(`current: ${error}`);
-                        isPlay = false
-                        parentPort.postMessage({ action: 'played', status: 'FAILED' })
-                    });
-            }
+    //                 })
+    //                 .catch(error => {
+    //                     console.log(`current: ${error}`);
+    //                     isPlay = false
+    //                     parentPort.postMessage({ action: 'played', status: 'FAILED' })
+    //                 });
+    //         }
 
 
-        }
-    }
+    //     }
+    // }
 
     predictStats.info = { ...currentInfo }
     round = currentInfo.round

@@ -31,14 +31,27 @@ db.sequelize.sync({
 let botTransactionObj = {
     'DEFAULT': null,
     'BANKER': null,
-    'PLAYER': null
+    'PLAYER': null,
+    'RB': null,
+    'ED': null,
+    'SB': null,
+    'TWOZONE': null,
+    'ONEZONE': null
+}
+
+let rotPlay = {
+    rb: false,
+    ed: false,
+    sb: false,
+    zone: false
+}
+
+let rotCurrent = {
+    
 }
 
 let win_percent;
 let isBet = false;
-let betData = null
-//db.sequelize.sync();
-let botNumber = 0;
 let botWorkerDict = {};
 let rotWorkerDict = {}
 let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMzA2fSwiaWF0IjoxNTk2Mjc1MjI2fQ.BlrzYvm7RKTjyK2vxoPWzlvZaTnifZVyB47JYblWM2A"
@@ -1323,9 +1336,9 @@ function mainBody() {
 
                     initiateWorker(table);
                 }
-                // else if(table.game_id == 10){
-                //     initiateRotWorker(table)
-                // }
+                else if(table.game_id == 10){
+                    initiateRotWorker(table)
+                }
             }
             playCasino()
         })
@@ -1665,7 +1678,7 @@ function initiateRotWorker(table){
     };
 
     // start worker
-    myWorker = startWorker(table, __dirname + '/rotWorkerCode.js', cb);
+    myWorker = startWorker(table, __dirname + '/rotWorker.js', cb);
     if (myWorker != null) {
         rotWorkerDict[table.id] = {
             worker: myWorker

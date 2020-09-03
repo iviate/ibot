@@ -111,8 +111,9 @@ function registerForEventListening() {
 
 
         // //  setting up interval to call method to multiple with factor
-        setInterval(predictPlay, 5000);
+        
     };
+    setInterval(predictPlay, 5000);
 
     // registering to events to receive messages from the main thread
     parentPort.on('error', cb);
@@ -160,6 +161,7 @@ function inititalInfo() {
 
 
 async function predictPlay() {
+    console.log('baccarat')
     
     let current = new Date().getTime()
     if(current - last_pull_timestamp < 4500){
