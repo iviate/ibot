@@ -1336,9 +1336,9 @@ function mainBody() {
 
                     initiateWorker(table);
                 }
-                else if(table.game_id == 10){
-                    initiateRotWorker(table)
-                }
+                // else if(table.game_id == 10){
+                //     initiateRotWorker(table)
+                // }
             }
             playCasino()
         })
