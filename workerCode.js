@@ -161,7 +161,6 @@ function inititalInfo() {
 
 
 async function predictPlay() {
-    console.log('baccarat')
     
     let current = new Date().getTime()
     if(current - last_pull_timestamp < 4500){

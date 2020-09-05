@@ -1374,9 +1374,9 @@ function mainBody() {
 
                     initiateWorker(table);
                 }
-                else if(table.game_id == 10){
-                    initiateRotWorker(table)
-                }
+                // else if(table.game_id == 10){
+                //     initiateRotWorker(table)
+                // }
             }
             playCasino()
         })
@@ -1575,6 +1575,7 @@ function initiateWorker(table) {
             betInt = setInterval(function () {
                 betInterval();
             }, 2100);
+
             remainingBet = result.data.remaining
             currentBetData = result.data
             isBet = true
