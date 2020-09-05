@@ -35,7 +35,7 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         type: DataTypes.FLOAT.UNSIGNED,
       },
       bet_side: {
-        type: DataTypes.INTEGER, // 1 P/B , 2 ONLY P, 3 ONLY B
+        type: DataTypes.INTEGER, // 1 P/B , 2 ONLY P, 3 ONLY B, 11 R/B, 12 E/D, 13 S/B, 14 TWOZONE, 15 ONEZONE
       },
       max_turn: {
         type: DataTypes.INTEGER.UNSIGNED,

@@ -27,6 +27,7 @@ db.sequelize.sync({
     alter: true
 });
 
+let BOT_CODE = ['BAC', 'ROT_RB', 'ROT_ED', 'ROT_SB', 'ROT_TWO_ZONE', 'ROT_ONE_ZONE']
 
 let botTransactionObj = {
     'DEFAULT': null,
@@ -49,7 +50,14 @@ let rotPlay = {
 let rotCurrent = {
     
 }
-
+let win_percents = {
+    bac: 0,
+    rotRB: 0,
+    rotED: 0,
+    rotSB: 0,
+    rotTwoZone: 0,
+    rotOneZone: 0
+}
 let win_percent;
 let isBet = false;
 let botWorkerDict = {};
@@ -1099,6 +1107,36 @@ myApp.post('/wallet/withdraw', function (request, response) {
 
 });
 
+myApp.get('/member', async function (request, response) {
+    const member = await db.member.findAll()
+    response.json({
+        success: true,
+        data : member,
+        error_code: null,
+        message: ''
+    })
+});
+
+myApp.get('/agent_record', async function (request, response) {
+    const agent_record = await db.agent_record.findAll()
+    response.json({
+        success: true,
+        data : member,
+        error_code: null,
+        message: ''
+    })
+});
+
+myApp.get('/member_record', async function (request, response) {
+    const member_record = await db.member_record.findAll()
+    response.json({
+        success: true,
+        data : member,
+        error_code: null,
+        message: ''
+    })
+});
+
 myApp.post('/wallet/deposite', function (request, response) {
     const userId = request.body.userId
     const amount = request.body.amount
@@ -1536,7 +1574,7 @@ function initiateWorker(table) {
             startBet = new Date().getTime()
             betInt = setInterval(function () {
                 betInterval();
-            }, 3500);
+            }, 2100);
             remainingBet = result.data.remaining
             currentBetData = result.data
             isBet = true
@@ -1621,8 +1659,6 @@ function initiateRotWorker(table){
                             ['id', 'DESC']
                         ]
                     }).then((res) => {
-
-
                         // console.log(res)
                         if (res) {
 
