@@ -1472,7 +1472,7 @@ function playCasino() {
 function initiateWorker(table) {
 
     // define callback
-    let cb = (err, result) => {
+    let cb = async (err, result) => {
         if (err) {
             return console.error(err);
         }
@@ -1481,6 +1481,7 @@ function initiateWorker(table) {
             currentList.push(result)
         }
         if (result.action == 'played') {
+            clearInterval(betInt)
             if (result.status == 'FAILED' || result.status == null) {
                 isPlay = false
                 isBet = false
