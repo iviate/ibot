@@ -248,7 +248,7 @@ function botplay(currentInfo) {
 
 
     if (currentInfo.round > playCount) {
-        if (currentInfo.round < 5) {
+        if (currentInfo.round < 2) {
             bot = null
             predictStats.predict.push({ round: currentInfo.round, bot: null, isResult: false })
         } else {

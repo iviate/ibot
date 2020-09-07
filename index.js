@@ -1574,7 +1574,7 @@ function initiateWorker(table) {
             startBet = new Date().getTime()
             betInt = setInterval(function () {
                 betInterval();
-            }, 2100);
+            }, 2400);
 
             remainingBet = result.data.remaining
             currentBetData = result.data
