@@ -4,13 +4,13 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.STRING
         },
         startdate: {
-            type: DataTypes.STRING
+            type: DataTypes.DATE
         },
         enddate: {
             type: DataTypes.DATE
         },
         betall: {
-            type: DataTypes.DATE
+            type: DataTypes.FLOAT
         },
         bet_rolling: {
             type: DataTypes.FLOAT

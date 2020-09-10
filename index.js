@@ -21,7 +21,7 @@ const e = require('express');
 const {
     syncBuiltinESMExports
 } = require('module');
-const { bot } = require('./app/models');
+const { bot, member } = require('./app/models');
 // const { USE } = require('sequelize/types/lib/index-hints');
 db.sequelize.sync({
     alter: true
@@ -85,6 +85,16 @@ io.on('connection', (socket) => {
     });
 });
 
+async function getBank(token){
+    const res = await axios.get('https://truthbet.com/api/m/request/withdraw', {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+
+    console.log(res.data.accounts[0])
+}
+
 myApp.post('/login', async function (request, response) {
     const USERNAME = request.body.username;
     const PASSWORD = request.body.password;
@@ -108,12 +118,14 @@ myApp.post('/login', async function (request, response) {
 
                 }).then((res2) => {
                     // console.log(res2)
-
+                    // getBank(user.truthbet_token)
                     axios.get('https://truthbet.com/api/m/account/edit', {
                         headers: {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
                     }).then((res3) => {
+
+                        
                         // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
                         if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) && 
                             (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
@@ -319,11 +331,7 @@ myApp.post('/login', async function (request, response) {
 
                             });
                         }
-
                     })
-
-
-
                 } else {
                     response.json({
                         success: false,
@@ -765,6 +773,169 @@ myApp.post('/pause', async function (request, response) {
     });
 
 });
+
+myApp.post('/rolling', async function (request, response){
+    // const USERNAME = request.body.username
+    const startDate = new Date(request.body.start_date)
+    const endDate = new Date(request.body.end_date)
+    endDate.setDate(endDate.getDate() + 1);
+
+    const optional = request.body.option
+    const base_rolling_percent = request.body.base_rolling_percent
+    
+    // const myUser = await db.user.findOne({
+    //     where: {
+    //         username: {
+    //             [Op.iLike] : USERNAME,
+    //         } 
+    //     },
+    // })
+    const allMember = await db.member.findAll()
+    var memberData = {}
+    allMember.forEach(function(member){
+        // console.log(member)
+        let memberDetail = {startTurn: 0, endTurn: 0}
+        memberData[member.username] = memberDetail
+    })
+
+    const startDateTurn = await db.member_record.findAll({
+        where: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('createdAt')), '=', startDate),
+    })
+    if(startDateTurn.length > 0){
+        startDateTurn.forEach(function(startTurnData){
+            memberData[startTurnData.username].startTurn = startTurnData.betall
+        })
+    }
+    
+
+    // console.log(startDateTurn)
+    const endDateTurn = await db.member_record.findAll({
+        where: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('createdAt')), '=', endDate),
+    })
+
+    endDateTurn.forEach(function(endTurnData){
+        memberData[endTurnData.username].endTurn = endTurnData.betall
+    })
+    var rollingTotal = 0
+    Object.keys(memberData).forEach(element => {
+        let betAll = memberData[element].endTurn - memberData[element].startTurn
+        let betRolling = Math.floor(betAll / 1000000) * 1000000
+        let leftRolling = betAll - betRolling
+        let rollingAmount = betRolling * base_rolling_percent / 100
+        memberData[element]['betall'] = betAll
+        memberData[element]['bet_rolling'] = betRolling
+        memberData[element]['bet_left'] = leftRolling
+        memberData[element]['rolling_amount'] = rollingAmount
+        rollingTotal += rollingAmount
+        if( rollingAmount > 0){
+            console.log(element, memberData[element])
+        }
+    });
+    console.log(rollingTotal)
+    
+
+
+
+    // console.log(endDateTurn)
+    response.json({
+        success: true,
+        error_code: 404,
+        message: 'user not found'
+    })
+    // if(!myUser){
+    //     response.json({
+    //         success: false,
+    //         error_code: 404,
+    //         message: 'user not found'
+    //     })
+    // }else{
+
+    //     response.json({
+    //         success: true,
+    //         data: member,
+    //         error_code: null,
+    //         message: ''
+    //     })
+    // }
+})
+
+myApp.post('/rolling_withdraw', async function (request, response){
+    const myMember = await db.member.findOne({
+        where: {
+            id: {
+                [Op.iLike] : request.params.username,
+            } 
+        },
+    })
+
+    if(!myMember){
+        response.json({
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        })
+    }else{
+
+        response.json({
+            success: true,
+            data: member,
+            error_code: null,
+            message: ''
+        })
+    }
+})
+
+myApp.post('/rolling_withdraw/:id', async function (request, response){
+    const myMember = await db.member.findOne({
+        where: {
+            id: {
+                [Op.iLike] : request.params.username,
+            } 
+        },
+    })
+
+    if(!myMember){
+        response.json({
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        })
+    }else{
+
+        response.json({
+            success: true,
+            data: member,
+            error_code: null,
+            message: ''
+        })
+    }
+})
+
+myApp.get('/profile', async function (request, response){
+    const myMember = await db.member.findOne({
+        where: {
+            id: {
+                [Op.iLike] : request.params.username,
+            } 
+        },
+    })
+
+    if(!myMember){
+        response.json({
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        })
+    }else{
+
+        response.json({
+            success: true,
+            data: member,
+            error_code: null,
+            message: ''
+        })
+    }
+})
 
 myApp.get('/user_bot/:id', async function (request, response) {
     db.user.findOne({
