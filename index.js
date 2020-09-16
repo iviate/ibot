@@ -22,6 +22,7 @@ const {
     syncBuiltinESMExports
 } = require('module');
 const { bot, member } = require('./app/models');
+const { DH_CHECK_P_NOT_PRIME } = require('constants');
 // const { USE } = require('sequelize/types/lib/index-hints');
 db.sequelize.sync({
     alter: true
@@ -93,6 +94,7 @@ async function getBank(token){
                     })
 
     console.log(res.data.accounts[0])
+    return res.data.accounts[0]
 }
 
 myApp.post('/login', async function (request, response) {
@@ -776,7 +778,7 @@ myApp.post('/pause', async function (request, response) {
 
 myApp.post('/rolling', async function (request, response){
     // const USERNAME = request.body.username
-    const startDate = new Date(request.body.start_date)
+    const updateDate = new Date(request.body.end_date)
     const endDate = new Date(request.body.end_date)
     endDate.setDate(endDate.getDate() + 1);
 
@@ -792,46 +794,118 @@ myApp.post('/rolling', async function (request, response){
     // })
     const allMember = await db.member.findAll()
     var memberData = {}
-    allMember.forEach(function(member){
+    var rollingTotal = 0
+    await allMember.forEach(async function(member){
         // console.log(member)
         let memberDetail = {startTurn: 0, endTurn: 0}
         memberData[member.username] = memberDetail
-    })
+        let lasted_roll = new Date(member.latest_rolling)
+        console.log(lasted_roll, updateDate)
+        if(updateDate.getTime() <= lasted_roll.getTime()){
+            console.log('not update')
+            return
+        }
 
-    const startDateTurn = await db.member_record.findAll({
-        where: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('createdAt')), '=', startDate),
-    })
-    if(startDateTurn.length > 0){
-        startDateTurn.forEach(function(startTurnData){
-            memberData[startTurnData.username].startTurn = startTurnData.betall
+        var startDate = null
+        let startDateAf = null
+        
+        // console.log(member.latest_rolling)
+
+        if(member.latest_rolling == null){
+        }else{
+            // console.log(member.latest_rolling)
+            startDate = new Date(member.latest_rolling)
+            startDateAf = new Date(startDate)
+            startDateAf.setTime(startDateAf.getTime() + (23*60*60*1000))
+            // console.log(startDate, startDateAf)
+
+             var startDateTurn = await db.member_record.findAll({
+                where: {
+                    createdAt: {
+                        [Op.between]: [startDate, startDateAf]
+                    },
+                    username: member.username
+                }
+            })
+
+            if(startDateTurn.length > 0){
+
+                // console.log(startDateTurn)
+                memberData[startDateTurn[0].username].startTurn = startDateTurn[0].betall
+            }
+        }
+
+
+        let endDateAf = new Date(endDate)
+        endDateAf.setTime(endDate.getTime() + (23*60*60*1000))
+        // console.log(endDate, endDateAf)
+
+        const endDateTurn = await db.member_record.findAll({
+            where: {
+                createdAt: {
+                    [Op.between]: [endDate, endDateAf]
+                },
+                username: member.username
+            }
         })
-    }
+       
+        
+        
     
+        if(endDateTurn.length > 0){
+            
+            memberData[endDateTurn[0].username].endTurn = endDateTurn[0].betall
+        }else{
+            return
+        }
 
-    // console.log(startDateTurn)
-    const endDateTurn = await db.member_record.findAll({
-        where: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('createdAt')), '=', endDate),
-    })
-
-    endDateTurn.forEach(function(endTurnData){
-        memberData[endTurnData.username].endTurn = endTurnData.betall
-    })
-    var rollingTotal = 0
-    Object.keys(memberData).forEach(element => {
-        let betAll = memberData[element].endTurn - memberData[element].startTurn
-        let betRolling = Math.floor(betAll / 1000000) * 1000000
-        let leftRolling = betAll - betRolling
+        
+        let previous_turn = member.left_turn
+        let betAll = memberData[member.username].endTurn - memberData[member.username].startTurn
+        let betRolling = Math.floor((betAll + previous_turn) / 1000000) * 1000000
+        let leftRolling = betAll + previous_turn - betRolling
         let rollingAmount = betRolling * base_rolling_percent / 100
-        memberData[element]['betall'] = betAll
-        memberData[element]['bet_rolling'] = betRolling
-        memberData[element]['bet_left'] = leftRolling
-        memberData[element]['rolling_amount'] = rollingAmount
+        if( leftRolling < 0 || rollingAmount < 0 || betRolling < 0){
+            console.log(memberData[member.username].endTurn, memberData[member.username].startTurn, member.left_turn, betAll, betRolling)
+        }
+        memberData[member.username]['betall'] = betAll
+        memberData[member.username]['bet_rolling'] = betRolling
+        
+        memberData[member.username]['bet_left'] = leftRolling
+        memberData[member.username]['rolling_amount'] = rollingAmount
         rollingTotal += rollingAmount
         if( rollingAmount > 0){
-            console.log(element, memberData[element])
+            // console.log(member.username, memberData[member.username])
+            console.log(rollingTotal)
         }
-    });
-    console.log(rollingTotal)
+        
+        member.rolling += rollingAmount
+        member.latest_rolling = updateDate
+        member.left_turn = leftRolling
+        member.save()
+
+        rollingRec = {
+            username: member.username,
+            startdate_turn: memberData[member.username].startTurn,
+            reserve_turn: previous_turn,
+            startdate: startDate,
+            enddate: updateDate,
+            enddate_turn: memberData[member.username].endTurn,
+            betall: memberData[member.username]['betall'],
+            bet_rolling: memberData[member.username]['bet_rolling'],
+            bet_left: memberData[member.username]['bet_left'],
+            base_rolling_percent: base_rolling_percent,
+            optional: null,
+            rolling_amount: memberData[member.username]['rolling_amount'],
+        }
+
+        const rollingCreated = db.rolling.create(rollingRec)
+        
+    })
+    // console.log(memberData)
+    
+
+    
     
 
 
@@ -862,8 +936,8 @@ myApp.post('/rolling', async function (request, response){
 myApp.post('/rolling_withdraw', async function (request, response){
     const myMember = await db.member.findOne({
         where: {
-            id: {
-                [Op.iLike] : request.params.username,
+            username: {
+                [Op.like] : request.params.username,
             } 
         },
     })
@@ -888,8 +962,8 @@ myApp.post('/rolling_withdraw', async function (request, response){
 myApp.post('/rolling_withdraw/:id', async function (request, response){
     const myMember = await db.member.findOne({
         where: {
-            id: {
-                [Op.iLike] : request.params.username,
+            username: {
+                [Op.like] : request.params.username,
             } 
         },
     })
@@ -912,10 +986,19 @@ myApp.post('/rolling_withdraw/:id', async function (request, response){
 })
 
 myApp.get('/profile', async function (request, response){
+    // console.log(request.query.username)
+    const USERNAME = request.query.username
+    if(!USERNAME){
+        response.json({
+            success: false,
+            error_code: 401,
+            message: 'invalid params'
+        })
+    }
     const myMember = await db.member.findOne({
         where: {
-            id: {
-                [Op.iLike] : request.params.username,
+            username: {
+                [Op.like] : USERNAME,
             } 
         },
     })
@@ -927,10 +1010,67 @@ myApp.get('/profile', async function (request, response){
             message: 'user not found'
         })
     }else{
+        const memberUser = await db.user.findOne({
+            where:{
+                username: {
+                    [Op.like]: USERNAME
+                }
+            },
+            order: [
+                ['id', 'DESC']
+            ]
+        })
+        if(!memberUser){
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+        const memberRolling = await db.rolling.findAll({
+            where:{
+                username: {
+                    [Op.like]: USERNAME
+                }
+            },
+            order: [
+                ['id', 'DESC']
+            ]
+        })
+
+        const memberRec = await db.member_record.findAll({
+            where:{
+                username: {
+                    [Op.like]: USERNAME
+                }
+            },
+            order: [
+                ['id', 'DESC']
+            ]
+        })
+
+        const memberBank = await getBank(memberUser.truthbet_token)
+        console.log(memberBank)
+        const memberWithdraw = await db.rolling_withdraw.findAll({
+            where:{
+                username: {
+                    [Op.like]: USERNAME
+                }
+            },
+            order: [
+                ['id', 'DESC']
+            ]
+        })
 
         response.json({
             success: true,
-            data: member,
+            data: {
+                rolling: memberRolling,
+                member: myMember,
+                account: memberBank,
+                withdraw: memberWithdraw,
+                turns: memberRec
+            },
             error_code: null,
             message: ''
         })

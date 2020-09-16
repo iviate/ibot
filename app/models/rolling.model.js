@@ -4,7 +4,8 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.STRING
         },
         startdate: {
-            type: DataTypes.DATE
+            type: DataTypes.DATE,
+            allowNull: true
         },
         enddate: {
             type: DataTypes.DATE
@@ -27,6 +28,15 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         rolling_amount: {
             type: DataTypes.FLOAT
         },
+        startdate_turn: {
+            type: DataTypes.FLOAT
+        },
+        reserve_turn: {
+            type: DataTypes.FLOAT
+        },
+        enddate_turn: {
+            type: DataTypes.FLOAT
+        }
 
     })
     return Member;

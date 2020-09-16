@@ -17,6 +17,10 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.FLOAT,
             defaultValue: 0.0
         },
+        withdraw: {
+            type: DataTypes.FLOAT,
+            defaultValue: 0.0
+        },
         bank_name: {
             type: DataTypes.STRING
         },
@@ -29,6 +33,10 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         latest_rolling: {
             type: DataTypes.DATE,
             allowNull: true
+        },
+        left_turn: {
+            type: DataTypes.FLOAT,
+            defaultValue: 0.0
         },
     })
     return Member;
