@@ -19,8 +19,8 @@ let isPlayHalfSB = false
 let isPlayZone = false
 
 let statCount = {
-    rbCorrect : 0,
-    rbWrong: 0, 
+    rbCorrect: 0,
+    rbWrong: 0,
     edCorrect: 0,
     edWrong: 0,
     sbCorrect: 0,
@@ -43,6 +43,7 @@ let playRound = null;
 let token = null
 let isPlay = false;
 var date = new Date();
+var playList = []
 // var resultStats = ''
 // var threeCutPlay = {}
 // var fourCutPlay = {}
@@ -73,14 +74,14 @@ function getCurrent() {
     //         table_title: workerData.title
     //     })
     // } else {
-        parentPort.postMessage({
-            table_id: workerData.id,
-            table_title: workerData.title,
-            action: 'getCurrent',
-            error: true,
-            winner_percent: 0,
-            bot: null
-        })
+    parentPort.postMessage({
+        table_id: workerData.id,
+        table_title: workerData.title,
+        action: 'getCurrent',
+        error: true,
+        winner_percent: 0,
+        bot: null
+    })
     // }
 
 
@@ -130,12 +131,13 @@ function registerForEventListening() {
             console.log(`Thred id ${workerData.id} action ${result.action}`)
             isPlay = true
             playRound = round + 1
+            playList = result.playList
             // betting(result.current)
         }
 
 
         // //  setting up interval to call method to multiple with factor
-        
+
     };
 
     setInterval(rotPredictPlay, 5000);
@@ -161,7 +163,7 @@ function inititalInfo() {
                 round = detail.round
                 // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
-                
+
                 if (predictStats.predict.length != detail.statistic.length) {
                     let i = 1
                     for (roundStat of detail.statistic) {
@@ -186,10 +188,10 @@ function inititalInfo() {
 async function rotPredictPlay() {
     console.log('rotPredictPlay')
     let current = new Date().getTime()
-    if(current - last_pull_timestamp < 4500){
+    if (current - last_pull_timestamp < 4500) {
         // console.log(`${workerData.title} not pull`)
         return
-    }else{
+    } else {
         // console.log(`${workerData.title}`)
         last_pull_timestamp = current
     }
@@ -210,6 +212,133 @@ async function rotPredictPlay() {
             console.log(`table error ${workerData.id} ${error}`);
         });
 }
+
+function randomHalfRB() {
+    return HalfRB[Math.floor(Math.random() * HalfRB.length)]
+}
+
+function randomHalfED() {
+    return HalfED[Math.floor(Math.random() * HalfED.length)]
+}
+
+function randomHalfSB() {
+    return HalfSB[Math.floor(Math.random() * HalfSB.length)]
+}
+
+function randomTwoZone() {
+    var ret = []
+    while (ret.length != 2) {
+        let rand = Dozen[Math.floor(Math.random() * Dozen.length)]
+        if (ret.indexOf(rand) == -1) {
+            ret.push(rand)
+        }
+    }
+}
+
+function randomOneZone(twozone) {
+    return twozone[Math.floor(Math.random() * twozone.length)]
+}
+
+function getRBWinerPercent() {
+    let sum = statCount.rbCorrect + statCount.rbWrong
+    let win_percent = 0
+    if (sum != 0) {
+        win_percent = (statCount.rbCorrect / sum) * 100
+    }
+
+    if (win_percent < 50) {
+        win_percent = 100 - win_percent
+    } else {
+        win_percent = win_percent
+    }
+
+    if (win_percent == 100) {
+        win_percent = 92
+    }
+
+    return win_percent
+}
+
+function getEDWinerPercent() {
+    let sum = statCount.edCorrect + statCount.edWrong
+    let win_percent = 0
+    if (sum != 0) {
+        win_percent = (statCount.edCorrect / sum) * 100
+    }
+
+    if (win_percent < 50) {
+        win_percent = 100 - win_percent
+    } else {
+        win_percent = win_percent
+    }
+
+    if (win_percent == 100) {
+        win_percent = 92
+    }
+
+    return win_percent
+}
+
+function getSBWinerPercent() {
+    let sum = statCount.sbCorrect + statCount.sbWrong
+    let win_percent = 0
+    if (sum != 0) {
+        win_percent = (statCount.sbCorrect / sum) * 100
+    }
+
+    if (win_percent < 50) {
+        win_percent = 100 - win_percent
+    } else {
+        win_percent = win_percent
+    }
+
+    if (win_percent == 100) {
+        win_percent = 92
+    }
+
+    return win_percent
+}
+
+function getTwozoneWinerPercent() {
+    let sum = statCount.twoZoneCorrect + statCount.twoZoneWrong
+    let win_percent = 0
+    if (sum != 0) {
+        win_percent = (statCount.twoZoneCorrect / sum) * 100
+    }
+
+    if (win_percent < 50) {
+        win_percent = 100 - win_percent
+    } else {
+        win_percent = win_percent
+    }
+
+    if (win_percent == 100) {
+        win_percent = 92
+    }
+
+    return win_percent
+}
+
+function getOnezoneWinerPercent() {
+    let sum = statCount.oneZoneCorrect + statCount.oneZoneWrong
+    let win_percent = 0
+    if (sum != 0) {
+        win_percent = (statCount.oneZoneCorrect / sum) * 100
+    }
+
+    if (win_percent < 50) {
+        win_percent = 100 - win_percent
+    } else {
+        win_percent = win_percent
+    }
+
+    if (win_percent == 100) {
+        win_percent = 92
+    }
+
+    return win_percent
+}
+
 
 function botplay(currentInfo) {
     console.log('roulette')
@@ -245,7 +374,7 @@ function botplay(currentInfo) {
             if (lastStat.winner == 'TIE') {
                 predictStats.tie++;
                 status = 'TIE'
-                
+
             }
             else if (lastPlay.bot == lastStat.winner) {
                 predictStats.correct++;
@@ -259,11 +388,11 @@ function botplay(currentInfo) {
                 isPlay = false
                 parentPort.postMessage({
                     action: 'played',
-                    status: status, 
-                    stats: predictStats.predict[playCount - 1], 
-                    shoe: shoe, 
+                    status: status,
+                    stats: predictStats.predict[playCount - 1],
+                    shoe: shoe,
                     table: workerData,
-                    bot_type: 1 
+                    bot_type: 1
                 })
             }
             bot = null
@@ -272,11 +401,18 @@ function botplay(currentInfo) {
 
 
     if (currentInfo.round > playCount) {
-        if (currentInfo.round < 5) {
+        if (currentInfo.round < 4) {
             bot = null
             predictStats.predict.push({ round: currentInfo.round, bot: null, isResult: false })
         } else {
-            bot = botChoice[Math.floor(Math.random() * botChoice.length)]
+            let twozone = randomTwoZone()
+            bot = {
+                RB: randomHalfRB(),
+                ED: randomHalfED(),
+                SB: randomHalfSB(),
+                TWOZONE: twozone,
+                ONEZONE: randomOneZone(twozone)
+            }
             predictStats.predict.push({ round: currentInfo.round, bot: bot, isResult: false })
             if (isPlay && playRound == currentInfo.round) {
                 axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
@@ -290,33 +426,29 @@ function botplay(currentInfo) {
                         // console.log(`round = ${response.data.info.detail.round}`)
                         let current = response.data.game
                         console.log(current)
-                        let sum = predictStats.correct + predictStats.wrong + predictStats.tie
-                        let win_percent = 0
-                        if (sum != 0) {
-                            win_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
-                        }
 
-                        if (win_percent < 50) {
-                            win_percent = 100 - win_percent
-                        } else {
-                            win_percent = win_percent
-                        }
-            
-                        if( win_percent == 100){
-                            win_percent = 92
+                        let winPercent = {
+                            RB: getRBWinerPercent(),
+                            ED: getEDWinerPercent(),
+                            SB: getSBWinerPercent(),
+                            TWOZONE: getTwozoneWinerPercent(),
+                            ONEZONE: getOnezoneWinerPercent()
                         }
 
                         if (current.round == currentInfo.round && current.remaining > 10) {
-                            parentPort.postMessage({ action: 'bet', data: { 
-                                bot: bot, 
-                                table: workerData, 
-                                shoe: shoe, 
-                                round: current.round, 
-                                game_id: current.id, 
-                                remaining: current.remaining,
-                                win_percent: win_percent
-                            } })
-                        }else{
+                            parentPort.postMessage({
+                                action: 'bet', data: {
+                                    bot: bot,
+                                    table: workerData,
+                                    shoe: shoe,
+                                    round: current.round,
+                                    game_id: current.id,
+                                    remaining: current.remaining,
+                                    win_percent: winPercent,
+                                    playList: playList
+                                }
+                            })
+                        } else {
                             parentPort.postMessage({ action: 'played', status: 'FAILED' })
                         }
 

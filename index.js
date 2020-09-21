@@ -49,7 +49,7 @@ let rotPlay = {
 }
 
 let rotCurrent = {
-    
+
 }
 let win_percents = {
     bac: 0,
@@ -62,6 +62,7 @@ let win_percents = {
 let win_percent;
 let isBet = false;
 let botWorkerDict = {};
+let rotBotWorkerDict = {};
 let rotWorkerDict = {}
 let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMzA2fSwiaWF0IjoxNTk2Mjc1MjI2fQ.BlrzYvm7RKTjyK2vxoPWzlvZaTnifZVyB47JYblWM2A"
 
@@ -78,20 +79,20 @@ io.on('connection', (socket) => {
         // console.log(msg)
         let userId = msg.userId
         let type = msg.type
-        if(botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined){
-            botWorkerDict[userId].postMessage({action: 'restart', type: type, userId: userId})
-        }else{
-            io.emit(`user${userId}`, {action: 'restart_result', data : {success: false, message: 'ยังไม่ได้สร้างบอท', data: null}})
+        if (botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined) {
+            botWorkerDict[userId].postMessage({ action: 'restart', type: type, userId: userId })
+        } else {
+            io.emit(`user${userId}`, { action: 'restart_result', data: { success: false, message: 'ยังไม่ได้สร้างบอท', data: null } })
         }
     });
 });
 
-async function getBank(token){
+async function getBank(token) {
     const res = await axios.get('https://truthbet.com/api/m/request/withdraw', {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    })
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
 
     console.log(res.data.accounts[0])
     return res.data.accounts[0]
@@ -127,9 +128,9 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res3) => {
 
-                        
+
                         // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
-                        if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) && 
+                        if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) &&
                             (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
                             response.json({
                                 success: false,
@@ -149,7 +150,7 @@ myApp.post('/login', async function (request, response) {
                                         username: USERNAME
                                     }
                                 });
-                            }else{
+                            } else {
                                 response.json({
                                     success: true,
                                     data: {
@@ -162,7 +163,7 @@ myApp.post('/login', async function (request, response) {
                         }
                     })
                 })
-            }else{
+            } else {
                 (async (USERNAME, PASSWORD) => {
 
                     const browser = await puppeteer.launch({
@@ -174,26 +175,26 @@ myApp.post('/login', async function (request, response) {
                     await page.goto("https://truthbet.com/login?redirect=/m", {
                         waitUntil: "networkidle2"
                     });
-        
+
                     await page.evaluate((USERNAME, PASSWORD) => {
                         document.querySelector('[name="username"]').value = USERNAME;
                         document.querySelector('[name="password"]').value = PASSWORD;
                         document.querySelector('[name="remember_username"]').checked = true;
                     }, USERNAME, PASSWORD);
-        
+
                     // login
                     await page.evaluate(() => {
                         document.querySelector("form").submit();
                     });
-        
-        
+
+
                     try {
                         await page.waitForSelector('.fa-coins', {
                             visible: false,
                             timeout: 5000
                         })
                         let data = await page.evaluate(() => window.App);
-        
+
                         if (data.jwtToken != '') {
                             axios.get('https://truthbet.com/api/m/account/edit', {
                                 headers: {
@@ -201,41 +202,41 @@ myApp.post('/login', async function (request, response) {
                                 }
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                                if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
-                                        && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
+                                if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)
+                                    && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
                                     response.json({
                                         success: false,
                                         message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
                                     });
                                 } else {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
-                                        
-                                            db.user.findOne({
-                                                where: {
-                                                    username: USERNAME
-                                                }
-                                            }).then((existRes) => {
-                                                existRes.password = hash,
+
+                                        db.user.findOne({
+                                            where: {
+                                                username: USERNAME
+                                            }
+                                        }).then((existRes) => {
+                                            existRes.password = hash,
                                                 existRes.truthbet_token = data.jwtToken,
                                                 existRes.truthbet_token_at = db.sequelize.fn('NOW')
-                                                existRes.save()
-                                                response.json({
-                                                    success: true,
-                                                    data: {
-                                                        user_id: existRes.id,
-                                                        bot: null,
-                                                        username: USERNAME
-                                                    }
-                                                });
-                                            })
-        
+                                            existRes.save()
+                                            response.json({
+                                                success: true,
+                                                data: {
+                                                    user_id: existRes.id,
+                                                    bot: null,
+                                                    username: USERNAME
+                                                }
+                                            });
+                                        })
+
                                     });
                                 }
-        
+
                             })
-        
-        
-        
+
+
+
                         } else {
                             response.json({
                                 success: false,
@@ -248,10 +249,10 @@ myApp.post('/login', async function (request, response) {
                             message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
                         });
                     }
-        
+
                     //   response.json(data);
-        
-        
+
+
                     // access baccarat room 2
                     // await page.goto("https://truthbet.com/g/live/baccarat/22", {
                     //   waitUntil: "networkidle2",
@@ -259,7 +260,7 @@ myApp.post('/login', async function (request, response) {
                     // await browser.close();
                 })(USERNAME, PASSWORD);
             }
-        
+
         })
     } else {
         // require("dotenv").config();
@@ -301,8 +302,8 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res2) => {
                         // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727) 
-                                && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
+                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)
+                            && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -370,13 +371,13 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
     } else if (money_system == 2) {
         let martingel = [50, 100, 250, 600, 1500]
         let ret = []
-        if( init_bet >= 1500 ){
+        if (init_bet >= 1500) {
             martingel = [init_bet]
-        }else{
-            for(let i = 0; i < martingel.length; i++){
-                if(init_bet > martingel[i]){
+        } else {
+            for (let i = 0; i < martingel.length; i++) {
+                if (init_bet > martingel[i]) {
                     continue
-                }else{
+                } else {
                     ret.push(martingel[i])
                 }
             }
@@ -469,7 +470,7 @@ myApp.post('/bot/set_opposite', async function (request, response) {
                 if (botObj) {
                     botObj.is_opposite = is_opposite
                     botObj.save()
-                    if(botWorkerDict[user.id] != undefined){
+                    if (botWorkerDict[user.id] != undefined) {
                         botWorkerDict[user.id].postMessage({
                             action: 'set_opposite',
                             is_opposite: is_opposite
@@ -519,7 +520,7 @@ myApp.post('/bot/set_stoploss', async function (request, response) {
                     botObj.loss_threshold = loss_threshold
                     botObj.loss_percent = loss_percent
                     botObj.save()
-                    if(botWorkerDict[user.id] != undefined){
+                    if (botWorkerDict[user.id] != undefined) {
                         botWorkerDict[user.id].postMessage({
                             action: 'set_stoploss',
                             loss_threshold: loss_threshold,
@@ -568,7 +569,7 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
                 if (botObj) {
                     botObj.bet_side = bet_side
                     botObj.save()
-                    if(botWorkerDict[user.id] != undefined){
+                    if (botWorkerDict[user.id] != undefined) {
                         botWorkerDict[user.id].postMessage({
                             action: 'set_bet_side',
                             bet_side: bet_side
@@ -744,14 +745,14 @@ myApp.post('/pause', async function (request, response) {
                 // console.log(u.id)
                 if (botObj) {
                     botObj.status = 2
-                    if(botWorkerDict[u.id] != undefined){
+                    if (botWorkerDict[u.id] != undefined) {
                         botWorkerDict[u.id].postMessage({
                             action: 'pause'
                         })
-                    }else{
+                    } else {
                         delete botWorkerDict[u.id]
                     }
-                    
+
                     botObj.save()
                     response.json({
                         success: true,
@@ -776,7 +777,7 @@ myApp.post('/pause', async function (request, response) {
 
 });
 
-myApp.post('/rolling', async function (request, response){
+myApp.post('/rolling', async function (request, response) {
     // const USERNAME = request.body.username
     const updateDate = new Date(request.body.end_date)
     const endDate = new Date(request.body.end_date)
@@ -784,7 +785,7 @@ myApp.post('/rolling', async function (request, response){
 
     const optional = request.body.option
     const base_rolling_percent = request.body.base_rolling_percent
-    
+
     // const myUser = await db.user.findOne({
     //     where: {
     //         username: {
@@ -795,31 +796,31 @@ myApp.post('/rolling', async function (request, response){
     const allMember = await db.member.findAll()
     var memberData = {}
     var rollingTotal = 0
-    await allMember.forEach(async function(member){
+    await allMember.forEach(async function (member) {
         // console.log(member)
-        let memberDetail = {startTurn: 0, endTurn: 0}
+        let memberDetail = { startTurn: 0, endTurn: 0 }
         memberData[member.username] = memberDetail
         let lasted_roll = new Date(member.latest_rolling)
         console.log(lasted_roll, updateDate)
-        if(updateDate.getTime() <= lasted_roll.getTime()){
+        if (updateDate.getTime() <= lasted_roll.getTime()) {
             console.log('not update')
             return
         }
 
         var startDate = null
         let startDateAf = null
-        
+
         // console.log(member.latest_rolling)
 
-        if(member.latest_rolling == null){
-        }else{
+        if (member.latest_rolling == null) {
+        } else {
             // console.log(member.latest_rolling)
             startDate = new Date(member.latest_rolling)
             startDateAf = new Date(startDate)
-            startDateAf.setTime(startDateAf.getTime() + (23*60*60*1000))
+            startDateAf.setTime(startDateAf.getTime() + (23 * 60 * 60 * 1000))
             // console.log(startDate, startDateAf)
 
-             var startDateTurn = await db.member_record.findAll({
+            var startDateTurn = await db.member_record.findAll({
                 where: {
                     createdAt: {
                         [Op.between]: [startDate, startDateAf]
@@ -828,7 +829,7 @@ myApp.post('/rolling', async function (request, response){
                 }
             })
 
-            if(startDateTurn.length > 0){
+            if (startDateTurn.length > 0) {
 
                 // console.log(startDateTurn)
                 memberData[startDateTurn[0].username].startTurn = startDateTurn[0].betall
@@ -837,7 +838,7 @@ myApp.post('/rolling', async function (request, response){
 
 
         let endDateAf = new Date(endDate)
-        endDateAf.setTime(endDate.getTime() + (23*60*60*1000))
+        endDateAf.setTime(endDate.getTime() + (23 * 60 * 60 * 1000))
         // console.log(endDate, endDateAf)
 
         const endDateTurn = await db.member_record.findAll({
@@ -848,37 +849,37 @@ myApp.post('/rolling', async function (request, response){
                 username: member.username
             }
         })
-       
-        
-        
-    
-        if(endDateTurn.length > 0){
-            
+
+
+
+
+        if (endDateTurn.length > 0) {
+
             memberData[endDateTurn[0].username].endTurn = endDateTurn[0].betall
-        }else{
+        } else {
             return
         }
 
-        
+
         let previous_turn = member.left_turn
         let betAll = memberData[member.username].endTurn - memberData[member.username].startTurn
         let betRolling = Math.floor((betAll + previous_turn) / 1000000) * 1000000
         let leftRolling = betAll + previous_turn - betRolling
         let rollingAmount = betRolling * base_rolling_percent / 100
-        if( leftRolling < 0 || rollingAmount < 0 || betRolling < 0){
+        if (leftRolling < 0 || rollingAmount < 0 || betRolling < 0) {
             console.log(memberData[member.username].endTurn, memberData[member.username].startTurn, member.left_turn, betAll, betRolling)
         }
         memberData[member.username]['betall'] = betAll
         memberData[member.username]['bet_rolling'] = betRolling
-        
+
         memberData[member.username]['bet_left'] = leftRolling
         memberData[member.username]['rolling_amount'] = rollingAmount
         rollingTotal += rollingAmount
-        if( rollingAmount > 0){
+        if (rollingAmount > 0) {
             // console.log(member.username, memberData[member.username])
             console.log(rollingTotal)
         }
-        
+
         member.rolling += rollingAmount
         member.latest_rolling = updateDate
         member.left_turn = leftRolling
@@ -900,13 +901,13 @@ myApp.post('/rolling', async function (request, response){
         }
 
         const rollingCreated = db.rolling.create(rollingRec)
-        
+
     })
     // console.log(memberData)
-    
 
-    
-    
+
+
+
 
 
 
@@ -933,62 +934,251 @@ myApp.post('/rolling', async function (request, response){
     // }
 })
 
-myApp.post('/rolling_withdraw', async function (request, response){
+myApp.get('/rolling_withdraw', async function (request, response) {
+    let rollingWithdraw = await db.rolling_withdraw.findAll({
+        order: [
+            ['id', 'DESC']
+        ]
+    })
+
+    response.json({
+        success: true,
+        data: rollingWithdraw,
+        error_code: null,
+        message: ''
+    })
+
+})
+
+myApp.post('/rolling_withdraw', async function (request, response) {
+    let amount = request.body.amount
+    let username = request.body.username
     const myMember = await db.member.findOne({
         where: {
             username: {
-                [Op.like] : request.params.username,
-            } 
+                [Op.like]: username,
+            }
         },
     })
 
-    if(!myMember){
+    if (!myMember) {
         response.json({
             success: false,
             error_code: 404,
             message: 'user not found'
         })
-    }else{
+    } else {
+        if (myMember.rolling - myMember.withdraw < amount) {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'จำนวนเงินมากกว่ายอดโรลลิ่ง'
+            })
+        } else {
+
+            const memberUser = await db.user.findOne({
+                where: {
+                    username: {
+                        [Op.like]: username
+                    }
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            })
+            if (!memberUser) {
+                response.json({
+                    success: false,
+                    error_code: 404,
+                    message: 'user not found'
+                })
+            }
+
+
+            const memberBank = await getBank(memberUser.truthbet_token)
+
+            let withdrawData = {
+                username: username,
+                amount: amount,
+                updated_by: username,
+                status: 1,
+                account_number: memberBank.account_number,
+                bank_name: memberBank.name,
+                account_name: memberBank.account_name
+            }
+
+            let createdWithdraw = db.rolling_withdraw.create(withdrawData)
+
+            myMember.withdraw += amount
+            myMember.save()
+
+            response.json({
+                success: true,
+                data: createdWithdraw,
+                error_code: null,
+                message: ''
+            })
+        }
+
+
+
+    }
+})
+
+myApp.post('/rolling_withdraw/:id/approve', async function (request, response) {
+    let approveBy = request.body.admin
+    console.log(id)
+    let status = request.body.status
+    const rollingWithdraw = await db.rolling_withdraw.findOne({
+        where: {
+            id: id
+        },
+    })
+
+    if (!rollingWithdraw) {
+        response.json({
+            success: false,
+            error_code: 404,
+            message: 'rolling withdraw not found'
+        })
+    } else {
+        if (rollingWithdraw.status != 1) {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'rolling withdraw can not approve'
+            })
+        }
+
+        rollingWithdraw.status = 2
+        rollingWithdraw.updated_by = approveBy
+        rollingWithdraw.save()
 
         response.json({
             success: true,
-            data: member,
+            data: rollingWithdraw,
             error_code: null,
             message: ''
         })
     }
 })
 
-myApp.post('/rolling_withdraw/:id', async function (request, response){
-    const myMember = await db.member.findOne({
+myApp.post('/rolling_withdraw/:id/complete', async function (request, response) {
+    let approveBy = request.body.admin
+    console.log(id)
+    let status = request.body.status
+    const rollingWithdraw = await db.rolling_withdraw.findOne({
         where: {
-            username: {
-                [Op.like] : request.params.username,
-            } 
+            id: id
         },
     })
 
-    if(!myMember){
+    if (!rollingWithdraw) {
         response.json({
             success: false,
             error_code: 404,
-            message: 'user not found'
+            message: 'rolling withdraw not found'
         })
-    }else{
+    } else {
+        if (rollingWithdraw.status != 2) {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'rolling withdraw can not approve'
+            })
+        }
 
-        response.json({
-            success: true,
-            data: member,
-            error_code: null,
-            message: ''
+        const member = db.member.findOne({
+            where: {
+                username: rollingWithdraw.username
+            }
         })
+
+        if (!member) {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'member not found'
+            })
+        } else {
+            rollingWithdraw.status = 3
+            rollingWithdraw.updated_by = approveBy
+            rollingWithdraw.save()
+
+            member.withdraw += rollingWithdraw.amount
+            member.save()
+
+            response.json({
+                success: true,
+                data: member,
+                error_code: null,
+                message: ''
+            })
+        }
+
     }
 })
 
-myApp.get('/profile', async function (request, response){
+myApp.post('/rolling_withdraw/:id/cancel', async function (request, response) {
+    let approveBy = request.body.admin
+    console.log(id)
+    let status = request.body.status
+    const rollingWithdraw = await db.rolling_withdraw.findOne({
+        where: {
+            id: id
+        },
+    })
+
+    if (!rollingWithdraw) {
+        response.json({
+            success: false,
+            error_code: 404,
+            message: 'rolling withdraw not found'
+        })
+    } else {
+        if (rollingWithdraw.status == 4) {
+            response.json({
+                success: true,
+                error_code: null,
+                data: rollingWithdraw,
+                message: ''
+            })
+        }
+
+        const member = db.member.findOne({
+            where: {
+                username: rollingWithdraw.username
+            }
+        })
+
+        if (!member) {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'member not found'
+            })
+        } else {
+            rollingWithdraw.status = 4
+            rollingWithdraw.updated_by = approveBy
+            rollingWithdraw.save()
+
+            member.withdraw -= rollingWithdraw.amount
+            member.save()
+
+            response.json({
+                success: true,
+                data: rollingWithdraw,
+                error_code: null,
+                message: ''
+            })
+        }
+    }
+})
+
+myApp.get('/profile', async function (request, response) {
     // console.log(request.query.username)
     const USERNAME = request.query.username
-    if(!USERNAME){
+    if (!USERNAME) {
         response.json({
             success: false,
             error_code: 401,
@@ -998,20 +1188,20 @@ myApp.get('/profile', async function (request, response){
     const myMember = await db.member.findOne({
         where: {
             username: {
-                [Op.like] : USERNAME,
-            } 
+                [Op.like]: USERNAME,
+            }
         },
     })
 
-    if(!myMember){
+    if (!myMember) {
         response.json({
             success: false,
             error_code: 404,
             message: 'user not found'
         })
-    }else{
+    } else {
         const memberUser = await db.user.findOne({
-            where:{
+            where: {
                 username: {
                     [Op.like]: USERNAME
                 }
@@ -1020,7 +1210,7 @@ myApp.get('/profile', async function (request, response){
                 ['id', 'DESC']
             ]
         })
-        if(!memberUser){
+        if (!memberUser) {
             response.json({
                 success: false,
                 error_code: 404,
@@ -1028,7 +1218,7 @@ myApp.get('/profile', async function (request, response){
             })
         }
         const memberRolling = await db.rolling.findAll({
-            where:{
+            where: {
                 username: {
                     [Op.like]: USERNAME
                 }
@@ -1039,7 +1229,7 @@ myApp.get('/profile', async function (request, response){
         })
 
         const memberRec = await db.member_record.findAll({
-            where:{
+            where: {
                 username: {
                     [Op.like]: USERNAME
                 }
@@ -1052,7 +1242,7 @@ myApp.get('/profile', async function (request, response){
         const memberBank = await getBank(memberUser.truthbet_token)
         console.log(memberBank)
         const memberWithdraw = await db.rolling_withdraw.findAll({
-            where:{
+            where: {
                 username: {
                     [Op.like]: USERNAME
                 }
@@ -1143,7 +1333,7 @@ myApp.get('/bot_info/:id', async function (request, response) {
 
             }).then((res2) => {
                 if (res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
-                    botWorkerDict[user.id].postMessage({action:'info'})
+                    botWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
                     success: true,
@@ -1172,10 +1362,10 @@ myApp.get('/user_transaction/:id', async function (request, response) {
     }).then((user) => {
         if (user) {
             axios.get(`https://truthbet.com/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
-                    headers: {
-                        Authorization: `Bearer ${user.truthbet_token}`
-                    }
-                })
+                headers: {
+                    Authorization: `Bearer ${user.truthbet_token}`
+                }
+            })
                 .then(res => {
                     response.json({
                         success: true,
@@ -1327,10 +1517,10 @@ myApp.get('/wallet/:id', function (request, response) {
     }).then((user) => {
         if (user) {
             axios.get(`https://truthbet.com/api/users/owner`, {
-                    headers: {
-                        Authorization: `Bearer ${user.truthbet_token}`
-                    }
-                })
+                headers: {
+                    Authorization: `Bearer ${user.truthbet_token}`
+                }
+            })
                 .then(res => {
                     // console.log(res.data)
                     let profit_wallet = user.profit_wallet
@@ -1377,10 +1567,10 @@ myApp.post('/wallet/withdraw', function (request, response) {
     }).then((user) => {
         if (user) {
             axios.get(`https://truthbet.com/api/wallet`, {
-                    headers: {
-                        Authorization: `Bearer ${user.truthbet_token}`
-                    }
-                })
+                headers: {
+                    Authorization: `Bearer ${user.truthbet_token}`
+                }
+            })
                 .then(res => {
                     // console.log(res.data)
                     let profit_wallet = user.profit_wallet
@@ -1422,7 +1612,7 @@ myApp.get('/member', async function (request, response) {
     const member = await db.member.findAll()
     response.json({
         success: true,
-        data : member,
+        data: member,
         error_code: null,
         message: ''
     })
@@ -1432,7 +1622,7 @@ myApp.get('/agent_record', async function (request, response) {
     const agent_record = await db.agent_record.findAll()
     response.json({
         success: true,
-        data : member,
+        data: member,
         error_code: null,
         message: ''
     })
@@ -1442,7 +1632,7 @@ myApp.get('/member_record', async function (request, response) {
     const member_record = await db.member_record.findAll()
     response.json({
         success: true,
-        data : member,
+        data: member,
         error_code: null,
         message: ''
     })
@@ -1458,10 +1648,10 @@ myApp.post('/wallet/deposite', function (request, response) {
     }).then((user) => {
         if (user) {
             axios.get(`https://truthbet.com/api/wallet`, {
-                    headers: {
-                        Authorization: `Bearer ${user.truthbet_token}`
-                    }
-                })
+                headers: {
+                    Authorization: `Bearer ${user.truthbet_token}`
+                }
+            })
                 .then(res => {
                     // console.log(res.data)
                     let profit_wallet = user.profit_wallet
@@ -1500,9 +1690,16 @@ let lst; // list will be populated from 0 to n
 let index = -1; // index will be used to traverse list
 let myWorker; // worker reference
 let interval;
+let rotInterval;
 let tables = [];
 let workerDict = {};
 let isPlay = false;
+let isPlayRot = {
+    RB: false,
+    SB: false,
+    ED: false,
+    ZONE: false
+}
 let playTable;
 let currentList = [];
 let botList = {}
@@ -1528,13 +1725,13 @@ function createBotWorker(obj, playData) {
         if (result.action == 'bet_failed') {
             console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
         }
-        if(result.action == 'restart_result'){
+        if (result.action == 'restart_result') {
             io.emit(`user${result.userId}`, result)
         }
 
-        if(result.action == 'info'){
+        if (result.action == 'info') {
             // console.log('bot info')
-            io.emit(`user${result.userId}`, { ...result, isPlay: isBet, win_percent: win_percent, currentBetData: currentBetData})
+            io.emit(`user${result.userId}`, { ...result, isPlay: isBet, win_percent: win_percent, currentBetData: currentBetData })
         }
         // if (result.action == 'stop') {
 
@@ -1562,10 +1759,10 @@ function createBotWorker(obj, playData) {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.chips.credit
             let winner_result = result.botTransaction.win_result
-            if(result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet){
-                if(result.botTransaction.win_result == 'WIN'){
+            if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
+                if (result.botTransaction.win_result == 'WIN') {
                     winner_result = 'LOSE'
-                }else if(result.botTransaction.win_result == 'LOSE'){
+                } else if (result.botTransaction.win_result == 'LOSE') {
                     winner_result = 'WIN'
                 }
             }
@@ -1579,9 +1776,9 @@ function createBotWorker(obj, playData) {
             }
 
             // console.log(userTransactionData)
-            let indexIsStop = result.isStop || ( result.botObj.is_infinite == false 
-                                    && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100))) 
-                                    // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
+            let indexIsStop = result.isStop || (result.botObj.is_infinite == false
+                && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
+            // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
             console.log(`isStop ${result.isStop}`)
 
             db.userTransaction.create(userTransactionData)
@@ -1599,11 +1796,11 @@ function createBotWorker(obj, playData) {
                 botObj: result.botObj
             })
 
-            console.log(indexIsStop, 
-                            result.botObj.is_infinite, userWallet, 
-                            result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)), 
-                            userWallet - result.botObj.profit_wallet, 
-                            result.botObj.loss_threshold)
+            console.log(indexIsStop,
+                result.botObj.is_infinite, userWallet,
+                result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
+                userWallet - result.botObj.profit_wallet,
+                result.botObj.loss_threshold)
 
             if (indexIsStop) {
                 db.bot.findOne({
@@ -1673,10 +1870,10 @@ function compare(a, b) {
 function mainBody() {
     console.log("Main Thread Started");
     axios.get('https://truthbet.com/api/m/games', {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
         .then(response => {
             // console.log(response.data);
             tables = response.data.tables
@@ -1689,7 +1886,8 @@ function mainBody() {
                 //     initiateRotWorker(table)
                 // }
             }
-            playCasino()
+            playBaccarat()
+            playRot()
         })
         .catch(error => {
             console.log(error);
@@ -1697,7 +1895,11 @@ function mainBody() {
 
 
     interval = setInterval(function () {
-        playCasino();
+        playBaccarat();
+    }, 7000);
+
+    rotInterval = setInterval(function () {
+        playRot();
     }, 7000);
 
     // filling array with 100 items
@@ -1728,7 +1930,8 @@ function betInterval() {
     }
 }
 
-function playCasino() {
+
+function playBaccarat() {
     console.log(Object.keys(botWorkerDict))
     // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
     if (isPlay == true) return;
@@ -1757,7 +1960,58 @@ function playCasino() {
                 win_percent = current.winner_percent
             }
 
-            if( win_percent == 100){
+            if (win_percent == 100) {
+                win_percent = 92
+            }
+
+            console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
+            isPlay = true
+            // console.log('post play')
+            workerDict[current.table_id].worker.postMessage({
+                action: 'play',
+            })
+
+            // io.emit('bot_play', {
+            //     current
+            // });
+            break;
+        }
+    }
+    if (isPlay == false) {
+        currentList = []
+    }
+}
+
+function playRot() {
+    console.log(Object.keys(botWorkerDict))
+    // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
+    if (isPlay == true) return;
+    if (isPlay == false && currentList.length == 0) {
+        Object.keys(workerDict).forEach(function (key) {
+            var val = workerDict[key];
+            // console.log(key, val)
+            val.worker.postMessage({
+                'action': 'getCurrent'
+            })
+        });
+        return
+    }
+
+    if (isPlay == false && currentList.length != Object.keys(workerDict).length) return;
+
+    currentList.sort(compare)
+    let found = true
+    for (current of currentList) {
+        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+        // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
+        if (current.winner_percent != 0 && current.bot != null) {
+            if (current.winner_percent < 50) {
+                win_percent = 100 - current.winner_percent
+            } else {
+                win_percent = current.winner_percent
+            }
+
+            if (win_percent == 100) {
                 win_percent = 92
             }
 
@@ -1892,7 +2146,7 @@ function initiateWorker(table) {
             currentBetData = result.data
             isBet = true
 
-            io.emit('bot', {action: 'play', data: result.data})
+            io.emit('bot', { action: 'play', data: result.data })
         }
         // // if worker thread is still working on list then write index and updated value
         // if (result.isInProgress) {
@@ -1918,7 +2172,7 @@ function initiateWorker(table) {
     // myWorker.postMessage({ multipleFactor: table });
 }
 
-function initiateRotWorker(table){
+function initiateRotWorker(table) {
     let cb = (err, result) => {
         if (err) {
             return console.error(err);
@@ -2022,7 +2276,7 @@ function initiateRotWorker(table){
             remainingBet = result.data.remaining
             currentBetData = result.data
 
-            io.emit('bot', {action: 'play', data: result.data})
+            io.emit('bot', { action: 'play', data: result.data })
         }
     };
 

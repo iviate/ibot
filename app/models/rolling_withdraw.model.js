@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.STRING
         },
         status: {
-            type: DataTypes.INTEGER // 1 pending, 2 aprroved, 3 completed
+            type: DataTypes.INTEGER // 1 pending, 2 aprroved, 3 completed, 4 cancel
         },
         account_number: {
             type: DataTypes.STRING
