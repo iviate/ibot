@@ -1681,8 +1681,8 @@ myApp.post('/wallet/deposite', function (request, response) {
 
 });
 
-http.listen(80, function () {
-    console.log('listening *.80');
+http.listen(8080, function () {
+    console.log('listening *.8080');
 });
 
 // main attributes
@@ -1867,32 +1867,25 @@ function compare(a, b) {
     return 0;
 }
 
-function mainBody() {
+async function mainBody() {
     console.log("Main Thread Started");
-    axios.get('https://truthbet.com/api/m/games', {
+    let response = await axios.get('https://truthbet.com/api/m/games', {
         headers: {
             Authorization: `Bearer ${token}`
         }
     })
-        .then(response => {
+
             // console.log(response.data);
-            tables = response.data.tables
-            for (let table of tables) {
-                if (table.game.id == 1) {
+    tables = response.data.tables
+    for (let table of tables) {
+        if (table.game.id == 1) {
 
-                    initiateWorker(table);
-                }
-                // else if(table.game_id == 10){
-                //     initiateRotWorker(table)
-                // }
-            }
-            playBaccarat()
-            playRot()
-        })
-        .catch(error => {
-            console.log(error);
-        });
-
+            initiateWorker(table);
+        }
+        else if(table.game_id == 10){
+            initiateRotWorker(table)
+        }
+    }
 
     interval = setInterval(function () {
         playBaccarat();

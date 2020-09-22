@@ -208,9 +208,9 @@ async function rotPredictPlay() {
             botplay(response.data.info.detail)
 
         })
-        .catch((error) => {
-            console.log(`table error ${workerData.id} ${error}`);
-        });
+        // .catch((error) => {
+        //     console.log(`table error ${workerData.id} ${error}`);
+        // });
 }
 
 function randomHalfRB() {
@@ -233,6 +233,7 @@ function randomTwoZone() {
             ret.push(rand)
         }
     }
+    return ret
 }
 
 function randomOneZone(twozone) {
@@ -341,7 +342,7 @@ function getOnezoneWinerPercent() {
 
 
 function botplay(currentInfo) {
-    console.log('roulette')
+    // console.log('roulette')
     if (shoe != currentInfo.shoe) {
         shoe = currentInfo.shoe
         round = currentInfo.round
@@ -365,30 +366,70 @@ function botplay(currentInfo) {
     // console.log(shoe, round, currentInfo.round, currentInfo.statistic.length, bot)
     let lastPlay = { ...predictStats.predict[playCount - 1] }
     let lastStat = { ...currentInfo.statistic[statsCount - 1] }
-    console.log(lastStat)
+    // console.log(lastStat)
     if (playCount == statsCount && lastPlay.isResult == false) {
         // cal correct wrong and collect stats
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
         if (bot != null) {
-            let status = ''
-            if (lastStat.winner == 'TIE') {
-                predictStats.tie++;
-                status = 'TIE'
+            let status = {
+                RB: 'LOSE',
+                ED: 'LOSE',
+                SB: 'LOSR',
+                TWOZONE: 'LOSE',
+                ONEZONE: 'LOSE'
+            }
 
+            let addition = lastStat.addition
+
+            console.log(workerData.id)
+            console.log(addition)
+
+            if (addition.findIndex((item) => item == bot.RB) != -1) {
+                statCount.rbCorrect++;
+                status.RB = 'WIN'
+            }else{
+                statCount.rbWrong++;
             }
-            else if (lastPlay.bot == lastStat.winner) {
-                predictStats.correct++;
-                status = 'WIN'
-            } else {
-                predictStats.wrong++;
-                status = 'LOSE'
+
+            if (addition.findIndex((item) => item == bot.ED) != -1) {
+                statCount.edCorrect++;
+                status.ED = 'WIN'
+            }else{
+                statCount.edWrong++;
             }
+
+            if (addition.findIndex((item) => item == bot.SB) != -1) {
+                statCount.sbCorrect++;
+                status.SB = 'WIN'
+            }else{
+                statCount.sbCorrect++;
+            }
+
+            if (addition.findIndex((item) => item == bot.TWOZONE[0]) != -1 || 
+                    addition.findIndex((item) => item == bot.TWOZONE[1]) != -1) {
+                statCount.twoZoneCorrect++;
+                status.TWOZONE = 'WIN'
+            }else{
+                statCount.twoZoneWrong++;
+            }
+
+            if (addition.findIndex((item) => item == bot.ONEZONE) != -1) {
+                statCount.oneZoneCorrect++;
+                status.ONEZONE = 'WIN'
+            }else{
+                statCount.oneZoneWrong++;
+            }
+
+            console.log(bot)
+            console.log(status)
+            console.log(statCount)
 
             if (isPlay && playRound == statsCount) {
                 isPlay = false
                 parentPort.postMessage({
                     action: 'played',
                     status: status,
+                    playList: playList,
                     stats: predictStats.predict[playCount - 1],
                     shoe: shoe,
                     table: workerData,
@@ -413,6 +454,8 @@ function botplay(currentInfo) {
                 TWOZONE: twozone,
                 ONEZONE: randomOneZone(twozone)
             }
+            console.log(workerData.id)
+            console.log(bot)
             predictStats.predict.push({ round: currentInfo.round, bot: bot, isResult: false })
             if (isPlay && playRound == currentInfo.round) {
                 axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
