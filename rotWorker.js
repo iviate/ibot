@@ -53,66 +53,74 @@ var last_pull_timestamp = date.getTime();
 registerForEventListening();
 
 function getCurrent() {
-    // // console.log(current)
-    // let sum = predictStats.correct + predictStats.wrong + predictStats.tie
-    // let winner_percent = 0
-    // if (sum != 0) {
-    //     winner_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
-    // }
+    // console.log(current)
+    let sumRB = statCount.rbCorrect + statCount.rbWrong
+    let percentRB = 0
+    if (sumRB != 0) {
+        percentRB = ((statCount.rbCorrect) / sum) * 100
+    }
 
-    // if (bot != null && round != 0) {
-    //     parentPort.postMessage({
-    //         error: false,
-    //         action: 'getCurrent',
-    //         table_id: workerData.id,
-    //         info: info,
-    //         predictStats: predictStats,
-    //         round: round,
-    //         bot: bot,
-    //         winner_percent: winner_percent,
-    //         bot: bot,
-    //         table_title: workerData.title
-    //     })
-    // } else {
-    parentPort.postMessage({
-        table_id: workerData.id,
-        table_title: workerData.title,
-        action: 'getCurrent',
-        error: true,
-        winner_percent: 0,
-        bot: null
-    })
-    // }
+    let sumED = statCount.edCorrect + statCount.edWrong
+    let percentED = 0
+    if (sumED != 0) {
+        percentED = ((statCount.edCorrect) / sum) * 100
+    }
 
+    let sumSB = statCount.sbCorrect + statCount.sbWrong
+    let percentSB = 0
+    if (sumSB != 0) {
+        percentSB = ((statCount.sbCorrect) / sum) * 100
+    }
 
-}
+    let sumTwoZone = statCount.twoZoneCorrect + statCount.twoZoneWrong
+    let percentTwoZone = 0
+    if (sumTwoZone != 0) {
+        percentTwoZone = ((statCount.twoZoneCorrect) / sum) * 100
+    }
 
-function betting(betCurrent) {
-    // console.log(betCurrent.round, round)
-    // if (betCurrent.round == round && betCurrent.remaining > 5) {
-    //     let payload = { table_id: workerData.id, game_id: betCurrent.id }
-    //     if (bot == 'PLAYER') {
-    //         payload.chip = { credit: { PLAYER: 50 } }
-    //     } else if (bot == 'BANKER') {
-    //         payload.chip = { credit: { BANKER: 50 } }
-    //     } else {
-    //         return
-    //     }
-    //     console.log('bet')
-    //     axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-    //         {
-    //             headers: {
-    //                 Authorization: `Bearer ${token}`,
-    //                 'content-type': 'application/json'
-    //             }
-    //         })
-    //         .then(response => {
-    //             console.log(response.data);
-    //         })
-    //         .catch(error => {
-    //             console.log(`${workerData.id} play bet error: ${error}`);
-    //         });
-    // }
+    let sumOneZone = statCount.oneZoneCorrect + statCount.oneZoneWrong
+    let percentOneZone = 0
+    if (sumOneZone != 0) {
+        percentOneZone = ((statCount.oneZoneCorrect) / sum) * 100
+    }
+
+    if (bot != null && round != 0) {
+        parentPort.postMessage({
+            error: false,
+            action: 'getCurrent',
+            table_id: workerData.id,
+            info: info,
+            predictStats: predictStats,
+            round: round,
+            stats: statsCount,
+            bot: bot,
+            winner_percent: {
+                RB: percentRB,
+                ED: percentED,
+                SB: percentSB,
+                TWOZONE: percentTwoZone,
+                ONEZONE: percentOneZone
+            },
+            table_title: workerData.title
+        })
+    } else {
+        parentPort.postMessage({
+            table_id: workerData.id,
+            table_title: workerData.title,
+            action: 'getCurrent',
+            error: true,
+            stats: statsCount,
+            winner_percent: {
+                RB: 0,
+                SB: 0,
+                ED: 0,
+                TWOZONE: 0,
+                ONEZONE: 0
+            },
+            bot: null
+        })
+    }
+
 
 }
 
@@ -208,9 +216,9 @@ async function rotPredictPlay() {
             botplay(response.data.info.detail)
 
         })
-        // .catch((error) => {
-        //     console.log(`table error ${workerData.id} ${error}`);
-        // });
+        .catch((error) => {
+            console.log(`table error ${workerData.id} ${error}`);
+        });
 }
 
 function randomHalfRB() {
@@ -387,36 +395,36 @@ function botplay(currentInfo) {
             if (addition.findIndex((item) => item == bot.RB) != -1) {
                 statCount.rbCorrect++;
                 status.RB = 'WIN'
-            }else{
+            } else {
                 statCount.rbWrong++;
             }
 
             if (addition.findIndex((item) => item == bot.ED) != -1) {
                 statCount.edCorrect++;
                 status.ED = 'WIN'
-            }else{
+            } else {
                 statCount.edWrong++;
             }
 
             if (addition.findIndex((item) => item == bot.SB) != -1) {
                 statCount.sbCorrect++;
                 status.SB = 'WIN'
-            }else{
+            } else {
                 statCount.sbCorrect++;
             }
 
-            if (addition.findIndex((item) => item == bot.TWOZONE[0]) != -1 || 
-                    addition.findIndex((item) => item == bot.TWOZONE[1]) != -1) {
+            if (addition.findIndex((item) => item == bot.TWOZONE[0]) != -1 ||
+                addition.findIndex((item) => item == bot.TWOZONE[1]) != -1) {
                 statCount.twoZoneCorrect++;
                 status.TWOZONE = 'WIN'
-            }else{
+            } else {
                 statCount.twoZoneWrong++;
             }
 
             if (addition.findIndex((item) => item == bot.ONEZONE) != -1) {
                 statCount.oneZoneCorrect++;
                 status.ONEZONE = 'WIN'
-            }else{
+            } else {
                 statCount.oneZoneWrong++;
             }
 

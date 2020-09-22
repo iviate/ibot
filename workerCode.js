@@ -63,35 +63,6 @@ function getCurrent() {
 
 }
 
-function betting(betCurrent) {
-    // console.log(betCurrent.round, round)
-    // if (betCurrent.round == round && betCurrent.remaining > 5) {
-    //     let payload = { table_id: workerData.id, game_id: betCurrent.id }
-    //     if (bot == 'PLAYER') {
-    //         payload.chip = { credit: { PLAYER: 50 } }
-    //     } else if (bot == 'BANKER') {
-    //         payload.chip = { credit: { BANKER: 50 } }
-    //     } else {
-    //         return
-    //     }
-    //     console.log('bet')
-    //     axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-    //         {
-    //             headers: {
-    //                 Authorization: `Bearer ${token}`,
-    //                 'content-type': 'application/json'
-    //             }
-    //         })
-    //         .then(response => {
-    //             console.log(response.data);
-    //         })
-    //         .catch(error => {
-    //             console.log(`${workerData.id} play bet error: ${error}`);
-    //         });
-    // }
-
-}
-
 function registerForEventListening() {
     token = workerData.token
     inititalInfo()
