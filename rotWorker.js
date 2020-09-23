@@ -365,7 +365,10 @@ function botplay(currentInfo) {
         if (isPlay == true) {
             isPlay = false
             parentPort.postMessage({ action: 'played', status: null, playList: playList})
+        }else{
+            isPlay = false
         }
+        
         return;
 
     }

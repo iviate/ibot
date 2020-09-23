@@ -2309,8 +2309,8 @@ function playRot() {
         // return
     }
 
-    console.log(hasNotPlay, rotCurrentList.length, Object.keys(rotWorkerDict).length)
-    if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length) {
+    console.log(hasNotPlay, rotCurrentList.length, Math.floor(Math.random() * Object.keys(rotWorkerDict).length) + 1)
+    if (hasNotPlay == true && rotCurrentList.length < Math.floor(Math.random() * Object.keys(rotWorkerDict).length) + 1  ) {
         // rotCurrentList = []
         return;
     }
