@@ -662,6 +662,7 @@ function registerForEventListening() {
     let cb = (err, result) => {
         if (err) return console.error(err);
         if (result.action == 'bet') {
+            console.log('rot bet')
             bet(result.data)
         }
         if (result.action == 'info') {
