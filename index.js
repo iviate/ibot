@@ -1776,8 +1776,8 @@ myApp.post('/wallet/deposite', function (request, response) {
 
 });
 
-http.listen(8080, function () {
-    console.log('listening *.8080');
+http.listen(80, function () {
+    console.log('listening *.80');
 });
 
 // main attributes
