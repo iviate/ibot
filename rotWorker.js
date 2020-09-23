@@ -37,7 +37,7 @@ let round;
 // let stats;
 let predictStats = { shoe: '', correct: 0, wrong: 0, tie: 0, info: {}, predict: [] };
 // let predictStatsHistory = [];
-let statsCount;
+// let statsCount;
 let bot = null;
 let playRound = null;
 let token = null
@@ -57,34 +57,34 @@ function getCurrent() {
     let sumRB = statCount.rbCorrect + statCount.rbWrong
     let percentRB = 0
     if (sumRB != 0) {
-        percentRB = ((statCount.rbCorrect) / sum) * 100
+        percentRB = ((statCount.rbCorrect) / sumRB) * 100
     }
 
     let sumED = statCount.edCorrect + statCount.edWrong
     let percentED = 0
     if (sumED != 0) {
-        percentED = ((statCount.edCorrect) / sum) * 100
+        percentED = ((statCount.edCorrect) / sumED) * 100
     }
 
     let sumSB = statCount.sbCorrect + statCount.sbWrong
     let percentSB = 0
     if (sumSB != 0) {
-        percentSB = ((statCount.sbCorrect) / sum) * 100
+        percentSB = ((statCount.sbCorrect) / sumSB) * 100
     }
 
     let sumTwoZone = statCount.twoZoneCorrect + statCount.twoZoneWrong
     let percentTwoZone = 0
     if (sumTwoZone != 0) {
-        percentTwoZone = ((statCount.twoZoneCorrect) / sum) * 100
+        percentTwoZone = ((statCount.twoZoneCorrect) / sumTwoZone) * 100
     }
 
     let sumOneZone = statCount.oneZoneCorrect + statCount.oneZoneWrong
     let percentOneZone = 0
     if (sumOneZone != 0) {
-        percentOneZone = ((statCount.oneZoneCorrect) / sum) * 100
+        percentOneZone = ((statCount.oneZoneCorrect) / sumOneZone) * 100
     }
 
-    if (bot != null && round != 0) {
+    if (!isPlay) {
         parentPort.postMessage({
             error: false,
             action: 'getCurrent',
@@ -92,8 +92,7 @@ function getCurrent() {
             info: info,
             predictStats: predictStats,
             round: round,
-            stats: statsCount,
-            bot: bot,
+            stats: statCount,
             winner_percent: {
                 RB: percentRB,
                 ED: percentED,
@@ -109,7 +108,7 @@ function getCurrent() {
             table_title: workerData.title,
             action: 'getCurrent',
             error: true,
-            stats: statsCount,
+            stats: statCount,
             winner_percent: {
                 RB: 0,
                 SB: 0,
@@ -134,12 +133,17 @@ function registerForEventListening() {
         // console.log("Thread id ")
 
         if (result.action == 'getCurrent') {
+            // console.log(getCurrent)
             getCurrent()
         } else if (result.action == 'play') {
+            if(isPlay == false){
+                playList = []
+            }
             console.log(`Thred id ${workerData.id} action ${result.action}`)
             isPlay = true
             playRound = round + 1
-            playList = result.playList
+            playList.push(result.type)
+            console.log(playList)
             // betting(result.current)
         }
 
@@ -164,26 +168,21 @@ function inititalInfo() {
             }
         })
         .then(response => {
-            console.log(response.data);
+            // console.log(response.data);
             let detail = response.data.info.detail
             if (shoe != detail.shoe) {
                 shoe = detail.shoe
                 round = detail.round
+                // playRound = round + 1
                 // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
-
+                
                 if (predictStats.predict.length != detail.statistic.length) {
-                    let i = 1
-                    for (roundStat of detail.statistic) {
-                        // console.log(roundStat)
-                        predictStats.predict.push({ ...roundStat, round: i, bot: null, isResult: true })
-                        i++
+                    for(let j = 1; j <= round; j++){
+                        predictStats.predict.push({round: j, bot: null, isResult: true })
                     }
                 }
 
-                if (detail.round > detail.statistic.length) {
-                    predictStats.predict.push({ round: detail.round, bot: null, isResult: false })
-                }
             }
 
         })
@@ -194,7 +193,7 @@ function inititalInfo() {
 
 
 async function rotPredictPlay() {
-    console.log('rotPredictPlay')
+    // console.log('rotPredictPlay')
     let current = new Date().getTime()
     if (current - last_pull_timestamp < 4500) {
         // console.log(`${workerData.title} not pull`)
@@ -358,14 +357,14 @@ function botplay(currentInfo) {
         predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
         return
     }
-    round = currentInfo.round
+    // round = currentInfo.round
     let statsCount = currentInfo.statistic.length
     let playCount = predictStats.predict.length
     let currentRound = currentInfo.round
     if (currentInfo.round == 0) {
         if (isPlay == true) {
             isPlay = false
-            parentPort.postMessage({ action: 'played', status: null })
+            parentPort.postMessage({ action: 'played', status: null, playList: playList})
         }
         return;
 
@@ -375,22 +374,22 @@ function botplay(currentInfo) {
     let lastPlay = { ...predictStats.predict[playCount - 1] }
     let lastStat = { ...currentInfo.statistic[statsCount - 1] }
     // console.log(lastStat)
-    if (playCount == statsCount && lastPlay.isResult == false) {
+    if (currentInfo.round > playCount && lastPlay.isResult == false) {
         // cal correct wrong and collect stats
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
         if (bot != null) {
             let status = {
                 RB: 'LOSE',
                 ED: 'LOSE',
-                SB: 'LOSR',
+                SB: 'LOSE',
                 TWOZONE: 'LOSE',
                 ONEZONE: 'LOSE'
             }
 
             let addition = lastStat.addition
 
-            console.log(workerData.id)
-            console.log(addition)
+            // console.log(workerData.id)
+            // console.log(addition)
 
             if (addition.findIndex((item) => item == bot.RB) != -1) {
                 statCount.rbCorrect++;
@@ -428,12 +427,13 @@ function botplay(currentInfo) {
                 statCount.oneZoneWrong++;
             }
 
-            console.log(bot)
-            console.log(status)
-            console.log(statCount)
+            // console.log(bot)
+            // console.log(status)
+            // console.log(statCount)
 
-            if (isPlay && playRound == statsCount) {
+            if (isPlay && playRound == playCount) {
                 isPlay = false
+                console.log(playList)
                 parentPort.postMessage({
                     action: 'played',
                     status: status,
@@ -441,14 +441,17 @@ function botplay(currentInfo) {
                     stats: predictStats.predict[playCount - 1],
                     shoe: shoe,
                     table: workerData,
-                    bot_type: 1
+                    bot_type: 2
                 })
+
+                // playList = []
             }
+            
             bot = null
         }
     }
 
-
+    // console.log(currentInfo.round, playCount)
     if (currentInfo.round > playCount) {
         if (currentInfo.round < 4) {
             bot = null
@@ -462,11 +465,11 @@ function botplay(currentInfo) {
                 TWOZONE: twozone,
                 ONEZONE: randomOneZone(twozone)
             }
-            console.log(workerData.id)
-            console.log(bot)
+            // console.log(workerData.id)
+            // console.log(bot)
             predictStats.predict.push({ round: currentInfo.round, bot: bot, isResult: false })
             if (isPlay && playRound == currentInfo.round) {
-                axios.get(`https://truthbet.com/api/baccarat/${workerData.id}/current`,
+                axios.get(`https://truthbet.com/api/roulette/${workerData.id}/current`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -476,7 +479,7 @@ function botplay(currentInfo) {
                         // console.log(response.data);
                         // console.log(`round = ${response.data.info.detail.round}`)
                         let current = response.data.game
-                        console.log(current)
+                        // console.log(current)
 
                         let winPercent = {
                             RB: getRBWinerPercent(),
@@ -500,14 +503,14 @@ function botplay(currentInfo) {
                                 }
                             })
                         } else {
-                            parentPort.postMessage({ action: 'played', status: 'FAILED' })
+                            parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList })
                         }
 
                     })
                     .catch(error => {
                         console.log(`current: ${error}`);
                         isPlay = false
-                        parentPort.postMessage({ action: 'played', status: 'FAILED' })
+                        parentPort.postMessage({ action: 'played', status: 'FAILED' , playList: playList })
                     });
             }
 

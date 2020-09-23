@@ -137,7 +137,8 @@ myApp.post('/login', async function (request, response) {
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
                             });
                         } else {
-                            if (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                            if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
+                            (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
                                 let hasBot = null
                                 if (res2) {
                                     hasBot = res2
@@ -476,6 +477,13 @@ myApp.post('/bot/set_opposite', async function (request, response) {
                             is_opposite: is_opposite
                         })
                     }
+                    if (rotBotWorkerDict[user.id] != undefined) {
+                        rotBotWorkerDict[user.id].postMessage({
+                            action: 'set_opposite',
+                            is_opposite: is_opposite
+                        })
+                    }
+
                     response.json({
                         success: true,
                         error_code: null
@@ -527,6 +535,14 @@ myApp.post('/bot/set_stoploss', async function (request, response) {
                             loss_percent: loss_percent
                         })
                     }
+
+                    if (rotBotWorkerDict[user.id] != undefined) {
+                        rotBotWorkerDict[user.id].postMessage({
+                            action: 'set_stoploss',
+                            loss_threshold: loss_threshold,
+                            loss_percent: loss_percent
+                        })
+                    }
                     response.json({
                         success: true,
                         error_code: null
@@ -571,6 +587,13 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
                     botObj.save()
                     if (botWorkerDict[user.id] != undefined) {
                         botWorkerDict[user.id].postMessage({
+                            action: 'set_bet_side',
+                            bet_side: bet_side
+                        })
+                    }
+
+                    if (rotBotWorkerDict[user.id] != undefined) {
+                        rotBotWorkerDict[user.id].postMessage({
                             action: 'set_bet_side',
                             bet_side: bet_side
                         })
@@ -659,7 +682,12 @@ myApp.post('/bot', async function (request, response) {
                     if (res) {
                         botData.id = res.id
                         // console.log(botData)
-                        createBotWorker(botData, playData)
+                        if (botData.bot_type == 1) {
+                            createBotWorker(botData, playData)
+                            
+                        } else if (botData.bot_type == 2) {
+                            createRotBotWorker(botData, playData)
+                        }
 
                         response.json({
                             success: true,
@@ -702,9 +730,17 @@ myApp.post('/start', async function (request, response) {
                 if (botObj) {
                     botObj.status = 1
                     botObj.save()
-                    botWorkerDict[user.id].postMessage({
-                        action: 'start'
-                    })
+                    if(botWorkerDict[user.id] != undefined){
+                        botWorkerDict[user.id].postMessage({
+                            action: 'start'
+                        })
+                    }
+                    if(rotBotWorkerDict[user.id] != undefined){
+                        rotBotWorkerDict[user.id].postMessage({
+                            action: 'start'
+                        })
+                    }
+                    
                     response.json({
                         success: true,
                         error_code: null
@@ -751,6 +787,14 @@ myApp.post('/pause', async function (request, response) {
                         })
                     } else {
                         delete botWorkerDict[u.id]
+                    }
+
+                    if (rotBotWorkerDict[u.id] != undefined) {
+                        rotBotWorkerDict[u.id].postMessage({
+                            action: 'pause'
+                        })
+                    } else {
+                        delete rotBotWorkerDict[u.id]
                     }
 
                     botObj.save()
@@ -1284,7 +1328,8 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
+                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     hasBot = res2
                     response.json({
                         success: true,
@@ -1294,6 +1339,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                     });
                 } else {
                     delete botWorkerDict[user.id]
+                    delete rotBotWorkerDict[user.id]
                     response.json({
                         success: true,
                         data: {
@@ -1332,7 +1378,8 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
+                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
@@ -1412,6 +1459,12 @@ myApp.post('/stop', function (request, response) {
                         })
                         delete botWorkerDict[user.id]
                     }
+                    if (rotBotWorkerDict[user.id] != undefined) {
+                        rotBotWorkerDict[user.id].postMessage({
+                            action: 'stop'
+                        })
+                        delete rotBotWorkerDict[user.id]
+                    }
 
                     response.json({
                         success: true,
@@ -1463,27 +1516,68 @@ myApp.get('/user_bot_transaction/:bot_id', function (request, response) {
 })
 
 myApp.get('/bot_transaction', function (request, response) {
+    let rotBotType = {
+        'RB': 21,
+        'ED': 22,
+        'SB': 23,
+        'TWOZONE': 24,
+        'ONEZONE': 25
+    }
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
-    if (botTransactionObj[BET] == null) {
-        if (BET == 'DEFAULT') {
-            db.botTransction.findAll({
-                limit: 100,
-                order: [
-                    ['id', 'DESC']
-                ],
-            }).then((res) => {
-                botTransactionObj[BET] = res
-                response.json({
-                    success: true,
-                    error_code: null,
-                    data: res
+    if(BET == 'DEFAULT' || BET == 'PLAYER' || BET == 'BANKER'){
+        if (botTransactionObj[BET] == null) {
+            if (BET == 'DEFAULT') {
+                db.botTransction.findAll({
+                    where: {
+                        bot_type: 1,
+                    },
+                    limit: 100,
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
                 })
-            })
+            } else {
+                db.botTransction.findAll({
+                    limit: 100,
+                    where: {
+                        bot_type: 1,
+                        bet: BET
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            }
+    
         } else {
+            // console.log('cache bot trasaction')
+            response.json({
+                success: true,
+                error_code: null,
+                data: botTransactionObj[BET]
+            })
+        }
+    }else if(BET == 'RB' || BET == 'ED' || BET == 'SB' || BET == 'TWOZONE' || BET == 'ONEZONE'){
+        if (botTransactionObj[BET] == null) {
+
             db.botTransction.findAll({
                 limit: 100,
                 where: {
-                    bet: BET
+                    bot_type: rotBotType[BET]
                 },
                 order: [
                     ['id', 'DESC']
@@ -1496,16 +1590,17 @@ myApp.get('/bot_transaction', function (request, response) {
                     data: res
                 })
             })
+    
+        } else {
+            // console.log('cache bot trasaction')
+            response.json({
+                success: true,
+                error_code: null,
+                data: botTransactionObj[BET]
+            })
         }
-
-    } else {
-        // console.log('cache bot trasaction')
-        response.json({
-            success: true,
-            error_code: null,
-            data: botTransactionObj[BET]
-        })
     }
+    
 })
 
 myApp.get('/wallet/:id', function (request, response) {
@@ -1702,11 +1797,16 @@ let isPlayRot = {
 }
 let playTable;
 let currentList = [];
+let rotCurrentList = []
 let botList = {}
 var startBet;
+var rotStartBet;
 var remainingBet;
+var rotRemainingBet;
 var betInt;
+var rotBetInt = {};
 var currentBetData;
+var rotCurrentBetData;
 var latestBotTransactionId;
 let wPercent = 0
 
@@ -1853,6 +1953,147 @@ function createBotWorker(obj, playData) {
     });
 }
 
+function createRotBotWorker(obj, playData) {
+    let cb = (err, result) => {
+        if (err) {
+            return console.error(err);
+        }
+        if (result.action == 'bet_success') {
+            // result.win_percent = win_percent
+            io.emit(`user${result.data.current.botObj.userId}`, result)
+            console.log(`bot ${result.data.current.botObj.userId} bet success`)
+        }
+        if (result.action == 'bet_failed') {
+            console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
+        }
+        // if (result.action == 'restart_result') {
+        //     io.emit(`user${result.userId}`, result)
+        // }
+
+        if (result.action == 'info') {
+            // console.log('bot info')
+            io.emit(`user${result.userId}`, { ...result, isPlay: isPlayRot, win_percent: win_percent, currentBetData: currentBetData })
+        }
+        // if (result.action == 'stop') {
+
+        //     db.bot.findOne({
+        //         where: {
+        //             id: result.botObj.id
+        //         }
+        //     }).then((res) => {
+        //         res.status = 3
+        //         res.save()
+        //         if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+        //             botWorkerDict[res.userId].terminate()
+        //             delete botWorkerDict[res.userId]
+        //         }
+
+        //     })
+        //     console.log(`bot ${result.user_id} stop`)
+        //     if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+        //         botWorkerDict[res.userId].terminate()
+        //         delete botWorkerDict[res.userId]
+        //     }
+        // }
+        if (result.action == 'process_result') {
+            // console.log(result.action)
+            // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
+            let userWallet = result.wallet.chips.credit
+            let winner_result = result.botTransaction.win_result
+            if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
+                if (result.botTransaction.win_result == 'WIN') {
+                    winner_result = 'LOSE'
+                } else if (result.botTransaction.win_result == 'LOSE') {
+                    winner_result = 'WIN'
+                }
+            }
+            let userTransactionData = {
+                value: result.betVal,
+                user_bet: result.bet,
+                wallet: result.wallet.chips.credit,
+                botId: result.botObj.id,
+                result: winner_result,
+                botTransactionId: result.botTransactionId
+            }
+
+            // console.log(userTransactionData)
+            let indexIsStop = result.isStop || (result.botObj.is_infinite == false
+                && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
+            // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
+            console.log(`isStop ${result.isStop}`)
+
+            db.userTransaction.create(userTransactionData)
+            io.emit(`user${result.botObj.userId}`, {
+                action: "bet_result",
+                wallet: result.wallet,
+                playData: result.playData,
+                status: result.status,
+                isStop: indexIsStop,
+                value: result.betVal,
+                wallet: result.wallet.chips.credit,
+                botId: result.botObj.id,
+                botTransactionId: result.botTransactionId,
+                botTransaction: result.botTransaction,
+                botObj: result.botObj
+            })
+
+            console.log(indexIsStop,
+                result.botObj.is_infinite, userWallet,
+                result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
+                userWallet - result.botObj.profit_wallet,
+                result.botObj.loss_threshold)
+
+            if (indexIsStop) {
+                db.bot.findOne({
+                    where: {
+                        id: result.botObj.id
+                    }
+                }).then((res) => {
+                    res.status = 3
+                    res.stop_wallet = result.wallet.chips.credit
+                    res.turnover = result.turnover
+                    res.stop_by = (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
+                    // userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
+                    res.save()
+                    if (rotBotWorkerDict.hasOwnProperty(res.userId) && rotBotWorkerDict[res.userId] != undefined) {
+                        rotBotWorkerDict[res.userId].terminate()
+                        delete rotBotWorkerDict[res.userId]
+                    } else {
+                        delete rotBotWorkerDict[res.userId]
+                    }
+
+                })
+            }
+        }
+    };
+
+    let w = new Worker(__dirname + '/rotBotWorker.js', {
+        workerData: {
+            obj: obj,
+            playData: playData
+        }
+    });
+
+    // registering events in main thread to perform actions after receiving data/error/exit events
+    w.on('message', (msg) => {
+        // data will be passed into callback
+        cb(null, msg);
+    });
+    rotBotWorkerDict[obj.userId] = w
+    // console.log(botWorkerDict)
+
+    // for error handling
+    w.on('error', cb);
+
+    // for exit
+    w.on('exit', (code) => {
+        // console.log(botWorkerDict)
+        if (code !== 0) {
+            console.error(new Error(`Worker stopped Code ${code}`))
+        }
+    });
+}
+
 
 function compare(a, b) {
     // console.log(compare)
@@ -1867,6 +2108,58 @@ function compare(a, b) {
     return 0;
 }
 
+function compareRB(a, b) {
+    // console.log(compare)
+    if (a.winner_percent.RB < b.winner_percent.RB) {
+        return 1;
+    }
+
+    if (a.winner_percent.RB >= b.winner_percent.RB) {
+        return -1;
+    }
+
+    return 0;
+}
+
+function compareED(a, b) {
+    // console.log(compare)
+    if (a.winner_percent.ED < b.winner_percent.ED) {
+        return 1;
+    }
+
+    if (a.winner_percent.ED >= b.winner_percent.ED) {
+        return -1;
+    }
+
+    return 0;
+}
+
+function compareSB(a, b) {
+    // console.log(compare)
+    if (a.winner_percent.SB < b.winner_percent.SB) {
+        return 1;
+    }
+
+    if (a.winner_percent.SB >= b.winner_percent.SB) {
+        return -1;
+    }
+
+    return 0;
+}
+
+function compareZONE(a, b) {
+    // console.log(compare)
+    if (a.winner_percent.TWOZONE < b.winner_percent.TWOZONE) {
+        return 1;
+    }
+
+    if (a.winner_percent.TWOZONE >= b.winner_percent.TWOZONE) {
+        return -1;
+    }
+
+    return 0;
+}
+
 async function mainBody() {
     console.log("Main Thread Started");
     let response = await axios.get('https://truthbet.com/api/m/games', {
@@ -1875,14 +2168,14 @@ async function mainBody() {
         }
     })
 
-            // console.log(response.data);
+    // console.log(response.data);
     tables = response.data.tables
     for (let table of tables) {
         if (table.game.id == 1) {
 
             initiateWorker(table);
         }
-        else if(table.game_id == 10){
+        else if (table.game_id == 10) {
             initiateRotWorker(table)
         }
     }
@@ -1893,7 +2186,7 @@ async function mainBody() {
 
     rotInterval = setInterval(function () {
         playRot();
-    }, 7000);
+    }, 6000);
 
     // filling array with 100 items
 
@@ -1923,9 +2216,32 @@ function betInterval() {
     }
 }
 
+function rotBetInterval(start, data, tableId) {
+    console.log(`rotBetInterval ${tableId}`)
+    // console.log(startBet)
+    // console.log(data)
+    let n = new Date().getTime()
+    console.log(n, n - start, (data.remaining - 2) * 1000)
+    if (n - start > (data.remaining - 2) * 1000) {
+        clearInterval(rotBetInt[tableId])
+    } else {
+        // console.log('betting')
+        if (Object.keys(rotBotWorkerDict).length > 0) {
+            Object.keys(rotBotWorkerDict).forEach(function (key) {
+                var val = rotBotWorkerDict[key];
+                // console.log(key, val)
+                val.postMessage({
+                    action: 'bet',
+                    data: data
+                })
+            });
+        }
+    }
+}
+
 
 function playBaccarat() {
-    console.log(Object.keys(botWorkerDict))
+    // console.log(Object.keys(botWorkerDict))
     // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
     if (isPlay == true) return;
     if (isPlay == false && currentList.length == 0) {
@@ -1976,54 +2292,113 @@ function playBaccarat() {
 }
 
 function playRot() {
-    console.log(Object.keys(botWorkerDict))
+    // console.log(Object.keys(botWorkerDict))
+    let hasNotPlay = !isPlayRot.RB || !isPlayRot.ED || !isPlayRot.SB || !isPlayRot.ZONE
+    let isAllPlay = isPlayRot.RB && isPlayRot.ED && isPlayRot.SB && isPlayRot.ZONE
+    // console.log(hasNotPlay, isAllPlay)
     // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
-    if (isPlay == true) return;
-    if (isPlay == false && currentList.length == 0) {
-        Object.keys(workerDict).forEach(function (key) {
-            var val = workerDict[key];
+    if (isAllPlay) return;
+    if (hasNotPlay) {
+        Object.keys(rotWorkerDict).forEach(function (key) {
+            var val = rotWorkerDict[key];
             // console.log(key, val)
             val.worker.postMessage({
                 'action': 'getCurrent'
             })
         });
-        return
+        // return
     }
 
-    if (isPlay == false && currentList.length != Object.keys(workerDict).length) return;
+    console.log(hasNotPlay, rotCurrentList.length, Object.keys(rotWorkerDict).length)
+    if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length) {
+        // rotCurrentList = []
+        return;
+    }
+    // console.log(rotCurrentList)
 
-    currentList.sort(compare)
-    let found = true
-    for (current of currentList) {
-        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
-        // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
-        if (current.winner_percent != 0 && current.bot != null) {
-            if (current.winner_percent < 50) {
-                win_percent = 100 - current.winner_percent
-            } else {
-                win_percent = current.winner_percent
-            }
 
-            if (win_percent == 100) {
-                win_percent = 92
-            }
-
-            console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
-            isPlay = true
-            // console.log('post play')
-            workerDict[current.table_id].worker.postMessage({
+    if (!isPlayRot.RB) {
+        rotCurrentList.sort(compareRB)
+        // console.log(rotCurrentList[0])
+        if (rotCurrentList[0].winner_percent.RB > 0) {
+            rotWorkerDict[rotCurrentList[0].table_id].worker.postMessage({
                 action: 'play',
+                type: 'RB'
             })
+            isPlayRot.RB = true
+        }
 
-            // io.emit('bot_play', {
-            //     current
-            // });
-            break;
+
+    }
+
+    if (!isPlayRot.ED) {
+        rotCurrentList.sort(compareED)
+        if (rotCurrentList[0].winner_percent.ED > 0) {
+            rotWorkerDict[rotCurrentList[0].table_id].worker.postMessage({
+                action: 'play',
+                type: 'ED'
+            })
+            isPlayRot.ED = true
+        }
+
+    }
+
+    if (!isPlayRot.SB) {
+        rotCurrentList.sort(compareSB)
+        if (rotCurrentList[0].winner_percent.SB > 0) {
+            rotWorkerDict[rotCurrentList[0].table_id].worker.postMessage({
+                action: 'play',
+                type: 'SB'
+            })
+            isPlayRot.SB = true
         }
     }
-    if (isPlay == false) {
-        currentList = []
+
+    if (!isPlayRot.ZONE) {
+        rotCurrentList.sort(compareZONE)
+        if (rotCurrentList[0].winner_percent.TWOZONE > 0) {
+            rotWorkerDict[rotCurrentList[0].table_id].worker.postMessage({
+                action: 'play',
+                type: 'ZONE'
+            })
+            isPlayRot.ZONE = true
+        }
+
     }
+
+    // currentList.sort(compare)
+    // let found = true
+    // for (current of currentList) {
+    //     // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+    //     // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
+    //     if (current.winner_percent != 0 && current.bot != null) {
+    //         if (current.winner_percent < 50) {
+    //             win_percent = 100 - current.winner_percent
+    //         } else {
+    //             win_percent = current.winner_percent
+    //         }
+
+    //         if (win_percent == 100) {
+    //             win_percent = 92
+    //         }
+
+    //         console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
+    //         isPlay = true
+    //         // console.log('post play')
+    //         workerDict[current.table_id].worker.postMessage({
+    //             action: 'play',
+    //         })
+
+    //         // io.emit('bot_play', {
+    //         //     current
+    //         // });
+    //         break;
+    //     }
+    // }
+    // if (isPlay == false) {
+    //     currentList = []
+    // }
+    rotCurrentList = []
 }
 
 // Defining callback method for receiving data or error on worker thread
@@ -2055,7 +2430,11 @@ function initiateWorker(table) {
                     ['id', 'DESC']
                 ]
             }).then((latest) => {
-                let point = latest.point
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+
                 botTransactionObj['DEFAULT'] = null
                 botTransactionObj[result.stats.bot] = null
                 if (result.status == 'WIN') {
@@ -2092,6 +2471,7 @@ function initiateWorker(table) {
 
                             if (latestBotTransactionId != res.id) {
                                 io.emit('all', {
+                                    bot_type: 1,
                                     bet: res.bet
                                 })
                                 latestBotTransactionId = res.id
@@ -2171,103 +2551,469 @@ function initiateRotWorker(table) {
             return console.error(err);
         }
         if (result.action == 'getCurrent') {
-            // console.log(result)
-            currentList.push(result)
+            console.log(result.error)
+            if (!result.error) {
+                let pos = rotCurrentList.findIndex((item) => item.table_id == result.table_id)
+                console.log(pos, result.table_id)
+                if (pos != -1) {
+                    rotCurrentList[pos] = result
+                } else {
+                    rotCurrentList.push(result)
+                }
+            }
+
         }
         if (result.action == 'played') {
+            // console.log('rot played', result.status)
+            clearInterval(rotBetInt)
             if (result.status == 'FAILED' || result.status == null) {
-                isPlay = false
-                currentList = []
+                if (result.playList.findIndex((item) => item == 'RB') != -1) {
+                    isPlayRot.RB = false
+                }
+                if (result.playList.findIndex((item) => item == 'ED') != -1) {
+                    isPlayRot.ED = false
+                }
+                if (result.playList.findIndex((item) => item == 'SB') != -1) {
+                    isPlayRot.SB = false
+                }
+                if (result.playList.findIndex((item) => item == 'ZONE') != -1) {
+                    isPlayRot.ZONE = false
+                }
+
+                // isPlay = false
+                rotCurrentList = []
                 return
             }
 
-            db.botTransction.findOne({
-                where: {
-                    bot_type: 1,
-                },
-                order: [
-                    ['id', 'DESC']
-                ]
-            }).then((latest) => {
-                let point = latest.point
-                botTransactionObj['DEFAULT'] = null
-                botTransactionObj[result.stats.bot] = null
-                if (result.status == 'WIN') {
-                    point += 1
-                } else if (result.status == 'LOSE') {
-                    point -= 1
-                }
-                botTransactionData = {
-                    bot_type: result.bot_type,
-                    table_id: result.table.id,
-                    table_title: result.table.title,
-                    shoe: result.shoe,
-                    round: result.stats.round,
-                    bet: result.stats.bot,
-                    result: JSON.stringify(result.stats),
-                    win_result: result.status,
-                    user_count: 0,
-                    point: point
-                }
+            if (result.playList.findIndex((item) => item == 'RB') != -1) {
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 21,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+                    botTransactionObj['RB'] = null
+                    if (result.status.RB == 'WIN') {
+                        point += 1
+                    } else if (result.status.RB == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: 21,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: result.stats.bot.RB,
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status.RB,
+                        user_count: 0,
+                        point: point
+                    }
 
-                db.botTransction.create(botTransactionData).then((created) => {
-                    db.botTransction.findOne({
-                        where: {
-                            bot_type: 1,
-                        },
-                        order: [
-                            ['id', 'DESC']
-                        ]
-                    }).then((res) => {
-                        // console.log(res)
-                        if (res) {
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 21,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+                            // console.log(res)
+                            if (res) {
 
-                            if (latestBotTransactionId != res.id) {
-                                io.emit('all', {
-                                    bet: res.bet
-                                })
-                                latestBotTransactionId = res.id
-                            }
-
-                            botTransactionData.id = res.id
-
-                            if (Object.keys(botWorkerDict).length > 0) {
-                                Object.keys(botWorkerDict).forEach(function (key) {
-                                    var val = botWorkerDict[key];
-                                    // console.log(key, val)
-                                    val.postMessage({
-                                        action: 'result_bet',
-                                        bot_type: result.bot_type,
-                                        table_id: result.table.id,
-                                        table_title: result.table.title,
-                                        shoe: result.shoe,
-                                        round: result.stats.round,
-                                        bet: result.stats.bot,
-                                        result: JSON.stringify(result.stats),
-                                        status: result.status,
-                                        user_count: 0,
-                                        botTransactionId: res.id,
-                                        botTransaction: botTransactionData
-
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 21,
+                                        bet: res.bet
                                     })
-                                });
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(rotBotWorkerDict).length > 0) {
+                                    Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                        var val = rotBotWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: result.stats.bot.RB,
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status.RB,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
                             }
-                        }
+                        })
                     })
                 })
-            })
+                isPlayRot.RB = false
+            }
+            if (result.playList.findIndex((item) => item == 'ED') != -1) {
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 22,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+                    botTransactionObj['ED'] = null
+                    if (result.status.ED == 'WIN') {
+                        point += 1
+                    } else if (result.status.ED == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: 22,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: result.stats.bot.ED,
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status.ED,
+                        user_count: 0,
+                        point: point
+                    }
 
-            isPlay = false
-            currentList = []
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 22,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+                            // console.log(res)
+                            if (res) {
+
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 22,
+                                        bet: res.bet
+                                    })
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(rotBotWorkerDict).length > 0) {
+                                    Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                        var val = rotBotWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: result.stats.bot.ED,
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status.ED,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
+                            }
+                        })
+                    })
+                })
+                isPlayRot.ED = false
+            }
+            if (result.playList.findIndex((item) => item == 'SB') != -1) {
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 23,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+                    botTransactionObj['SB'] = null
+                    if (result.status.SB == 'WIN') {
+                        point += 1
+                    } else if (result.status.SB == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: 23,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: result.stats.bot.SB,
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status.SB,
+                        user_count: 0,
+                        point: point
+                    }
+
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 23,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+                            // console.log(res)
+                            if (res) {
+
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 23,
+                                        bet: res.bet
+                                    })
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(rotBotWorkerDict).length > 0) {
+                                    Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                        var val = rotBotWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: result.stats.bot.SB,
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status.SB,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
+                            }
+                        })
+                    })
+                })
+                isPlayRot.SB = false
+            }
+
+            if (result.playList.findIndex((item) => item == 'ZONE') != -1) {
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 24,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+                    botTransactionObj['TWOZONE'] = null
+                    if (result.status.TWOZONE == 'WIN') {
+                        point += 1
+                    } else if (result.status.TWOZONE == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: 24,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: JSON.stringify(result.stats.bot.TWOZONE),
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status.TWOZONE,
+                        user_count: 0,
+                        point: point
+                    }
+
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 24,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+                            // console.log(res)
+                            if (res) {
+
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 24,
+                                        bet: res.bet
+                                    })
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(rotBotWorkerDict).length > 0) {
+                                    Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                        var val = rotBotWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: JSON.stringify(result.stats.bot.TWOZONE),
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status.TWOZONE,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
+                            }
+                        })
+                    })
+                })
+
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 25,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+                    botTransactionObj['ONEZONE'] = null
+                    if (result.status.TWOZONE == 'WIN') {
+                        point += 1
+                    } else if (result.status.TWOZONE == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: 25,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: result.stats.bot.ONEZONE,
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status.ONEZONE,
+                        user_count: 0,
+                        point: point
+                    }
+
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 25,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+                            // console.log(res)
+                            if (res) {
+
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 25,
+                                        bet: res.bet
+                                    })
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(rotBotWorkerDict).length > 0) {
+                                    Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                        var val = rotBotWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: result.stats.bot.TWOZONE,
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status.TWOZONE,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
+                            }
+                        })
+                    })
+                })
+                isPlayRot.ZONE = false
+            }
+
+
+            // // isPlay = false
+            // if(result.playList.findIndex((item) => item == 'RB') != -1){
+            //     isPlayRot.RB = false
+            // }
+            // if(result.playList.findIndex((item) => item == 'ED') != -1){
+            //     isPlayRot.ED = false
+            // }
+            // if(result.playList.findIndex((item) => item == 'SB') != -1){
+            //     isPlayRot.SB = false
+            // }
+            // if(result.playList.findIndex((item) => item == 'ZONE') != -1){
+            //     isPlayRot.ZONE = false
+            // }
+            rotCurrentList = []
         }
         if (result.action == 'bet') {
-            startBet = new Date().getTime()
-            betInt = setInterval(function () {
-                betInterval();
-            }, 3500);
-            isBet = true;
-            remainingBet = result.data.remaining
-            currentBetData = result.data
+            rotStartBet = new Date().getTime()
+            rotBetInt[result.data.table.id] = setInterval(function () {
+                rotBetInterval(rotStartBet, result.data, result.data.table.id);
+            }, 2400);
+            // rotIsBet = true;
+            // rotRemainingBet = result.data.remaining
+            // rotCurrentBetData = result.data
 
             io.emit('bot', { action: 'play', data: result.data })
         }
