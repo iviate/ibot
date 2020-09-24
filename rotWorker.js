@@ -355,6 +355,10 @@ function botplay(currentInfo) {
         round = currentInfo.round
         // predictStatsHistory.push({ ...predictStats })
         predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
+        if (isPlay == true) {
+            isPlay = false
+            parentPort.postMessage({ action: 'played', status: null, playList: playList})
+        }
         return
     }
     // round = currentInfo.round
@@ -448,6 +452,9 @@ function botplay(currentInfo) {
                 })
 
                 // playList = []
+            }else if(isPlay && playCount > playRound + 1){
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: null, playList: playList})
             }
             
             bot = null
