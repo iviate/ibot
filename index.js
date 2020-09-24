@@ -2296,7 +2296,7 @@ function playRot() {
     let hasNotPlay = !isPlayRot.RB || !isPlayRot.ED || !isPlayRot.SB || !isPlayRot.ZONE
     let isAllPlay = isPlayRot.RB && isPlayRot.ED && isPlayRot.SB && isPlayRot.ZONE
     // console.log(hasNotPlay, isAllPlay)
-    // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
+    console.log(isPlayRot)
     if (isAllPlay) return;
     if (hasNotPlay) {
         Object.keys(rotWorkerDict).forEach(function (key) {
