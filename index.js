@@ -23,6 +23,7 @@ const {
 } = require('module');
 const { bot, member } = require('./app/models');
 const { DH_CHECK_P_NOT_PRIME } = require('constants');
+// const { Json } = require('sequelize/types/lib/utils');
 // const { USE } = require('sequelize/types/lib/index-hints');
 db.sequelize.sync({
     alter: true
@@ -1776,7 +1777,7 @@ myApp.post('/wallet/deposite', function (request, response) {
 
 });
 
-http.listen(80, function () {
+http.listen(8080, function () {
     console.log('listening *.80');
 });
 
@@ -2000,16 +2001,20 @@ function createRotBotWorker(obj, playData) {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.chips.credit
             let winner_result = result.botTransaction.win_result
-            if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
-                if (result.botTransaction.win_result == 'WIN') {
-                    winner_result = 'LOSE'
-                } else if (result.botTransaction.win_result == 'LOSE') {
-                    winner_result = 'WIN'
+
+            if(result.botObj.bet_side != 14){
+                if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
+                    if (result.botTransaction.win_result == 'WIN') {
+                        winner_result = 'LOSE'
+                    } else if (result.botTransaction.win_result == 'LOSE') {
+                        winner_result = 'WIN'
+                    }
                 }
             }
+            
             let userTransactionData = {
                 value: result.betVal,
-                user_bet: result.bet,
+                user_bet: result.botObj.bet_side != 14 ? result.bet : JSON.stringify(result.bet),
                 wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 result: winner_result,
@@ -2922,9 +2927,9 @@ function initiateRotWorker(table) {
                         point = latest.point
                     }
                     botTransactionObj['ONEZONE'] = null
-                    if (result.status.TWOZONE == 'WIN') {
+                    if (result.status.ONEZONE == 'WIN') {
                         point += 1
-                    } else if (result.status.TWOZONE == 'LOSE') {
+                    } else if (result.status.ONEZONE == 'LOSE') {
                         point -= 1
                     }
                     botTransactionData = {
@@ -2973,9 +2978,9 @@ function initiateRotWorker(table) {
                                             table_title: result.table.title,
                                             shoe: result.shoe,
                                             round: result.stats.round,
-                                            bet: result.stats.bot.TWOZONE,
+                                            bet: result.stats.bot.ONEZONE,
                                             result: JSON.stringify(result.stats),
-                                            status: result.status.TWOZONE,
+                                            status: result.status.ONEZONE,
                                             user_count: 0,
                                             botTransactionId: res.id,
                                             botTransaction: botTransactionData
