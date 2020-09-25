@@ -124,7 +124,7 @@ function getCurrent() {
 }
 
 function registerForEventListening() {
-    console.log('start rot')
+    // console.log('start rot')
     token = workerData.token
     inititalInfo()
     // callback method is defined to receive data from main thread
@@ -357,7 +357,7 @@ function botplay(currentInfo) {
         predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
         if (isPlay == true) {
             isPlay = false
-            parentPort.postMessage({ action: 'played', status: null, playList: playList})
+            parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
         }
         return
     }
@@ -368,7 +368,7 @@ function botplay(currentInfo) {
     if (currentInfo.round == 0) {
         if (isPlay == true) {
             isPlay = false
-            parentPort.postMessage({ action: 'played', status: null, playList: playList})
+            parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
         }else{
             isPlay = false
         }
@@ -440,7 +440,7 @@ function botplay(currentInfo) {
 
             if (isPlay && playRound == playCount) {
                 isPlay = false
-                console.log(playList)
+                // console.log(playList)
                 parentPort.postMessage({
                     action: 'played',
                     status: status,
@@ -448,13 +448,14 @@ function botplay(currentInfo) {
                     stats: predictStats.predict[playCount - 1],
                     shoe: shoe,
                     table: workerData,
-                    bot_type: 2
+                    bot_type: 2,
+                    table: workerData
                 })
 
                 // playList = []
-            }else if(isPlay && playCount > playRound + 1){
+            }else if(isPlay && playCount > playRound){
                 isPlay = false
-                parentPort.postMessage({ action: 'played', status: null, playList: playList})
+                parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
             }
             
             bot = null
@@ -513,14 +514,14 @@ function botplay(currentInfo) {
                                 }
                             })
                         } else {
-                            parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList })
+                            parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
                         }
 
                     })
                     .catch(error => {
                         console.log(`current: ${error}`);
                         isPlay = false
-                        parentPort.postMessage({ action: 'played', status: 'FAILED' , playList: playList })
+                        parentPort.postMessage({ action: 'played', status: 'FAILED' , playList: playList, table: workerData})
                     });
             }
 

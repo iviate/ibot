@@ -5,7 +5,13 @@ const { bot } = require('./app/models');
 const { POINT_CONVERSION_COMPRESSED } = require('constants');
 const e = require('express');
 const db = require('./app/models');
-
+var botCodeMap = {
+    11: 'RB',
+    12: 'ED',
+    13: 'SB',
+    14: 'TWOZONE',
+    15: 'ONEZONE'
+}
 let interval;
 let systemData;
 let current = {}
@@ -83,7 +89,7 @@ function restartOnlyProfit() {
                 }
 
                 playData = ret
-                console.log(playData)
+                // console.log(playData)
                 parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
             }
 
@@ -141,7 +147,7 @@ function restartAll() {
         }
     }
     playData = ret
-    console.log(playData)
+    // console.log(playData)
     parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
 }
 
@@ -254,21 +260,32 @@ function getBetPayLoad(table_id, game_id, bot, betVal) {
 
 function bet(data) {
     table = data.table
-    console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
+    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
     if (betFailed) {
         return
     }
 
-    if (status == 2) {
-        console.log(`bot ${workerData.obj.userId} pause`)
-    } else if (status == 3) {
-        console.log(`bot ${workerData.obj.userId} stop`)
-    } else if (botObj.bet_side == 2 && data.bot == 'BANKER') {
-
-    } else if (botObj.bet_side == 3 && data.bot == 'PLAYER') {
-
+    if(botObj.bet_side == 11 && data.playList.findIndex((item) => item == 'RB') == -1){
+        return
     }
-    else {
+    else if(botObj.bet_side == 12 && data.playList.findIndex((item) => item == 'ED') == -1){
+        return
+    }
+    else if(botObj.bet_side == 13 && data.playList.findIndex((item) => item == 'SB') == -1){
+        return
+    }
+    else if(botObj.bet_side == 14 && data.playList.findIndex((item) => item == 'ZONE') == -1){
+        return
+    }
+    else if(botObj.bet_side == 15 && data.playList.findIndex((item) => item == 'ZONE') == -1){
+        return
+    }
+
+    if (status == 2) {
+        // console.log(`bot ${workerData.obj.userId} pause`)
+    } else if (status == 3) {
+        // console.log(`bot ${workerData.obj.userId} stop`)
+    }else {
 
         let betVal = getBetVal()
         console.log(`betVal : ${betVal}`)
@@ -374,7 +391,7 @@ function bet(data) {
             payload.chip.credit[realBet] = betVal
         }
 
-        console.log(payload)
+        // console.log(payload)
 
         axios.post(`https://truthbet.com/api/bet/roulette`, payload,
             {
@@ -502,7 +519,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         }
     })
         .then(async (res) => {
-            console.log(playData)
+            // console.log(playData)
             let currentWallet = res.data.chips.credit
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
             if (playData.length == 0) {
@@ -523,7 +540,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 
 
 
-            console.log(currentWallet, cutProfit)
+            // console.log(currentWallet, cutProfit)
             if (botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit) {
                 db.bot.findOne({
                     where: {
@@ -638,7 +655,7 @@ function registerForEventListening() {
     stopLoss = botObj.init_wallet - botObj.loss_threshold
     stopLossPercent = botObj.loss_percent
     token = workerData.obj.token
-    console.log(`${workerData.obj.id} hello`)
+    // console.log(`${workerData.obj.id} hello`)
 
     axios.get(`https://truthbet.com/api/m/settings/limit`, {
         headers: {
@@ -662,7 +679,7 @@ function registerForEventListening() {
     let cb = (err, result) => {
         if (err) return console.error(err);
         if (result.action == 'bet') {
-            console.log('rot bet')
+            // console.log('rot bet')
             bet(result.data)
         }
         if (result.action == 'info') {

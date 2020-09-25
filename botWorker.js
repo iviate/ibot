@@ -83,7 +83,7 @@ function restartOnlyProfit() {
                 }
 
                 playData = ret
-                console.log(playData)
+                // console.log(playData)
                 parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
             }
 
@@ -141,7 +141,7 @@ function restartAll() {
         }
     }
     playData = ret
-    console.log(playData)
+    // console.log(playData)
     parentPort.postMessage({ action: 'restart_result', data: { success: true, data: { playData: playData } }, userId: botObj.userId })
 }
 
@@ -191,15 +191,15 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
-    console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
+    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
     if (betFailed) {
         return
     }
 
     if (status == 2) {
-        console.log(`bot ${workerData.obj.userId} pause`)
+        // console.log(`bot ${workerData.obj.userId} pause`)
     } else if (status == 3) {
-        console.log(`bot ${workerData.obj.userId} stop`)
+        // console.log(`bot ${workerData.obj.userId} stop`)
     } else if (botObj.bet_side == 2 && data.bot == 'BANKER') {
 
     } else if (botObj.bet_side == 3 && data.bot == 'PLAYER') {
@@ -208,7 +208,7 @@ function bet(data) {
     else {
 
         let betVal = getBetVal()
-        console.log(`betVal : ${betVal}`)
+        // console.log(`betVal : ${betVal}`)
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
         } else if (betVal > 10000) {
@@ -216,7 +216,7 @@ function bet(data) {
         }
 
         if (betVal > maxBet) {
-            console.log('upgrade bet limit')
+            // console.log('upgrade bet limit')
             let payload = { games: { baccarat: { range: "medium" } } }
 
             axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
@@ -233,7 +233,7 @@ function bet(data) {
             return
 
         } else if (betVal < minBet) {
-            console.log('dowgrade bet limit')
+            // console.log('dowgrade bet limit')
             let payload = { games: { baccarat: { range: "newbie" } } }
 
             axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
@@ -391,7 +391,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         }
     })
         .then(async (res) => {
-            console.log(playData)
+            // console.log(playData)
             let currentWallet = res.data.chips.credit
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
             if (playData.length == 0) {
@@ -405,14 +405,14 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                     //     playData = genLeftProfitXSystem(currentWallet)
                     // }
                     playData = JSON.parse(botObj.data)
-                    console.log('re labuashare')
-                    console.log(playData)
+                    // console.log('re labuashare')
+                    // console.log(playData)
                 }
             }
 
 
 
-            console.log(currentWallet, cutProfit)
+            // console.log(currentWallet, cutProfit)
             if (botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit) {
                 db.bot.findOne({
                     where: {
@@ -527,7 +527,7 @@ function registerForEventListening() {
     stopLoss = botObj.init_wallet - botObj.loss_threshold
     stopLossPercent = botObj.loss_percent
     token = workerData.obj.token
-    console.log(`${workerData.obj.id} hello`)
+    // console.log(`${workerData.obj.id} hello`)
 
     axios.get(`https://truthbet.com/api/m/settings/limit`, {
         headers: {

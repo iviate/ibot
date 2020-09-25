@@ -95,7 +95,7 @@ async function getBank(token) {
         }
     })
 
-    console.log(res.data.accounts[0])
+    // console.log(res.data.accounts[0])
     return res.data.accounts[0]
 }
 
@@ -846,7 +846,7 @@ myApp.post('/rolling', async function (request, response) {
         let memberDetail = { startTurn: 0, endTurn: 0 }
         memberData[member.username] = memberDetail
         let lasted_roll = new Date(member.latest_rolling)
-        console.log(lasted_roll, updateDate)
+        // console.log(lasted_roll, updateDate)
         if (updateDate.getTime() <= lasted_roll.getTime()) {
             console.log('not update')
             return
@@ -1072,7 +1072,7 @@ myApp.post('/rolling_withdraw', async function (request, response) {
 
 myApp.post('/rolling_withdraw/:id/approve', async function (request, response) {
     let approveBy = request.body.admin
-    console.log(id)
+    // console.log(id)
     let status = request.body.status
     const rollingWithdraw = await db.rolling_withdraw.findOne({
         where: {
@@ -1110,7 +1110,7 @@ myApp.post('/rolling_withdraw/:id/approve', async function (request, response) {
 
 myApp.post('/rolling_withdraw/:id/complete', async function (request, response) {
     let approveBy = request.body.admin
-    console.log(id)
+    // console.log(id)
     let status = request.body.status
     const rollingWithdraw = await db.rolling_withdraw.findOne({
         where: {
@@ -1166,7 +1166,7 @@ myApp.post('/rolling_withdraw/:id/complete', async function (request, response) 
 
 myApp.post('/rolling_withdraw/:id/cancel', async function (request, response) {
     let approveBy = request.body.admin
-    console.log(id)
+    // console.log(id)
     let status = request.body.status
     const rollingWithdraw = await db.rolling_withdraw.findOne({
         where: {
@@ -1285,7 +1285,7 @@ myApp.get('/profile', async function (request, response) {
         })
 
         const memberBank = await getBank(memberUser.truthbet_token)
-        console.log(memberBank)
+        // console.log(memberBank)
         const memberWithdraw = await db.rolling_withdraw.findAll({
             where: {
                 username: {
@@ -1880,7 +1880,7 @@ function createBotWorker(obj, playData) {
             let indexIsStop = result.isStop || (result.botObj.is_infinite == false
                 && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
             // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
-            console.log(`isStop ${result.isStop}`)
+            // console.log(`isStop ${result.isStop}`)
 
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
@@ -1897,11 +1897,11 @@ function createBotWorker(obj, playData) {
                 botObj: result.botObj
             })
 
-            console.log(indexIsStop,
-                result.botObj.is_infinite, userWallet,
-                result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
-                userWallet - result.botObj.profit_wallet,
-                result.botObj.loss_threshold)
+            // console.log(indexIsStop,
+            //     result.botObj.is_infinite, userWallet,
+            //     result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
+            //     userWallet - result.botObj.profit_wallet,
+            //     result.botObj.loss_threshold)
 
             if (indexIsStop) {
                 db.bot.findOne({
@@ -2025,7 +2025,7 @@ function createRotBotWorker(obj, playData) {
             let indexIsStop = result.isStop || (result.botObj.is_infinite == false
                 && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
             // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
-            console.log(`isStop ${result.isStop}`)
+            // console.log(`isStop ${result.isStop}`)
 
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
@@ -2042,11 +2042,11 @@ function createRotBotWorker(obj, playData) {
                 botObj: result.botObj
             })
 
-            console.log(indexIsStop,
-                result.botObj.is_infinite, userWallet,
-                result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
-                userWallet - result.botObj.profit_wallet,
-                result.botObj.loss_threshold)
+            // console.log(indexIsStop,
+            //     result.botObj.is_infinite, userWallet,
+            //     result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
+            //     userWallet - result.botObj.profit_wallet,
+            //     result.botObj.loss_threshold)
 
             if (indexIsStop) {
                 db.bot.findOne({
@@ -2222,11 +2222,12 @@ function betInterval() {
 }
 
 function rotBetInterval(start, data, tableId) {
-    console.log(`rotBetInterval ${tableId}`)
+    // console.log(`rotBetInterval ${tableId}`)
     // console.log(startBet)
     // console.log(data)
     let n = new Date().getTime()
     console.log(n, n - start, (data.remaining - 2) * 1000)
+    // console.log(rotBetInt, tableId)
     if (n - start > (data.remaining - 2) * 1000) {
         clearInterval(rotBetInt[tableId])
     } else {
@@ -2278,7 +2279,7 @@ function playBaccarat() {
                 win_percent = 92
             }
 
-            console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
+            // console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
             isPlay = true
             // console.log('post play')
             workerDict[current.table_id].worker.postMessage({
@@ -2296,12 +2297,15 @@ function playBaccarat() {
     }
 }
 
+
+var isFullCurrent = true
+var countNotFullCurrent = 0
 function playRot() {
     // console.log(Object.keys(botWorkerDict))
     let hasNotPlay = !isPlayRot.RB || !isPlayRot.ED || !isPlayRot.SB || !isPlayRot.ZONE
     let isAllPlay = isPlayRot.RB && isPlayRot.ED && isPlayRot.SB && isPlayRot.ZONE
     // console.log(hasNotPlay, isAllPlay)
-    console.log(isPlayRot)
+    // console.log(isPlayRot)
     if (isAllPlay) return;
     if (hasNotPlay) {
         Object.keys(rotWorkerDict).forEach(function (key) {
@@ -2314,11 +2318,25 @@ function playRot() {
         // return
     }
 
-    console.log(hasNotPlay, rotCurrentList.length, Math.floor(Math.random() * Object.keys(rotWorkerDict).length) + 1)
-    if (hasNotPlay == true && rotCurrentList.length < Math.floor(Math.random() * Object.keys(rotWorkerDict).length) + 1  ) {
-        // rotCurrentList = []
-        return;
+
+    if(countNotFullCurrent > 14){
+        isFullCurrent = false
+        countNotFullCurrent = 0
     }
+    // console.log(hasNotPlay, rotCurrentList.length, Math.floor(Math.random() * Object.keys(rotWorkerDict).length) + 1)
+    if(isFullCurrent){
+        if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length ) {
+            // rotCurrentList = []
+            countNotFullCurrent++;
+            return;
+        }
+    }else{
+        if (hasNotPlay == true && rotCurrentList.length == 0 ) {
+            // rotCurrentList = []
+            return;
+        }
+    }
+    
     // console.log(rotCurrentList)
 
 
@@ -2371,6 +2389,8 @@ function playRot() {
 
     }
 
+    
+
     // currentList.sort(compare)
     // let found = true
     // for (current of currentList) {
@@ -2403,6 +2423,7 @@ function playRot() {
     // if (isPlay == false) {
     //     currentList = []
     // }
+    isFullCurrent = true
     rotCurrentList = []
 }
 
@@ -2556,10 +2577,10 @@ function initiateRotWorker(table) {
             return console.error(err);
         }
         if (result.action == 'getCurrent') {
-            console.log(result.error)
+            // console.log(result.error)
             if (!result.error) {
                 let pos = rotCurrentList.findIndex((item) => item.table_id == result.table_id)
-                console.log(pos, result.table_id)
+                // console.log(pos, result.table_id)
                 if (pos != -1) {
                     rotCurrentList[pos] = result
                 } else {
@@ -2569,8 +2590,8 @@ function initiateRotWorker(table) {
 
         }
         if (result.action == 'played') {
-            // console.log('rot played', result.status)
-            clearInterval(rotBetInt)
+            // console.log('rot played', result)
+            clearInterval(rotBetInt[result.table.id])
             if (result.status == 'FAILED' || result.status == null) {
                 if (result.playList.findIndex((item) => item == 'RB') != -1) {
                     isPlayRot.RB = false
