@@ -2226,9 +2226,10 @@ function rotBetInterval(start, data, tableId) {
     // console.log(startBet)
     // console.log(data)
     let n = new Date().getTime()
-    console.log(n, n - start, (data.remaining - 2) * 1000)
+    console.log(tableId, n, n - start, (data.remaining - 2) * 1000)
     // console.log(rotBetInt, tableId)
     if (n - start > (data.remaining - 2) * 1000) {
+        console.log('clearInterval ', rotBetInt[tableId])
         clearInterval(rotBetInt[tableId])
     } else {
         // console.log('betting')
@@ -2319,7 +2320,8 @@ function playRot() {
     }
 
 
-    if(countNotFullCurrent > 14){
+    if(countNotFullCurrent > 30){
+        console.log('countNotFullCurrent full')
         isFullCurrent = false
         countNotFullCurrent = 0
     }
@@ -2327,6 +2329,7 @@ function playRot() {
     if(isFullCurrent){
         if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length ) {
             // rotCurrentList = []
+            console.log(countNotFullCurrent)
             countNotFullCurrent++;
             return;
         }
@@ -2338,7 +2341,7 @@ function playRot() {
     }
     
     // console.log(rotCurrentList)
-
+    console.log('play')
 
     if (!isPlayRot.RB) {
         rotCurrentList.sort(compareRB)

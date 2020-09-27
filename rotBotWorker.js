@@ -265,6 +265,11 @@ function bet(data) {
         return
     }
 
+    if(current.shoe == data.shoe && current.round == data.round){
+        betFailed = false
+        return
+    }
+
     if(botObj.bet_side == 11 && data.playList.findIndex((item) => item == 'RB') == -1){
         return
     }

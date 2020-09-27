@@ -23,6 +23,10 @@ var is_opposite = false
 var table = null
 var stopLoss = 0
 var stopLossPercent = 0
+var latestBetSuccess = {
+    shoe: null,
+    round: null
+}
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -193,6 +197,11 @@ function bet(data) {
     table = data.table
     // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
     if (betFailed) {
+        return
+    }
+
+    if(current.shoe == data.shoe && current.round == data.round){
+        betFailed = false
         return
     }
 
