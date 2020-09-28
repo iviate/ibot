@@ -651,12 +651,12 @@ myApp.post('/bot', async function (request, response) {
                 profit_wallet: 0,
                 is_opposite: false
             }
-
+            let playData = []
             if(request.body.money_system != 5){
-                let playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
+                playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
                 botData.data = JSON.stringify(playData)
             }else{
-                let playData = request.body.playData
+                playData = request.body.playData
                 botData.data = JSON.stringify(playData)
             }
             
@@ -2347,7 +2347,7 @@ function playRot() {
     }
     
     // console.log(rotCurrentList)
-    console.log('play')
+    // console.log('play')
 
     if (!isPlayRot.RB) {
         rotCurrentList.sort(compareRB)
