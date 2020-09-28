@@ -165,7 +165,7 @@ function getBetVal() {
     if (botObj.money_system == 1) {
         betval = botObj.init_bet
     }
-    if (botObj.money_system == 2) {
+    if (botObj.money_system == 2 || botObj.money_system == 5) {
         betval = playData[playTurn - 1]
     }
     if (botObj.money_system == 3) {
@@ -494,7 +494,7 @@ function genLeftProfitXSystem(wallet) {
 
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
-    // if (botObj.money_system == 2) {
+    // if (botObj.money_system == 2 || botObj.money_system == 5) {
     //     if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
     //         playTurn = 1
     //     } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {

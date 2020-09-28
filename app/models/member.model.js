@@ -38,6 +38,14 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.FLOAT,
             defaultValue: 0.0
         },
+        is_test: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        token: {
+            type: DataTypes.STRING,
+            allowNull: true
+        }
     })
     return Member;
 };

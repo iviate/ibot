@@ -652,8 +652,14 @@ myApp.post('/bot', async function (request, response) {
                 is_opposite: false
             }
 
-            let playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
-            botData.data = JSON.stringify(playData)
+            if(request.body.money_system != 5){
+                let playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
+                botData.data = JSON.stringify(playData)
+            }else{
+                let playData = request.body.playData
+                botData.data = JSON.stringify(playData)
+            }
+            
 
             db.bot.create(botData).then((created) => {
                 // console.log(created)
