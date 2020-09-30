@@ -79,6 +79,10 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       turnover: {
         type: DataTypes.FLOAT,
         default: 0
+      },
+      zero_bet: {
+        type: DataTypes.INTEGER,
+        default: 0
       }
     });
 

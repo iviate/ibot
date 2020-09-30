@@ -138,8 +138,8 @@ myApp.post('/login', async function (request, response) {
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
                             });
                         } else {
-                            if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                            (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
+                            if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                                (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
                                 let hasBot = null
                                 if (res2) {
                                     hasBot = res2
@@ -374,7 +374,7 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         let martingel = [50, 100, 250, 600, 1500]
         let ret = []
         if (init_bet >= 1500) {
-            martingel = [init_bet]
+            return martingel
         } else {
             for (let i = 0; i < martingel.length; i++) {
                 if (init_bet > martingel[i]) {
@@ -448,6 +448,21 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             }
         }
 
+        return ret
+    } else if (money_system == 6) {
+        let rotOneZoneMartingel = [50, 80, 130, 210, 335, 535, 850, 1300, 2000, 3200, 5000, 8000]
+        let ret = []
+        if (init_bet >= 8000) {
+            return rotOneZoneMartingel
+        } else {
+            for (let i = 0; i < rotOneZoneMartingel.length; i++) {
+                if (init_bet > martingel[i]) {
+                    continue
+                } else {
+                    ret.push(martingel[i])
+                }
+            }
+        }
         return ret
     }
 }
@@ -586,23 +601,83 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
                 if (botObj) {
                     botObj.bet_side = bet_side
                     botObj.save()
-                    if (botWorkerDict[user.id] != undefined) {
-                        botWorkerDict[user.id].postMessage({
-                            action: 'set_bet_side',
-                            bet_side: bet_side
-                        })
-                    }
-
-                    if (rotBotWorkerDict[user.id] != undefined) {
-                        rotBotWorkerDict[user.id].postMessage({
-                            action: 'set_bet_side',
-                            bet_side: bet_side
-                        })
-                    }
+                    if(botObj.bot_type == 1){
+                        if (botWorkerDict[user.id] != undefined) {
+                            botWorkerDict[user.id].postMessage({
+                                action: 'set_bet_side',
+                                bet_side: bet_side
+                            })
+                        }
+                    }else if(botObj.bot_type == 2){
+                        if (rotBotWorkerDict[user.id] != undefined) {
+                            rotBotWorkerDict[user.id].postMessage({
+                                action: 'set_bet_side',
+                                bet_side: bet_side
+                            })
+                        }
+                    }  
                     response.json({
                         success: true,
                         error_code: null
                     })
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: null
+                    })
+                }
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+})
+
+myApp.post('/bot/set_zero', async function (request, response) {
+
+    const USERNAME = request.body.username
+    const zero_bet = request.body.zero_bet
+    // console.log(USERNAME, is_opposite)
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    userId: user.id,
+                    status: 2
+                },
+            }).then((botObj) => {
+                if (botObj) {
+                    if (botObj.bot_type == 1) {
+                        response.json({
+                            success: false,
+                            error_code: null
+                        })
+                        
+                    } else if (botObj.bot_type == 2) {
+                        botObj.zero_bet = zero_bet
+                        botObj.save()
+                        if (rotBotWorkerDict[user.id] != undefined) {
+                            rotBotWorkerDict[user.id].postMessage({
+                                action: 'set_zero',
+                                bet_side: zero_bet
+                            })    
+                        }
+                    }
+
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                    
                 } else {
                     response.json({
                         success: false,
@@ -652,14 +727,14 @@ myApp.post('/bot', async function (request, response) {
                 is_opposite: false
             }
             let playData = []
-            if(request.body.money_system != 5){
+            if (request.body.money_system != 5) {
                 playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
                 botData.data = JSON.stringify(playData)
-            }else{
+            } else {
                 playData = request.body.playData
                 botData.data = JSON.stringify(playData)
             }
-            
+
 
             db.bot.create(botData).then((created) => {
                 // console.log(created)
@@ -691,7 +766,7 @@ myApp.post('/bot', async function (request, response) {
                         // console.log(botData)
                         if (botData.bot_type == 1) {
                             createBotWorker(botData, playData)
-                            
+
                         } else if (botData.bot_type == 2) {
                             createRotBotWorker(botData, playData)
                         }
@@ -737,17 +812,17 @@ myApp.post('/start', async function (request, response) {
                 if (botObj) {
                     botObj.status = 1
                     botObj.save()
-                    if(botWorkerDict[user.id] != undefined){
+                    if (botWorkerDict[user.id] != undefined) {
                         botWorkerDict[user.id].postMessage({
                             action: 'start'
                         })
                     }
-                    if(rotBotWorkerDict[user.id] != undefined){
+                    if (rotBotWorkerDict[user.id] != undefined) {
                         rotBotWorkerDict[user.id].postMessage({
                             action: 'start'
                         })
                     }
-                    
+
                     response.json({
                         success: true,
                         error_code: null
@@ -1335,8 +1410,8 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
+                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                    (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     hasBot = res2
                     response.json({
                         success: true,
@@ -1385,8 +1460,8 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
+                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                    (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
@@ -1399,7 +1474,7 @@ myApp.get('/bot_info/:id', async function (request, response) {
             response.json({
                 success: false,
                 error_code: 404,
-                message: 'user not found'
+                message: 'bot or user not found'
             })
         }
 
@@ -1531,7 +1606,7 @@ myApp.get('/bot_transaction', function (request, response) {
         'ONEZONE': 25
     }
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
-    if(BET == 'DEFAULT' || BET == 'PLAYER' || BET == 'BANKER'){
+    if (BET == 'DEFAULT' || BET == 'PLAYER' || BET == 'BANKER') {
         if (botTransactionObj[BET] == null) {
             if (BET == 'DEFAULT') {
                 db.botTransction.findAll({
@@ -1569,7 +1644,7 @@ myApp.get('/bot_transaction', function (request, response) {
                     })
                 })
             }
-    
+
         } else {
             // console.log('cache bot trasaction')
             response.json({
@@ -1578,7 +1653,7 @@ myApp.get('/bot_transaction', function (request, response) {
                 data: botTransactionObj[BET]
             })
         }
-    }else if(BET == 'RB' || BET == 'ED' || BET == 'SB' || BET == 'TWOZONE' || BET == 'ONEZONE'){
+    } else if (BET == 'RB' || BET == 'ED' || BET == 'SB' || BET == 'TWOZONE' || BET == 'ONEZONE') {
         if (botTransactionObj[BET] == null) {
 
             db.botTransction.findAll({
@@ -1597,7 +1672,7 @@ myApp.get('/bot_transaction', function (request, response) {
                     data: res
                 })
             })
-    
+
         } else {
             // console.log('cache bot trasaction')
             response.json({
@@ -1607,7 +1682,7 @@ myApp.get('/bot_transaction', function (request, response) {
             })
         }
     }
-    
+
 })
 
 myApp.get('/wallet/:id', function (request, response) {
@@ -2008,7 +2083,7 @@ function createRotBotWorker(obj, playData) {
             let userWallet = result.wallet.chips.credit
             let winner_result = result.botTransaction.win_result
 
-            if(result.botObj.bet_side != 14){
+            if (result.botObj.bet_side != 14) {
                 if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
                     if (result.botTransaction.win_result == 'WIN') {
                         winner_result = 'LOSE'
@@ -2017,7 +2092,7 @@ function createRotBotWorker(obj, playData) {
                     }
                 }
             }
-            
+
             let userTransactionData = {
                 value: result.betVal,
                 user_bet: result.botObj.bet_side != 14 ? result.bet : JSON.stringify(result.bet),
@@ -2235,7 +2310,7 @@ function rotBetInterval(start, data, tableId) {
     console.log(tableId, n, n - start, (data.remaining - 2) * 1000)
     // console.log(rotBetInt, tableId)
     if (n - start > (data.remaining - 2) * 1000) {
-        console.log('clearInterval ', rotBetInt[tableId])
+        // console.log('clearInterval ', rotBetInt[tableId])
         clearInterval(rotBetInt[tableId])
     } else {
         // console.log('betting')
@@ -2326,31 +2401,32 @@ function playRot() {
     }
 
 
-    if(countNotFullCurrent > 30){
+    if (countNotFullCurrent > 30) {
         console.log('countNotFullCurrent full')
         isFullCurrent = false
         countNotFullCurrent = 0
     }
     // console.log(hasNotPlay, rotCurrentList.length, Math.floor(Math.random() * Object.keys(rotWorkerDict).length) + 1)
-    if(isFullCurrent){
-        if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length ) {
+    if (isFullCurrent) {
+        if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length) {
             // rotCurrentList = []
             console.log(countNotFullCurrent)
             countNotFullCurrent++;
             return;
         }
-    }else{
-        if (hasNotPlay == true && rotCurrentList.length == 0 ) {
+    } else {
+        if (hasNotPlay == true && rotCurrentList.length == 0) {
             // rotCurrentList = []
             return;
         }
     }
-    
+
     // console.log(rotCurrentList)
     // console.log('play')
 
     if (!isPlayRot.RB) {
         rotCurrentList.sort(compareRB)
+        console.log(rotCurrentList)
         // console.log(rotCurrentList[0])
         if (rotCurrentList[0].winner_percent.RB > 0) {
             rotWorkerDict[rotCurrentList[0].table_id].worker.postMessage({
@@ -2398,7 +2474,7 @@ function playRot() {
 
     }
 
-    
+
 
     // currentList.sort(compare)
     // let found = true

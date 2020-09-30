@@ -1,0 +1,98 @@
+truthbet api
+
+1. get ข้อมูลธนาคารของยูสเซอร์
+await axios.get('https://truthbet.com/api/m/request/withdraw', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+
+2 ดู profile user 
+axios.get('https://truthbet.com/api/m/account/edit', {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+
+3 API ดูประวัติการแทงของยูส
+axios.get(`https://truthbet.com/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, () => {})
+
+4 API ข้อมมูลของยูส เอาไว้ใช้ดึงยอดเงิน
+ axios.get(`https://truthbet.com/api/users/owner`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+
+
+5 API เรียกดูจำนวนเกมและโต๊ะทั้งหมดที่มี
+axios.get('https://truthbet.com/api/m/games', {})
+
+6 ดูข้อมูลของโต๊ะใน รอบนั้นๆ(shoe) มีผลของแต่ละดา(round)
+axios.get(`https://truthbet.com/api/table/${tableId}?include=dealer,info`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+
+7 API get สถานะปัจจุบันของโต๊ะ เช่น เปิดให้แทง เปิดไพ่อยู่ 
+*****เอา gameId จาก API นี้ไปใส่ใน API bet
+axios.get(`https://truthbet.com/api/baccarat/${tableId}/current`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+
+
+8 API get สถานะปัจจุบันของโต๊ะ เช่น เปิดให้แทง เปิดไพ่อยู่ 
+*****เอา gameId จาก API นี้ไปใส่ใน API bet
+axios.get(`https://truthbet.com/api/roulette/${tableId}/current`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+
+
+9 API แทงบาคารา
+axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            })
+payload = { table_id: data.table.id, game_id: data.game_id, chip : { credit: { BANKER: betVal } }  }
+payload = { table_id: data.table.id, game_id: data.game_id, chip : { credit: { PLAYER: betVal } }  }
+
+
+10 API get ลิมิตไม้แทงของยูส 
+axios.get(`https://truthbet.com/api/m/settings/limit`, {
+        headers: {
+            Authorization: `Bearer ${workerData.obj.token}`
+        }
+    })
+
+
+
+11 API ปรับลิมิตไม้แทง 
+axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
+                headers: {
+                    Authorization: `Bearer ${workerData.obj.token}`
+                }
+            })
+เปลี่ยนแล้วจะเปลี่นนกลับต้องรอ 180 วินาที
+payload = { games: { baccarat: { range: "medium" } } } // 200 - 10000
+payload = { games: { baccarat: { range: "newbie" } } } 50 - 2500
+
+
+12 API แทงรูเล็ต
+axios.post(`https://truthbet.com/api/bet/roulette`, payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            })

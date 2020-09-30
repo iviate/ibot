@@ -165,7 +165,7 @@ function getBetVal() {
     if (botObj.money_system == 1) {
         betval = botObj.init_bet
     }
-    if (botObj.money_system == 2 || botObj.money_system == 5) {
+    if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 6) {
         betval = playData[playTurn - 1]
     }
     if (botObj.money_system == 3) {
@@ -396,6 +396,10 @@ function bet(data) {
             payload.chip.credit[realBet] = betVal
         }
 
+        if(botObj.zero_bet > 0){
+            payload.chip.credit['STRAIGHTUPx0'] = botObj.zero_bet
+        }
+
         // console.log(payload)
 
         axios.post(`https://truthbet.com/api/bet/roulette`, payload,
@@ -494,16 +498,16 @@ function genLeftProfitXSystem(wallet) {
 
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
-    // if (botObj.money_system == 2 || botObj.money_system == 5) {
-    //     if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-    //         playTurn = 1
-    //     } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
-    //         playTurn++
-    //         if (playTurn > playData.length) {
-    //             playTurn = 1
-    //         }
-    //     }
-    // }
+    if (botObj.money_system == 6 || botObj.money_system == 5) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playTurn = 1
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            playTurn++
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
+        }
+    }
     // if (botObj.money_system == 3 || botObj.money_system == 4) {
     //     if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
     //         playData = playData.splice(1, playData.length - 2)
@@ -710,6 +714,12 @@ function registerForEventListening() {
             parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
             // bet_side = result.bet_side
         }
+
+        if (result.action == 'set_zero'){
+            botObj.zero_bet = result.zero_bet
+            parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
+        }
+
         if (result.action == 'pause') {
             botObj.status = 2
             status = 2
