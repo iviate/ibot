@@ -456,10 +456,10 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             return rotOneZoneMartingel
         } else {
             for (let i = 0; i < rotOneZoneMartingel.length; i++) {
-                if (init_bet > martingel[i]) {
+                if (init_bet > rotOneZoneMartingel[i]) {
                     continue
                 } else {
-                    ret.push(martingel[i])
+                    ret.push(rotOneZoneMartingel[i])
                 }
             }
         }
@@ -681,7 +681,8 @@ myApp.post('/bot/set_zero', async function (request, response) {
                 } else {
                     response.json({
                         success: false,
-                        error_code: null
+                        error_code: null,
+                        message: 'bot dose not pause'
                     })
                 }
             })
@@ -697,7 +698,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
 })
 
 myApp.post('/bot', async function (request, response) {
-
+    console.log(`zero_bet : ${request.body.zero_bet}`)
     const USERNAME = request.body.username
     db.user.findOne({
         where: {
@@ -724,7 +725,8 @@ myApp.post('/bot', async function (request, response) {
                 is_infinite: request.body.is_infinite,
                 deposite_count: 0,
                 profit_wallet: 0,
-                is_opposite: false
+                is_opposite: false,
+                zero_bet: request.body.zero_bet | 0
             }
             let playData = []
             if (request.body.money_system != 5) {
@@ -2400,7 +2402,7 @@ function playRot() {
         // return
     }
 
-
+    console.log(countNotFullCurrent)
     if (countNotFullCurrent > 30) {
         console.log('countNotFullCurrent full')
         isFullCurrent = false
@@ -2410,7 +2412,7 @@ function playRot() {
     if (isFullCurrent) {
         if (hasNotPlay == true && rotCurrentList.length != Object.keys(rotWorkerDict).length) {
             // rotCurrentList = []
-            console.log(countNotFullCurrent)
+            // console.log(countNotFullCurrent)
             countNotFullCurrent++;
             return;
         }
@@ -2425,8 +2427,8 @@ function playRot() {
     // console.log('play')
 
     if (!isPlayRot.RB) {
-        rotCurrentList.sort(compareRB)
-        console.log(rotCurrentList)
+        // rotCurrentList.sort(compareRB)
+        // console.log(rotCurrentList)
         // console.log(rotCurrentList[0])
         if (rotCurrentList[0].winner_percent.RB > 0) {
             rotWorkerDict[rotCurrentList[0].table_id].worker.postMessage({
@@ -2715,7 +2717,7 @@ function initiateRotWorker(table) {
                     } else if (result.status.RB == 'LOSE') {
                         point -= 1
                     }
-                    botTransactionData = {
+                    let RBbotTransactionData = {
                         bot_type: 21,
                         table_id: result.table.id,
                         table_title: result.table.title,
@@ -2728,7 +2730,7 @@ function initiateRotWorker(table) {
                         point: point
                     }
 
-                    db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.create(RBbotTransactionData).then((created) => {
                         db.botTransction.findOne({
                             where: {
                                 bot_type: 21,
@@ -2748,7 +2750,7 @@ function initiateRotWorker(table) {
                                     latestBotTransactionId = res.id
                                 }
 
-                                botTransactionData.id = res.id
+                                RBbotTransactionData.id = res.id
 
                                 if (Object.keys(rotBotWorkerDict).length > 0) {
                                     Object.keys(rotBotWorkerDict).forEach(function (key) {
@@ -2766,7 +2768,7 @@ function initiateRotWorker(table) {
                                             status: result.status.RB,
                                             user_count: 0,
                                             botTransactionId: res.id,
-                                            botTransaction: botTransactionData
+                                            botTransaction: RBbotTransactionData
 
                                         })
                                     });
@@ -2796,7 +2798,7 @@ function initiateRotWorker(table) {
                     } else if (result.status.ED == 'LOSE') {
                         point -= 1
                     }
-                    botTransactionData = {
+                    let EDbotTransactionData = {
                         bot_type: 22,
                         table_id: result.table.id,
                         table_title: result.table.title,
@@ -2809,7 +2811,7 @@ function initiateRotWorker(table) {
                         point: point
                     }
 
-                    db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.create(EDbotTransactionData).then((created) => {
                         db.botTransction.findOne({
                             where: {
                                 bot_type: 22,
@@ -2829,7 +2831,7 @@ function initiateRotWorker(table) {
                                     latestBotTransactionId = res.id
                                 }
 
-                                botTransactionData.id = res.id
+                                EDbotTransactionData.id = res.id
 
                                 if (Object.keys(rotBotWorkerDict).length > 0) {
                                     Object.keys(rotBotWorkerDict).forEach(function (key) {
@@ -2847,7 +2849,7 @@ function initiateRotWorker(table) {
                                             status: result.status.ED,
                                             user_count: 0,
                                             botTransactionId: res.id,
-                                            botTransaction: botTransactionData
+                                            botTransaction: EDbotTransactionData
 
                                         })
                                     });
@@ -2877,7 +2879,7 @@ function initiateRotWorker(table) {
                     } else if (result.status.SB == 'LOSE') {
                         point -= 1
                     }
-                    botTransactionData = {
+                    let SBbotTransactionData = {
                         bot_type: 23,
                         table_id: result.table.id,
                         table_title: result.table.title,
@@ -2890,7 +2892,7 @@ function initiateRotWorker(table) {
                         point: point
                     }
 
-                    db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.create(SBbotTransactionData).then((created) => {
                         db.botTransction.findOne({
                             where: {
                                 bot_type: 23,
@@ -2910,7 +2912,7 @@ function initiateRotWorker(table) {
                                     latestBotTransactionId = res.id
                                 }
 
-                                botTransactionData.id = res.id
+                                SBbotTransactionData.id = res.id
 
                                 if (Object.keys(rotBotWorkerDict).length > 0) {
                                     Object.keys(rotBotWorkerDict).forEach(function (key) {
@@ -2928,7 +2930,7 @@ function initiateRotWorker(table) {
                                             status: result.status.SB,
                                             user_count: 0,
                                             botTransactionId: res.id,
-                                            botTransaction: botTransactionData
+                                            botTransaction: SBbotTransactionData
 
                                         })
                                     });
@@ -2959,7 +2961,7 @@ function initiateRotWorker(table) {
                     } else if (result.status.TWOZONE == 'LOSE') {
                         point -= 1
                     }
-                    botTransactionData = {
+                    let TWOZONEbotTransactionData = {
                         bot_type: 24,
                         table_id: result.table.id,
                         table_title: result.table.title,
@@ -2972,7 +2974,7 @@ function initiateRotWorker(table) {
                         point: point
                     }
 
-                    db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.create(TWOZONEbotTransactionData).then((created) => {
                         db.botTransction.findOne({
                             where: {
                                 bot_type: 24,
@@ -2992,7 +2994,7 @@ function initiateRotWorker(table) {
                                     latestBotTransactionId = res.id
                                 }
 
-                                botTransactionData.id = res.id
+                                TWOZONEbotTransactionData.id = res.id
 
                                 if (Object.keys(rotBotWorkerDict).length > 0) {
                                     Object.keys(rotBotWorkerDict).forEach(function (key) {
@@ -3010,7 +3012,7 @@ function initiateRotWorker(table) {
                                             status: result.status.TWOZONE,
                                             user_count: 0,
                                             botTransactionId: res.id,
-                                            botTransaction: botTransactionData
+                                            botTransaction: TWOZONEbotTransactionData
 
                                         })
                                     });
@@ -3038,7 +3040,7 @@ function initiateRotWorker(table) {
                     } else if (result.status.ONEZONE == 'LOSE') {
                         point -= 1
                     }
-                    botTransactionData = {
+                    let ONEZONEbotTransactionData = {
                         bot_type: 25,
                         table_id: result.table.id,
                         table_title: result.table.title,
@@ -3051,7 +3053,7 @@ function initiateRotWorker(table) {
                         point: point
                     }
 
-                    db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.create(ONEZONEbotTransactionData).then((created) => {
                         db.botTransction.findOne({
                             where: {
                                 bot_type: 25,
@@ -3071,7 +3073,7 @@ function initiateRotWorker(table) {
                                     latestBotTransactionId = res.id
                                 }
 
-                                botTransactionData.id = res.id
+                                ONEZONEbotTransactionData.id = res.id
 
                                 if (Object.keys(rotBotWorkerDict).length > 0) {
                                     Object.keys(rotBotWorkerDict).forEach(function (key) {
@@ -3089,7 +3091,7 @@ function initiateRotWorker(table) {
                                             status: result.status.ONEZONE,
                                             user_count: 0,
                                             botTransactionId: res.id,
-                                            botTransaction: botTransactionData
+                                            botTransaction: ONEZONEbotTransactionData
 
                                         })
                                     });

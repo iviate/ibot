@@ -166,6 +166,7 @@ function getBetVal() {
         betval = botObj.init_bet
     }
     if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 6) {
+        console.log(playData, playTurn)
         betval = playData[playTurn - 1]
     }
     if (botObj.money_system == 3) {
@@ -400,7 +401,7 @@ function bet(data) {
             payload.chip.credit['STRAIGHTUPx0'] = botObj.zero_bet
         }
 
-        // console.log(payload)
+        console.log(payload)
 
         axios.post(`https://truthbet.com/api/bet/roulette`, payload,
             {
@@ -418,7 +419,7 @@ function bet(data) {
             })
             .catch(error => {
                 // console.log(error)
-                if (error.response.data.error != 500) {
+                if (error.response.data.error != 500 && error.response.data.code != "toomany_requests") {
                     betFailed = true
                 } else {
                     betFailed = false
@@ -499,6 +500,7 @@ function genLeftProfitXSystem(wallet) {
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     if (botObj.money_system == 6 || botObj.money_system == 5) {
+        console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn = 1
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
@@ -695,9 +697,20 @@ function registerForEventListening() {
             parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
         }
         if (result.action == 'result_bet') {
+            mapBotTypeAndBetSide = {
+                11: 21,
+                12: 22,
+                13: 23,
+                14: 24,
+                15: 25
+            }
             // console.log('action result_bet')
             betFailed = false
-            if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
+            if (result.table_id == current.table_id && 
+                result.round == current.round && 
+                result.shoe == current.shoe && 
+                mapBotTypeAndBetSide[botObj.bet_side] == result.botTransaction.bot_type) {
+                
                 processResultBet(result.status, result.botTransactionId, result.botTransaction)
             }
         }
