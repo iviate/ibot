@@ -443,7 +443,16 @@ function bet(data) {
             })
             .then(response => {
                 // console.log(response.data);
-                turnover += betVal
+                if(botObj.open_zero){
+                    turnover += botObj.zero_bet
+                }
+
+                if(botObj.bet_side == 14 || ( botObj.bet_side == 15 && is_opposite == true ) ){
+                    turnover += betVal * 2
+                }else{
+                    turnover += betVal
+                }
+                
                 current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
                 parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                 betFailed = true

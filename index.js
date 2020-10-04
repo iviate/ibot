@@ -701,7 +701,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
 })
 
 myApp.post('/bot', async function (request, response) {
-    console.log(`zero_bet : ${request.body.zero_bet}`)
+    // console.log(`zero_bet : ${request.body.zero_bet}`)
     const USERNAME = request.body.username
     db.user.findOne({
         where: {
@@ -732,7 +732,7 @@ myApp.post('/bot', async function (request, response) {
                 zero_bet: request.body.zero_bet | 0,
                 open_zero: false
             }
-            console.log(botData)
+            // console.log(botData)
             let playData = []
             if (request.body.money_system != 5) {
                 playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
@@ -1472,7 +1472,7 @@ myApp.get('/bot_info/:id', async function (request, response) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
                 }else if (res2 && res2.bot_type == 2 && ((rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
                     (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
-                    console.log('get rot bot info')
+                    // console.log('get rot bot info')
                     rotBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
@@ -1714,12 +1714,12 @@ myApp.get('/wallet/:id', function (request, response) {
                     let profit_wallet = user.profit_wallet
                     let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
-                    console.log({
-                        profit_wallet: 0,
-                        all_wallet: all_wallet,
-                        play_wallet: all_wallet,
-                        myWallet: res.data.myWallet
-                    })
+                    // console.log({
+                    //     profit_wallet: 0,
+                    //     all_wallet: all_wallet,
+                    //     play_wallet: all_wallet,
+                    //     myWallet: res.data.myWallet
+                    // })
                     response.json({
                         success: true,
                         error_code: null,
@@ -1727,7 +1727,7 @@ myApp.get('/wallet/:id', function (request, response) {
                             profit_wallet: profit_wallet,
                             all_wallet: all_wallet,
                             play_wallet: play_wallet,
-                            myWallet: res.data.myWallet
+                            myWallet: res.data.chips
                         }
                     })
                 })
