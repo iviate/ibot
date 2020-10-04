@@ -642,6 +642,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
 
     const USERNAME = request.body.username
     const zero_bet = request.body.zero_bet
+    const open_zero = request.body.open_zero
     // console.log(USERNAME, is_opposite)
     db.user.findOne({
         where: {
@@ -664,11 +665,13 @@ myApp.post('/bot/set_zero', async function (request, response) {
                         
                     } else if (botObj.bot_type == 2) {
                         botObj.zero_bet = zero_bet
+                        botObj.open_zero = open_zero
                         botObj.save()
                         if (rotBotWorkerDict[user.id] != undefined) {
                             rotBotWorkerDict[user.id].postMessage({
                                 action: 'set_zero',
-                                bet_side: zero_bet
+                                zero_bet: zero_bet,
+                                open_zero: open_zero
                             })    
                         }
                     }
@@ -726,8 +729,10 @@ myApp.post('/bot', async function (request, response) {
                 deposite_count: 0,
                 profit_wallet: 0,
                 is_opposite: false,
-                zero_bet: request.body.zero_bet | 0
+                zero_bet: request.body.zero_bet | 0,
+                open_zero: false
             }
+            console.log(botData)
             let playData = []
             if (request.body.money_system != 5) {
                 playData = processBotMoneySystem(botData.money_system, botData.init_wallet, botData.profit_threshold, botData.init_bet)
@@ -1462,9 +1467,13 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                if (res2 && res2.bot_type == 1 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                     (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
+                }else if (res2 && res2.bot_type == 2 && ((rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
+                    (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
+                    console.log('get rot bot info')
+                    rotBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
                     success: true,
@@ -1705,7 +1714,12 @@ myApp.get('/wallet/:id', function (request, response) {
                     let profit_wallet = user.profit_wallet
                     let all_wallet = res.data.chips.credit
                     let play_wallet = all_wallet - profit_wallet
-
+                    console.log({
+                        profit_wallet: 0,
+                        all_wallet: all_wallet,
+                        play_wallet: all_wallet,
+                        myWallet: res.data.myWallet
+                    })
                     response.json({
                         success: true,
                         error_code: null,
@@ -1890,7 +1904,7 @@ var rotRemainingBet;
 var betInt;
 var rotBetInt = {};
 var currentBetData;
-var rotCurrentBetData;
+var rotCurrentBetData = {};
 var latestBotTransactionId;
 let wPercent = 0
 
@@ -2056,7 +2070,7 @@ function createRotBotWorker(obj, playData) {
 
         if (result.action == 'info') {
             // console.log('bot info')
-            io.emit(`user${result.userId}`, { ...result, isPlay: isPlayRot, win_percent: win_percent, currentBetData: currentBetData })
+            io.emit(`user${result.userId}`, { ...result, isPlay: isPlayRot, currentBetData: rotCurrentBetData })
         }
         // if (result.action == 'stop') {
 
@@ -2084,7 +2098,8 @@ function createRotBotWorker(obj, playData) {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.chips.credit
             let winner_result = result.botTransaction.win_result
-
+            console.log(result.bet, result.botTransaction.bet, result.bet != result.botTransaction.bet, 
+                            result.botTransaction.win_result, result.is_opposite)
             if (result.botObj.bet_side != 14) {
                 if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
                     if (result.botTransaction.win_result == 'WIN') {
@@ -2097,18 +2112,21 @@ function createRotBotWorker(obj, playData) {
 
             let userTransactionData = {
                 value: result.betVal,
-                user_bet: result.botObj.bet_side != 14 ? result.bet : JSON.stringify(result.bet),
+                user_bet: 
+                    result.botObj.bet_side == 14 ||
+                    (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                 wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 result: winner_result,
                 botTransactionId: result.botTransactionId
             }
 
-            // console.log(userTransactionData)
+            console.log(userTransactionData)
+            console.log(userWallet, result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
             let indexIsStop = result.isStop || (result.botObj.is_infinite == false
                 && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
             // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
-            // console.log(`isStop ${result.isStop}`)
+            console.log(`isStop ${indexIsStop}`)
 
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
@@ -3124,6 +3142,8 @@ function initiateRotWorker(table) {
             rotBetInt[result.data.table.id] = setInterval(function () {
                 rotBetInterval(rotStartBet, result.data, result.data.table.id);
             }, 2400);
+
+            rotCurrentBetData[result.data.table.id] = result.data
             // rotIsBet = true;
             // rotRemainingBet = result.data.remaining
             // rotCurrentBetData = result.data

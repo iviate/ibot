@@ -42,11 +42,11 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       },
       stats: {
         type: DataTypes.TEXT,
-        default: '[]'
+        defaultValue: '[]'
       },
       data: {
         type: DataTypes.TEXT,
-        default: '[]'
+        defaultValue: '[]'
       },
       stop_by: {
         type: DataTypes.INTEGER, // 1 user, 2 profit stop, 3 loss stop, 4 error
@@ -62,27 +62,31 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       },
       is_infinite: {
         type: DataTypes.BOOLEAN,
-        default: false
+        defaultValue: false
       },
       profit_wallet: {
         type: DataTypes.FLOAT,
-        default: 0
+        defaultValue: 0
       },
       deposite_count: {
         type: DataTypes.INTEGER,
-        default: 0
+        defaultValue: 0
       },
       is_opposite: {
         type: DataTypes.BOOLEAN,
-        default: false
+        defaultValue: false
       },
       turnover: {
         type: DataTypes.FLOAT,
-        default: 0
+        defaultValue: 0
       },
       zero_bet: {
         type: DataTypes.INTEGER,
-        default: 0
+        defaultValue: 0
+      },
+      open_zero: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
       }
     });
 
