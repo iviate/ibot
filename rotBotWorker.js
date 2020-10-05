@@ -452,7 +452,7 @@ function bet(data) {
             .then(response => {
                 // console.log(response.data);
                 if(botObj.open_zero){
-                    turnover += botObj.zero_bet
+                    turnover += payload.chip.credit['STRAIGHTUPx0']
                 }
 
                 if(botObj.bet_side == 14 || ( botObj.bet_side == 15 && is_opposite == true ) ){
