@@ -24,6 +24,7 @@ let status = 2
 var isStop = false;
 var minBet = 50
 var maxBet = 2500
+var minZero = 10
 var turnover = 0
 var is_opposite = false
 var table = null
@@ -319,6 +320,7 @@ function bet(data) {
             }).then(res => {
                 minBet = 200
                 maxBet = 10000
+                minZero = 40
             })
                 .catch(error => {
                     // console.log(error)
@@ -336,6 +338,7 @@ function bet(data) {
             }).then(res => {
                 minBet = 50
                 maxBet = 2500
+                minZero = 10
             })
                 .catch(error => {
                     // console.log(error)
@@ -428,8 +431,13 @@ function bet(data) {
             }
         }
 
-        if(botObj.open_zero){
-            payload.chip.credit['STRAIGHTUPx0'] = botObj.zero_bet
+        if(botObj.open_zero && botObj.zero_bet > 9){
+            if(botObj.zero_bet < minZero){
+                payload.chip.credit['STRAIGHTUPx0'] = minZero
+            }else{
+                payload.chip.credit['STRAIGHTUPx0'] = botObj.zero_bet
+            }
+            
         }
 
         console.log(payload)
