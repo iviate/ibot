@@ -168,16 +168,19 @@ function getBetVal() {
     }
     if (botObj.money_system == 3 ) {
         if (playData.length == 1) {
-
             betval = playData[0] * (botObj.init_bet / 2)
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-        betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
+        
     }
     if (botObj.money_system == 4) {
         if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
         }
-        betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
+        
     }
 
     let mod = ~~(betval % 10)

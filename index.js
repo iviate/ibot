@@ -464,6 +464,15 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             }
         }
         return ret
+    }else if (money_system == 7){
+        let ret = [init_bet, init_bet]
+        for(let i = 0; i < 7; i++){
+            let nextVal = ret[ret.length - 1] + ret[ret.length - 2]
+            ret.push(nextVal)
+        }
+        console.log('3 in 9')
+        console.log(ret)
+        return ret
     }
 }
 

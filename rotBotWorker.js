@@ -30,6 +30,8 @@ var is_opposite = false
 var table = null
 var stopLoss = 0
 var stopLossPercent = 0
+var profitloss = 0
+var winStreak = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -166,22 +168,29 @@ function getBetVal() {
     if (botObj.money_system == 1) {
         betval = botObj.init_bet
     }
-    if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 6) {
+    else if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 6) {
         console.log(playData, playTurn)
         betval = playData[playTurn - 1]
     }
-    if (botObj.money_system == 3) {
+    else if (botObj.money_system == 3) {
         if (playData.length == 1) {
 
             betval = playData[0] * (botObj.init_bet / 2)
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-        betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
+       
     }
-    if (botObj.money_system == 4) {
+    else if (botObj.money_system == 4) {
         if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
         }
-        betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
+        
+    }
+    else if(botObj.money_system == 7){
+        betval = playData[playTurn]
     }
 
     let mod = ~~(betval % 10)
@@ -193,6 +202,7 @@ function getBetVal() {
             betval = Math.ceil(betval / 10) * 10
         }
     }
+
 
     return ~~betval
 }
@@ -547,7 +557,7 @@ function genLeftProfitXSystem(wallet) {
 
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
-    if (botObj.money_system == 6 || botObj.money_system == 5) {
+    else if (botObj.money_system == 6 || botObj.money_system == 5) {
         console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn = 1
@@ -556,6 +566,20 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             if (playTurn > playData.length) {
                 playTurn = 1
             }
+        }
+    }
+    else if (botObj.money_system == 7){
+        if(betStatus == "WIN"){
+            winStreak += 1
+            profitloss += playData[playTurn]
+        }else if(betStatus == 'LOSE'){
+            winStreak = 0
+            profitloss += -1 * (playData[playTurn] * 2)
+        }
+
+        if(winStreak == 3 || profitloss >= 0){
+            playTurn = 1
+            profitloss = 0
         }
     }
     // if (botObj.money_system == 3 || botObj.money_system == 4) {
