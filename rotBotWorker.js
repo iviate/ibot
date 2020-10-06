@@ -571,13 +571,13 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
     }
     else if (botObj.money_system == 7){
         console.log(`before playTurn ${playTurn}`)
-        console.log(playData[playTurn])
+        console.log(playData[playTurn-1])
         if(betStatus == "WIN"){
             winStreak += 1
-            profitloss += playData[playTurn]
+            profitloss += playData[playTurn-1]
         }else if(betStatus == 'LOSE'){
             winStreak = 0
-            profitloss += -1 * (playData[playTurn] * 2)
+            profitloss += -1 * (playData[playTurn-1] * 2)
         }
         console.log(`profitloss ${profitloss} winStreak: ${winStreak}`)
         if(winStreak == 3 || profitloss >= 0){
