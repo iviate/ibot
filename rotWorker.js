@@ -464,7 +464,7 @@ function botplay(currentInfo) {
             // console.log(status)
             // console.log(statCount)
 
-            if (isPlay && playRound == playCount) {
+            if (isPlay && playRound == playCount && playRound < 99) {
                 isPlay = false
                 // console.log(playList)
                 parentPort.postMessage({
@@ -479,7 +479,11 @@ function botplay(currentInfo) {
                 })
 
                 // playList = []
-            }else if(isPlay && playCount > playRound){
+            }else if(isPlay && playRound > 98){
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
+            }
+            else if(isPlay && playCount > playRound){
                 isPlay = false
                 parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
             }
