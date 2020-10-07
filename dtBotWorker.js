@@ -209,9 +209,9 @@ function bet(data) {
         // console.log(`bot ${workerData.obj.userId} pause`)
     } else if (status == 3) {
         // console.log(`bot ${workerData.obj.userId} stop`)
-    } else if (botObj.bet_side == 2 && data.bot == 'BANKER') {
+    } else if (botObj.bet_side == 2 && data.bot == '') {
 
-    } else if (botObj.bet_side == 3 && data.bot == 'PLAYER') {
+    } else if (botObj.bet_side == 3 && data.bot == 'TIGER') {
 
     }
     else {
@@ -261,16 +261,16 @@ function bet(data) {
 
         let payload = { table_id: data.table.id, game_id: data.game_id }
         let realBet = data.bot
-        if (data.bot == 'PLAYER' && is_opposite == false) {
-            payload.chip = { credit: { PLAYER: betVal } }
-        } else if (data.bot == 'BANKER' && is_opposite == false) {
-            payload.chip = { credit: { BANKER: betVal } }
-        } else if (data.bot == 'PLAYER' && is_opposite == true) {
-            payload.chip = { credit: { BANKER: betVal } }
-            realBet = 'BANKER'
-        } else if (data.bot == 'BANKER' && is_opposite == true) {
-            payload.chip = { credit: { PLAYER: betVal } }
-            realBet = 'PLAYER'
+        if (data.bot == 'DRAGON' && is_opposite == false) {
+            payload.chip = { credit: { DRAGON: betVal } }
+        } else if (data.bot == 'TIGER' && is_opposite == false) {
+            payload.chip = { credit: { TIGER: betVal } }
+        } else if (data.bot == 'TIGER' && is_opposite == true) {
+            payload.chip = { credit: { DRAGON: betVal } }
+            realBet = 'DRAGON'
+        } else if (data.bot == 'DRAGON' && is_opposite == true) {
+            payload.chip = { credit: { TIGER: betVal } }
+            realBet = 'TIGER'
         } else {
             return
         }

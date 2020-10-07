@@ -29,7 +29,7 @@ db.sequelize.sync({
     alter: true
 });
 
-let BOT_CODE = ['BAC', 'ROT_RB', 'ROT_ED', 'ROT_SB', 'ROT_TWO_ZONE', 'ROT_ONE_ZONE']
+let BOT_CODE = ['BAC', 'ROT_RB', 'ROT_ED', 'ROT_SB', 'ROT_TWO_ZONE', 'ROT_ONE_ZONE', "DT"]
 
 let botTransactionObj = {
     'DEFAULT': null,
@@ -39,7 +39,8 @@ let botTransactionObj = {
     'ED': null,
     'SB': null,
     'TWOZONE': null,
-    'ONEZONE': null
+    'ONEZONE': null,
+    'DT': null
 }
 
 let rotPlay = {
@@ -62,9 +63,12 @@ let win_percents = {
 }
 let win_percent;
 let isBet = false;
+let dtIsBet = false;
 let botWorkerDict = {};
 let rotBotWorkerDict = {};
 let rotWorkerDict = {}
+let dtWorkerDict = {}
+let dtBotWorkerDict = {}
 let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMzA2fSwiaWF0IjoxNTk2Mjc1MjI2fQ.BlrzYvm7RKTjyK2vxoPWzlvZaTnifZVyB47JYblWM2A"
 
 var myApp = require('express')();
@@ -132,14 +136,16 @@ myApp.post('/login', async function (request, response) {
 
                         // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
                         if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) &&
-                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
+                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa'
+                                && USERNAME != "betforwin")) {
                             response.json({
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
                             });
                         } else {
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                            (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
+                            (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
+                            (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
                                 let hasBot = null
                                 if (res2) {
                                     hasBot = res2
@@ -205,7 +211,8 @@ myApp.post('/login', async function (request, response) {
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
                                 if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)
-                                    && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
+                                    && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa' 
+                                            && USERNAME != "betforwin")) {
                                     response.json({
                                         success: false,
                                         message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
@@ -484,6 +491,12 @@ myApp.post('/bot/set_opposite', async function (request, response) {
                             is_opposite: is_opposite
                         })
                     }
+                    if (dtBotWorkerDict[user.id] != undefined) {
+                        dtBotWorkerDict[user.id].postMessage({
+                            action: 'set_opposite',
+                            is_opposite: is_opposite
+                        })
+                    }
 
                     response.json({
                         success: true,
@@ -544,6 +557,14 @@ myApp.post('/bot/set_stoploss', async function (request, response) {
                             loss_percent: loss_percent
                         })
                     }
+
+                    if (dtBotWorkerDict[user.id] != undefined) {
+                        dtBotWorkerDict[user.id].postMessage({
+                            action: 'set_stoploss',
+                            loss_threshold: loss_threshold,
+                            loss_percent: loss_percent
+                        })
+                    }
                     response.json({
                         success: true,
                         error_code: null
@@ -595,6 +616,13 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
 
                     if (rotBotWorkerDict[user.id] != undefined) {
                         rotBotWorkerDict[user.id].postMessage({
+                            action: 'set_bet_side',
+                            bet_side: bet_side
+                        })
+                    }
+
+                    if (dtBotWorkerDict[user.id] != undefined) {
+                        dtBotWorkerDict[user.id].postMessage({
                             action: 'set_bet_side',
                             bet_side: bet_side
                         })
@@ -672,7 +700,10 @@ myApp.post('/bot', async function (request, response) {
                     ]
                 }).then((res) => {
                     // console.log(res)
-
+                    delete botWorkerDict[u.id]
+                    delete rotBotWorkerDict[u.id]
+                    delete dtBotWorkerDict[u.id]
+                    
                     db.bot.update({
                         status: 3
                     }, {
@@ -691,9 +722,10 @@ myApp.post('/bot', async function (request, response) {
                         // console.log(botData)
                         if (botData.bot_type == 1) {
                             createBotWorker(botData, playData)
-                            
                         } else if (botData.bot_type == 2) {
                             createRotBotWorker(botData, playData)
+                        } else if (botData.bot_type == 3) {
+                            createDtWorker(botData, playData)
                         }
 
                         response.json({
@@ -744,6 +776,12 @@ myApp.post('/start', async function (request, response) {
                     }
                     if(rotBotWorkerDict[user.id] != undefined){
                         rotBotWorkerDict[user.id].postMessage({
+                            action: 'start'
+                        })
+                    }
+
+                    if(dtBotWorkerDict[user.id] != undefined){
+                        dtBotWorkerDict[user.id].postMessage({
                             action: 'start'
                         })
                     }
@@ -802,6 +840,14 @@ myApp.post('/pause', async function (request, response) {
                         })
                     } else {
                         delete rotBotWorkerDict[u.id]
+                    }
+
+                    if (dtBotWorkerDict[u.id] != undefined) {
+                        dtBotWorkerDict[u.id].postMessage({
+                            action: 'pause'
+                        })
+                    } else {
+                        delete dtBotWorkerDict[u.id]
                     }
 
                     botObj.save()
@@ -1336,7 +1382,8 @@ myApp.get('/user_bot/:id', async function (request, response) {
 
             }).then((res2) => {
                 if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
+                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) || 
+                                (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined) )) {
                     hasBot = res2
                     response.json({
                         success: true,
@@ -1347,6 +1394,7 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 } else {
                     delete botWorkerDict[user.id]
                     delete rotBotWorkerDict[user.id]
+                    delete dtBotWorkerDict[user.id]
                     response.json({
                         success: true,
                         data: {
@@ -1385,9 +1433,14 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
+                if (res2 && (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
+                }
+                if (res2 && (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined)){
+                    rotBotWorkerDict[user.id].postMessage({ action: 'info' })
+                }
+                if (res2 && (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)){
+                    dtBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
                     success: true,
@@ -1471,6 +1524,12 @@ myApp.post('/stop', function (request, response) {
                             action: 'stop'
                         })
                         delete rotBotWorkerDict[user.id]
+                    }
+                    if (dtBotWorkerDict[user.id] != undefined) {
+                        dtBotWorkerDict[user.id].postMessage({
+                            action: 'stop'
+                        })
+                        delete dtBotWorkerDict[user.id]
                     }
 
                     response.json({
@@ -1793,9 +1852,11 @@ let index = -1; // index will be used to traverse list
 let myWorker; // worker reference
 let interval;
 let rotInterval;
+let dtInterval;
 let tables = [];
 let workerDict = {};
 let isPlay = false;
+let dtIsPlay = false;
 let isPlayRot = {
     RB: false,
     SB: false,
@@ -1804,16 +1865,21 @@ let isPlayRot = {
 }
 let playTable;
 let currentList = [];
-let rotCurrentList = []
+let rotCurrentList = [];
+let dtCurrentList = [];
 let botList = {}
 var startBet;
 var rotStartBet;
+var dtStartBet;
 var remainingBet;
 var rotRemainingBet;
+var dtRemainingBet;
 var betInt;
+var dtBetInt;
 var rotBetInt = {};
 var currentBetData;
 var rotCurrentBetData;
+var dtCurrentBetData;
 var latestBotTransactionId;
 let wPercent = 0
 
@@ -2105,6 +2171,147 @@ function createRotBotWorker(obj, playData) {
     });
 }
 
+function createDtWorker(obj, playData) {
+    let cb = (err, result) => {
+        if (err) {
+            return console.error(err);
+        }
+        if (result.action == 'bet_success') {
+            result.win_percent = win_percent
+            io.emit(`user${result.data.current.botObj.userId}`, result)
+            console.log(`bot ${result.data.current.botObj.userId} bet success`)
+        }
+        if (result.action == 'bet_failed') {
+            console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
+        }
+        if (result.action == 'restart_result') {
+            io.emit(`user${result.userId}`, result)
+        }
+
+        if (result.action == 'info') {
+            // console.log('bot info')
+            io.emit(`user${result.userId}`, { ...result, isPlay: dtIsBet, win_percent: win_percent, currentBetData: currentBetData })
+        }
+        // if (result.action == 'stop') {
+
+        //     db.bot.findOne({
+        //         where: {
+        //             id: result.botObj.id
+        //         }
+        //     }).then((res) => {
+        //         res.status = 3
+        //         res.save()
+        //         if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+        //             botWorkerDict[res.userId].terminate()
+        //             delete botWorkerDict[res.userId]
+        //         }
+
+        //     })
+        //     console.log(`bot ${result.user_id} stop`)
+        //     if(botWorkerDict.hasOwnProperty(res.userId) && botWorkerDict[res.userId]){
+        //         botWorkerDict[res.userId].terminate()
+        //         delete botWorkerDict[res.userId]
+        //     }
+        // }
+        if (result.action == 'process_result') {
+            // console.log(result.action)
+            // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
+            let userWallet = result.wallet.chips.credit
+            let winner_result = result.botTransaction.win_result
+            if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
+                if (result.botTransaction.win_result == 'WIN') {
+                    winner_result = 'LOSE'
+                } else if (result.botTransaction.win_result == 'LOSE') {
+                    winner_result = 'WIN'
+                }
+            }
+            let userTransactionData = {
+                value: result.betVal,
+                user_bet: result.bet,
+                wallet: result.wallet.chips.credit,
+                botId: result.botObj.id,
+                result: winner_result,
+                botTransactionId: result.botTransactionId
+            }
+
+            // console.log(userTransactionData)
+            let indexIsStop = result.isStop || (result.botObj.is_infinite == false
+                && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
+            // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
+            // console.log(`isStop ${result.isStop}`)
+
+            db.userTransaction.create(userTransactionData)
+            io.emit(`user${result.botObj.userId}`, {
+                action: "bet_result",
+                wallet: result.wallet,
+                playData: result.playData,
+                status: result.status,
+                isStop: indexIsStop,
+                value: result.betVal,
+                wallet: result.wallet.chips.credit,
+                botId: result.botObj.id,
+                botTransactionId: result.botTransactionId,
+                botTransaction: result.botTransaction,
+                botObj: result.botObj
+            })
+
+            // console.log(indexIsStop,
+            //     result.botObj.is_infinite, userWallet,
+            //     result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)),
+            //     userWallet - result.botObj.profit_wallet,
+            //     result.botObj.loss_threshold)
+
+            if (indexIsStop) {
+                db.bot.findOne({
+                    where: {
+                        id: result.botObj.id
+                    }
+                }).then((res) => {
+                    res.status = 3
+                    res.stop_wallet = result.wallet.chips.credit
+                    res.turnover = result.turnover
+                    res.stop_by = (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
+                    // userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
+                    res.save()
+                    if (dtBotWorkerDict.hasOwnProperty(res.userId) && dtBotWorkerDict[res.userId] != undefined) {
+                        dtBotWorkerDict[res.userId].terminate()
+                        delete dtBotWorkerDict[res.userId]
+                    } else {
+                        delete dtBotWorkerDict[res.userId]
+                    }
+
+                })
+            }
+        }
+    };
+
+    let w = new Worker(__dirname + '/dtBotWorker.js', {
+        workerData: {
+            obj: obj,
+            playData: playData
+        }
+    });
+
+    // registering events in main thread to perform actions after receiving data/error/exit events
+    w.on('message', (msg) => {
+        // data will be passed into callback
+        cb(null, msg);
+    });
+    dtBotWorkerDict[obj.userId] = w
+    // console.log(botWorkerDict)
+
+    // for error handling
+    w.on('error', cb);
+
+    // for exit
+    w.on('exit', (code) => {
+        // console.log(botWorkerDict)
+        if (code !== 0) {
+            console.error(new Error(`Worker stopped Code ${code}`))
+        }
+    });
+}
+
 
 function compare(a, b) {
     // console.log(compare)
@@ -2189,11 +2396,19 @@ async function mainBody() {
         else if (table.game_id == 10) {
             initiateRotWorker(table)
         }
+        else if (table.game_id == 6) {
+            console.log(table.id)
+            initiateDtWorker(table)
+        }
     }
 
     interval = setInterval(function () {
         playBaccarat();
     }, 7000);
+
+    dtInterval = setInterval(function () {
+        playDragonTiger();
+    }, 5500);
 
     rotInterval = setInterval(function () {
         playRot();
@@ -2221,6 +2436,26 @@ function betInterval() {
                 val.postMessage({
                     action: 'bet',
                     data: currentBetData
+                })
+            });
+        }
+    }
+}
+
+function dtBetInterval() {
+    let n = new Date().getTime()
+    console.log(n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
+    if (n - dtStartBet > (dtRemainingBet - 2) * 1000) {
+        clearInterval(dtBetInt)
+    } else {
+        // console.log('betting')
+        if (Object.keys(botWorkerDict).length > 0) {
+            Object.keys(botWorkerDict).forEach(function (key) {
+                var val = dtWorkerDict[key];
+                // console.log(key, val)
+                val.postMessage({
+                    action: 'bet',
+                    data: dtCurrentBetData
                 })
             });
         }
@@ -2301,6 +2536,57 @@ function playBaccarat() {
     }
     if (isPlay == false) {
         currentList = []
+    }
+}
+
+function playDragonTiger() {
+    // console.log(Object.keys(botWorkerDict))
+    // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
+    if (dtIsPlay == true) return;
+    if (dtIsPlay == false && dtCurrentList.length == 0) {
+        Object.keys(dtWorkerDict).forEach(function (key) {
+            var val = dtWorkerDict[key];
+            // console.log(key, val)
+            val.worker.postMessage({
+                'action': 'getCurrent'
+            })
+        });
+        return
+    }
+
+    if (dtIsPlay == false && dtCurrentList.length != Object.keys(dtWorkerDict).length) return;
+
+    dtCurrentList.sort(compare)
+    let found = true
+    for (current of dtCurrentList) {
+        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+        // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
+        if (current.winner_percent != 0 && current.bot != null) {
+            if (current.winner_percent < 50) {
+                win_percent = 100 - current.winner_percent
+            } else {
+                win_percent = current.winner_percent
+            }
+
+            if (win_percent == 100) {
+                win_percent = 92
+            }
+
+            // console.log(`table: ${current.table_id} percent: ${win_percent} bot: ${current.bot}`)
+            dtIsPlay = true
+            // console.log('post play')
+            dtWorkerDict[current.table_id].worker.postMessage({
+                action: 'play',
+            })
+
+            // io.emit('bot_play', {
+            //     current
+            // });
+            break;
+        }
+    }
+    if (dtIsPlay == false) {
+        dtCurrentList = []
     }
 }
 
@@ -2572,6 +2858,149 @@ function initiateWorker(table) {
 
     if (myWorker != null) {
         workerDict[table.id] = {
+            worker: myWorker
+        }
+    }
+
+    // post a multiple factor to worker thread
+    // myWorker.postMessage({ multipleFactor: table });
+}
+
+function initiateDtWorker(table) {
+
+    // define callback
+    let cb = async (err, result) => {
+        if (err) {
+            return console.error(err);
+        }
+        if (result.action == 'getCurrent') {
+            // console.log(result)
+            currentList.push(result)
+        }
+        if (result.action == 'played') {
+            clearInterval(dtBetInt)
+            if (result.status == 'FAILED' || result.status == null) {
+                dtIsPlay = false
+                dtIsBet = false
+                currentList = []
+                return
+            }
+
+            db.botTransction.findOne({
+                where: {
+                    bot_type: 3,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+
+                botTransactionObj['DEFAULT'] = null
+                botTransactionObj[result.stats.bot] = null
+                if (result.status == 'WIN') {
+                    point += 1
+                } else if (result.status == 'LOSE') {
+                    point -= 1
+                }
+                botTransactionData = {
+                    bot_type: result.bot_type,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: result.stats.bot,
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: 3,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+
+
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: 3,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            botTransactionData.id = res.id
+
+                            if (Object.keys(dtBotWorkerDict).length > 0) {
+                                Object.keys(dtBotWorkerDict).forEach(function (key) {
+                                    var val = dtBotWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'result_bet',
+                                        bot_type: result.bot_type,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: result.stats.bot,
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: botTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
+
+            dtIsPlay = false
+            dtIsBet = false
+            currentList = []
+        }
+        if (result.action == 'bet') {
+            dtStartBet = new Date().getTime()
+            dtBetInt = setInterval(function () {
+               dtBetInterval();
+            }, 2400);
+
+            dtRemainingBet = result.data.remaining
+            dtCurrentBetData = result.data
+            isBet = true
+
+            io.emit('bot', { action: 'play', data: result.data })
+        }
+        // // if worker thread is still working on list then write index and updated value
+        // if (result.isInProgress) {
+        //     console.log("Message from worker at Index: ", result.index, " and updated value: ", result.val);
+        // }
+        // // when worker thread complete process then console original list from main and updated list from worker thread
+        // else {
+        //     console.log("Original List Data: ", lst);
+        //     console.log("Updated List From worker: ", result.val);
+        // }
+    };
+
+    // start worker
+    myWorker = startWorker(table, __dirname + '/dtWorkerCode.js', cb);
+
+    if (myWorker != null) {
+        dtWorkerDict[table.id] = {
             worker: myWorker
         }
     }
