@@ -589,6 +589,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         console.log(`after playTurn ${playTurn}`)
         if(playTurn > 9){
             playTurn = 1
+            profitloss = 0
         }
         
         console.log(`last playTurn ${playTurn}`)
