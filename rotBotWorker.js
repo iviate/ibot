@@ -24,11 +24,14 @@ let status = 2
 var isStop = false;
 var minBet = 50
 var maxBet = 2500
+var minZero = 10
 var turnover = 0
 var is_opposite = false
 var table = null
 var stopLoss = 0
 var stopLossPercent = 0
+var profitloss = 0
+var winStreak = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -165,21 +168,30 @@ function getBetVal() {
     if (botObj.money_system == 1) {
         betval = botObj.init_bet
     }
-    if (botObj.money_system == 2 || botObj.money_system == 5) {
+    else if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 6) {
+        console.log(playData, playTurn)
         betval = playData[playTurn - 1]
     }
-    if (botObj.money_system == 3) {
+    else if (botObj.money_system == 3) {
         if (playData.length == 1) {
 
             betval = playData[0] * (botObj.init_bet / 2)
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-        betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
+       
     }
-    if (botObj.money_system == 4) {
+    else if (botObj.money_system == 4) {
         if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
         }
-        betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
+        
+    }
+    else if(botObj.money_system == 7){
+        betval = playData[playTurn - 1]
+        console.log(`bet val ${playTurn} : ${betval}`)
     }
 
     let mod = ~~(betval % 10)
@@ -192,71 +204,79 @@ function getBetVal() {
         }
     }
 
+
     return ~~betval
 }
 
-function getBetPayLoad(table_id, game_id, bot, betVal) {
-    let payload = { table_id: table_id, game_id: game_id }
-    if (botObj.bet_side == 11) {
-        let realBet = data.bot.RB
-        if (data.bot == 'HALFxBLACK' && is_opposite == false) {
-            payload.chip = { credit: { 'HALFxBLACK': betVal } }
-        } else if (data.bot == 'HALFxRED' && is_opposite == false) {
-            payload.chip = { credit: { 'HALFxRED': betVal } }
-        } else if (data.bot == 'HALFxBLACK' && is_opposite == true) {
-            payload.chip = { credit: { 'HALFxRED': betVal } }
-            realBet = 'HALFxRED'
-        } else if (data.bot == 'HALFxRED' && is_opposite == true) {
-            payload.chip = { credit: { 'HALFxBLACK': betVal } }
-            realBet = 'HALFxBLACK'
-        } else {
-            return
-        }
-    } else if (botObj.bet_side == 12) {
-        let realBet = data.bot.ED
-        if (data.bot == 'HALFxEVEN' && is_opposite == false) {
-            payload.chip = { credit: { 'HALFxEVEN': betVal } }
-        } else if (data.bot == 'HALFxODD' && is_opposite == false) {
-            payload.chip = { credit: { 'HALFxODD': betVal } }
-        } else if (data.bot == 'HALFxEVEN' && is_opposite == true) {
-            payload.chip = { credit: { 'HALFxODD': betVal } }
-            realBet = 'HALFxODD'
-        } else if (data.bot == 'HALFxODD' && is_opposite == true) {
-            payload.chip = { credit: { 'HALFxEVEN': betVal } }
-            realBet = 'HALFxEVEN'
-        } else {
-            return
-        }
-    } else if (botObj.bet_side == 13) {
-        let realBet = data.bot.ED
-        if (data.bot == 'HALFxSMALL' && is_opposite == false) {
-            payload.chip = { credit: { 'HALFxSMALL': betVal } }
-        } else if (data.bot == 'HALFxBIG' && is_opposite == false) {
-            payload.chip = { credit: { 'HALFxBIG': betVal } }
-        } else if (data.bot == 'HALFxBIG' && is_opposite == true) {
-            payload.chip = { credit: { 'HALFxSMALL': betVal } }
-            realBet = 'HALFxSMALL'
-        } else if (data.bot == 'HALFxSMALL' && is_opposite == true) {
-            payload.chip = { credit: { 'HALFxBIG': betVal } }
-            realBet = 'HALFxBIG'
-        } else {
-            return
-        }
-    } else if (botObj.bet_side == 14) {
-        let realBet = data.bot.TWOZONE
-        payload.chip = {}
-        payload.chip['credit'] = {}
-        payload.chip.credit[realBet[0]] = betVal
-        payload.chip.credit[realBet[1]] = betVal
-    } else if (botObj.bet_side == 15) {
-        let realBet = data.bot.ONEZONE
-        payload.chip = {}
-        payload.chip['credit'] = {}
-        payload.chip.credit[realBet] = betVal
+// function getBetPayLoad(table_id, game_id, bot, betVal) {
+//     let payload = { table_id: table_id, game_id: game_id }
+//     if (botObj.bet_side == 11) {
+//         let realBet = data.bot.RB
+//         if (data.bot == 'HALFxBLACK' && is_opposite == false) {
+//             payload.chip = { credit: { 'HALFxBLACK': betVal } }
+//         } else if (data.bot == 'HALFxRED' && is_opposite == false) {
+//             payload.chip = { credit: { 'HALFxRED': betVal } }
+//         } else if (data.bot == 'HALFxBLACK' && is_opposite == true) {
+//             payload.chip = { credit: { 'HALFxRED': betVal } }
+//             realBet = 'HALFxRED'
+//         } else if (data.bot == 'HALFxRED' && is_opposite == true) {
+//             payload.chip = { credit: { 'HALFxBLACK': betVal } }
+//             realBet = 'HALFxBLACK'
+//         } else {
+//             return
+//         }
+//     } else if (botObj.bet_side == 12) {
+//         let realBet = data.bot.ED
+//         if (data.bot == 'HALFxEVEN' && is_opposite == false) {
+//             payload.chip = { credit: { 'HALFxEVEN': betVal } }
+//         } else if (data.bot == 'HALFxODD' && is_opposite == false) {
+//             payload.chip = { credit: { 'HALFxODD': betVal } }
+//         } else if (data.bot == 'HALFxEVEN' && is_opposite == true) {
+//             payload.chip = { credit: { 'HALFxODD': betVal } }
+//             realBet = 'HALFxODD'
+//         } else if (data.bot == 'HALFxODD' && is_opposite == true) {
+//             payload.chip = { credit: { 'HALFxEVEN': betVal } }
+//             realBet = 'HALFxEVEN'
+//         } else {
+//             return
+//         }
+//     } else if (botObj.bet_side == 13) {
+//         let realBet = data.bot.ED
+//         if (data.bot == 'HALFxSMALL' && is_opposite == false) {
+//             payload.chip = { credit: { 'HALFxSMALL': betVal } }
+//         } else if (data.bot == 'HALFxBIG' && is_opposite == false) {
+//             payload.chip = { credit: { 'HALFxBIG': betVal } }
+//         } else if (data.bot == 'HALFxBIG' && is_opposite == true) {
+//             payload.chip = { credit: { 'HALFxSMALL': betVal } }
+//             realBet = 'HALFxSMALL'
+//         } else if (data.bot == 'HALFxSMALL' && is_opposite == true) {
+//             payload.chip = { credit: { 'HALFxBIG': betVal } }
+//             realBet = 'HALFxBIG'
+//         } else {
+//             return
+//         }
+//     } else if (botObj.bet_side == 14) {
+//         let realBet = data.bot.TWOZONE
+//         payload.chip = {}
+//         payload.chip['credit'] = {}
+//         payload.chip.credit[realBet[0]] = betVal
+//         payload.chip.credit[realBet[1]] = betVal
+//     } else if (botObj.bet_side == 15) {
+//         if(!is_opposite){
+//             let realBet = data.bot.ONEZONE
+//             payload.chip = {}
+//             payload.chip['credit'] = {}
+//             payload.chip.credit[realBet] = betVal
+//         }else{
+//             let dozen = ['DOZENx1st', 'DOZENx2nd', 'DOZENx3rd']
 
-    }
+//         }
+        
+        
 
-}
+//     }
+
+// }
 
 function bet(data) {
     table = data.table
@@ -311,6 +331,7 @@ function bet(data) {
             }).then(res => {
                 minBet = 200
                 maxBet = 10000
+                minZero = 40
             })
                 .catch(error => {
                     // console.log(error)
@@ -328,6 +349,7 @@ function bet(data) {
             }).then(res => {
                 minBet = 50
                 maxBet = 2500
+                minZero = 10
             })
                 .catch(error => {
                     // console.log(error)
@@ -390,13 +412,46 @@ function bet(data) {
             payload.chip.credit[realBet[0]] = betVal
             payload.chip.credit[realBet[1]] = betVal
         } else if (botObj.bet_side == 15) {
-            realBet = data.bot.ONEZONE
-            payload.chip = {}
-            payload.chip['credit'] = {}
-            payload.chip.credit[realBet] = betVal
+            if(!is_opposite){
+                realBet = data.bot.ONEZONE
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet] = betVal
+            }else{
+                console.log('opposite one zone')
+                let dozen = ['DOZENx1st', 'DOZENx2nd', 'DOZENx3rd']
+                let index = dozen.indexOf(data.bot.ONEZONE)
+                console.log(index)
+                if(index != -1){
+                    dozen.splice(index, 1)
+                    realBet = dozen
+                    console.log(realBet)
+                    payload.chip = {}
+                    payload.chip['credit'] = {}
+                    payload.chip.credit[realBet[0]] = betVal
+                    payload.chip.credit[realBet[1]] = betVal
+                }else{
+                    realBet = data.bot.ONEZONE
+                    payload.chip = {}
+                    payload.chip['credit'] = {}
+                    payload.chip.credit[realBet] = betVal
+                }
+
+                
+                
+            }
         }
 
-        // console.log(payload)
+        if(botObj.open_zero && botObj.zero_bet > 9){
+            if(botObj.zero_bet < minZero){
+                payload.chip.credit['STRAIGHTUPx0'] = minZero
+            }else{
+                payload.chip.credit['STRAIGHTUPx0'] = botObj.zero_bet
+            }
+            
+        }
+
+        console.log(payload)
 
         axios.post(`https://truthbet.com/api/bet/roulette`, payload,
             {
@@ -407,14 +462,23 @@ function bet(data) {
             })
             .then(response => {
                 // console.log(response.data);
-                turnover += betVal
+                if(botObj.open_zero){
+                    turnover += payload.chip.credit['STRAIGHTUPx0']
+                }
+
+                if(botObj.bet_side == 14 || ( botObj.bet_side == 15 && is_opposite == true ) ){
+                    turnover += betVal * 2
+                }else{
+                    turnover += betVal
+                }
+                
                 current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
                 parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                 betFailed = true
             })
             .catch(error => {
                 // console.log(error)
-                if (error.response.data.error != 500) {
+                if (error.response.data.error != 500 && error.response.data.code != "toomany_requests") {
                     betFailed = true
                 } else {
                     betFailed = false
@@ -494,16 +558,41 @@ function genLeftProfitXSystem(wallet) {
 
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
-    // if (botObj.money_system == 2 || botObj.money_system == 5) {
-    //     if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-    //         playTurn = 1
-    //     } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
-    //         playTurn++
-    //         if (playTurn > playData.length) {
-    //             playTurn = 1
-    //         }
-    //     }
-    // }
+    else if (botObj.money_system == 6 || botObj.money_system == 5) {
+        console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playTurn = 1
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            playTurn++
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
+        }
+    }
+    else if (botObj.money_system == 7){
+        console.log(`before playTurn ${playTurn}`)
+        console.log(playData[playTurn-1])
+        if(betStatus == "WIN"){
+            winStreak += 1
+            profitloss += playData[playTurn-1]
+        }else if(betStatus == 'LOSE'){
+            winStreak = 0
+            profitloss += -1 * (playData[playTurn-1] * 2)
+        }
+        console.log(`profitloss ${profitloss} winStreak: ${winStreak}`)
+        if(winStreak == 3 || profitloss >= 0){
+            playTurn = 1
+            profitloss = 0
+        }else{
+            playTurn += 1
+        }
+        console.log(`after playTurn ${playTurn}`)
+        if(playTurn > 9){
+            playTurn = 1
+        }
+        
+        console.log(`last playTurn ${playTurn}`)
+    }
     // if (botObj.money_system == 3 || botObj.money_system == 4) {
     //     if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
     //         playData = playData.splice(1, playData.length - 2)
@@ -569,6 +658,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         betVal: current.betVal,
                         bet: current.bet,
                         botObj: botObj,
+                        is_opposite: current.is_opposite,
                         playData: playData,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
@@ -623,6 +713,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         bet: current.bet,
                         botObj: botObj,
                         playData: playData,
+                        is_opposite: current.is_opposite,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
                         isStop: currentWallet - botObj.profit_wallet < 50 ? true : false,
@@ -637,6 +728,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         bet: current.bet,
                         botObj: botObj,
                         playData: playData,
+                        is_opposite: current.is_opposite,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
                         isStop: isStop,
@@ -691,9 +783,20 @@ function registerForEventListening() {
             parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
         }
         if (result.action == 'result_bet') {
+            mapBotTypeAndBetSide = {
+                11: 21,
+                12: 22,
+                13: 23,
+                14: 24,
+                15: 25
+            }
             // console.log('action result_bet')
             betFailed = false
-            if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
+            if (result.table_id == current.table_id && 
+                result.round == current.round && 
+                result.shoe == current.shoe && 
+                mapBotTypeAndBetSide[botObj.bet_side] == result.botTransaction.bot_type) {
+                
                 processResultBet(result.status, result.botTransactionId, result.botTransaction)
             }
         }
@@ -710,6 +813,13 @@ function registerForEventListening() {
             parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
             // bet_side = result.bet_side
         }
+
+        if (result.action == 'set_zero'){
+            botObj.zero_bet = result.zero_bet
+            botObj.open_zero = result.open_zero
+            parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
+        }
+
         if (result.action == 'pause') {
             botObj.status = 2
             status = 2

@@ -168,16 +168,19 @@ function getBetVal() {
     }
     else if (botObj.money_system == 3 ) {
         if (playData.length == 1) {
-
             betval = playData[0] * (botObj.init_bet / 2)
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-        betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
+        
     }
     else if (botObj.money_system == 4) {
         if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
         }
-        betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
+        
     }
 
     let mod = ~~(betval % 10)
@@ -290,7 +293,7 @@ function bet(data) {
                 betFailed = true
             })
             .catch(error => {
-                if (error.response.data.code != 500) {
+                if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
                     betFailed = true
                 } else {
                     betFailed = false
@@ -444,6 +447,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         wallet: res.data,
                         betVal: current.betVal,
                         bet: current.bet,
+                        is_opposite: current.is_opposite,
                         botObj: botObj,
                         playData: playData,
                         botTransactionId: botTransactionId,
@@ -500,6 +504,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         bet: current.bet,
                         botObj: botObj,
                         playData: playData,
+                        is_opposite: current.is_opposite,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
                         isStop: currentWallet - botObj.profit_wallet < 50? true: false,
@@ -513,6 +518,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         betVal: current.betVal,
                         bet: current.bet,
                         botObj: botObj,
+                        is_opposite: current.is_opposite,
                         playData: playData,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,

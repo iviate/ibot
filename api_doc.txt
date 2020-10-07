@@ -1,0 +1,393 @@
+
+/// API
+1 Login
+DESCRIPTION: ล๊อกอินยูสเซอร์ จะมีเวลาหน่วงประมาณ 5 วินาทีหากลูกค้ากรอก username และ password ผิดหรือไม่ใช่ AF ของเรา หรือเข้าครั้งแรก หากเคยเข้าระบบแล้วจะไม่ดีเลย์
+URL: /login
+METHOD : POST
+PARAMETERS: 
+{
+    username: string,
+    password: string
+}
+RESPONSE: 
+Success: {
+    success: true,
+    data: {
+        user_id: $user.id,
+        bot: $bot_object, // object เก็บค่าต่างๆของบอทที่เปิดอยู่ เป็น null คือไม่มี บอทเปิดอยู่
+        username: $username
+    }
+}
+Failed: {
+    success: false,
+    message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+}
+{
+    success: false,
+    message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+}
+
+2 User Profile
+DESCRIPTION: เรียกดูข้อมูลของยูสเซอร์
+URL: /profile
+METHOD : GET
+PARAMETERS: 
+{
+    username: string
+}
+RESPONSE: 
+Success:{
+            success: true,
+            data: {
+                rolling: array, array ของข้อมูลคำนวณ rolling
+                member: object, ข้อมูลสมาชิกเกียวกับ turnover and rolling
+                account: object, ข้อมูลธนาคาร
+                withdraw: array, list การถอนค่าโรลลิ่ง
+                turns: array, list ข้อมูล turnover ของยูส ระบบเก็บค่าทุกเที่ยงคืน
+            },
+            error_code: null,
+            message: ''
+        }
+Failed: {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+
+
+2 User Wallet
+URL: /wallet/:userId
+DESCRIPTION: เรียกดูยอดเงินของลูกค้า
+METHOD : GET
+PARAMETERS: {}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null,
+            data: {
+                profit_wallet: float,  // กระเป๋ากำไร
+                all_wallet: float, // ยอดเงินปัจจุบันจาก truthbet
+                play_wallet: float, // ยอดเงินที่เหลือไว้เล่น
+                myWallet: object // ข้อมูลจาก truthbet
+            }
+        }
+Failed: {
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            }
+
+3 Create Bot
+DESCRIPTION: สร้างบอท
+URL: /bot
+METHOD : POST
+PARAMETERS:
+{
+    username: string,
+    bot_type: int, // ประเภทของบอท 1.บอทบาคาร่า 2. บอทรูเล็ต
+    money_system: int, // การเดินเงิน 1. คงที่ 2.มาติงเกล 5 ไม้ 3.ลาบูแชร์ฺ 4. x system 5. มาติงเกลกำหนดเองได้
+    profit_threshold: float, //  กำไรเป่าหมาย ค่าเป็น เงินเต็มเลย เช่น ทุน 1000 อยากได้กำไร 500 ส่งค่าเป็น 1500
+    loss_threshold: float, //  กำหนดว่าเสียแล้วเหลือเงินเท่าไหร่แล้วหยุด
+    profit_percent: float, กำไรคำนวณค่าเป็น % เอาไว้ใช้ใน front
+    loss_percent: float, ขาดทุนคำนวณค่าเป็น % เอาไว้ใช้ใน front
+    init_wallet: float, เงินตั้งต้นตอนสร้างบอท
+    init_bet: float, ค่าชิพเริ่มต้น
+    bet_side: int, การแทงของบอท 1. Player/Banker 2. Player Only, 3.Banker Only, 
+                                        11. Red/Black, 12 Even/Odd, 13 Small/Big 14 Two Zone, 15 One Zone
+    is_infinite: boolean, boolean กำหนดว่าถ้ากำไรถึงเป้าให้เก็บเข้ากระเป๋าแล้วเล่นต่อ False ตือบอทจะหยุดเมื่อกำไรถึง 94% ของที่ตั้งไว้
+}
+RESPONSE: 
+Success: {
+}
+Failed: {
+}
+
+4 Start Bot
+URL: /start
+DESCRIPTION: สั่งให้บอทเริ่มเล่น
+METHOD : POST
+PARAMETERS: 
+{
+    username: string
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null
+        }
+Failed:{
+            success: false,
+            error_code: null
+        }
+        {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+
+
+5 Pause Bot
+URL: /pause
+DESCRIPTION: สั่งให้บอทพักการเล่น
+METHOD : POST
+PARAMETERS: 
+{
+    username: string
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null
+        }
+Failed: {
+            success: false,
+            error_code: null
+        }
+        {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+
+6 Stop Bot
+URL: /stop
+DESCRIPTION: สั่งปิดบอท
+METHOD : POST
+PARAMETERS: 
+{
+    username: string
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null
+        }
+Failed: {
+            success: false,
+            error_code: null
+        }
+        {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }   
+
+7 Set Bot is_opposite
+URL: /bot/set_opposite
+DESCRIPTION: ตั้งค่าการแทงสวน/แทงตามบอท ต้องกดพักบอทก่อน ถึงจะ set ได้
+METHOD : POST
+PARAMETERS: 
+{
+    username: string,
+    is_opposite: boolean // true สวนบอท, false ตามบอท(default)
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null
+        }
+Failed: {
+            success: false,
+            error_code: null
+        }
+        {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }  
+
+8 Set Bot bet_side
+URL: /bot/set_bet_side
+DESCRIPTION: ตั้งค่าการแทงชนิดต่างๆของบอท ต้องกดพักบอทก่อน ถึงจะ set ได้
+METHOD : POST
+PARAMETERS: 
+{
+    username: string,
+    bet_side: เปี่ยนการแทงของบอท
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null
+        }
+Failed: {
+            success: false,
+            error_code: null
+        }
+        {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+
+9 Call Bot Information socket
+URL: /bot_info/:user_id
+DESCRIPTION: เรียก API เพื่อรอรับ Socket ข้อมูล
+METHOD : GET
+PARAMETERS: 
+{
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null
+        }
+Failed:{
+            success: false,
+            error_code: 404,
+            message: 'bot or user not found'
+        }  
+
+10 Get all user transaction ( get from truthbet )
+URL: /user_transaction/:userId
+DESCRIPTION: เรียก API เพื่อดูข้อมูลการแทงของยูสดึงจาก truthbet API
+METHOD : GET
+PARAMETERS: 
+{
+    page: page // default 1
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null,
+            data: array
+        }
+Failed: {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+
+11 Get user bot transaction
+URL: /user_bot_transaction/:botId
+DESCRIPTION: เรียก API เพื่อดูข้อมูลการแทงบอทของยูสข้อมูลจากระบบเราเอง
+METHOD : GET
+PARAMETERS: 
+{
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null,
+            data: array
+        }
+Failed: {
+}
+
+12 Get overall bot transaction
+URL: /bot_transaction
+DESCRIPTION: เรียก API พื่อดูข้อมูลการแทงบอทแยกตามการแทง bet_side
+METHOD : GET
+PARAMETERS: 
+{
+    type: string // DEFAULT = bot Player/Banker, BANKER, PLAYER, RB, ED, SB, TWOZONE, ONEZONE
+}
+RESPONSE: 
+Success: {
+            success: true,
+            error_code: null,
+            data: array
+        }
+Failed: {
+}
+
+13 Check user has bot
+URL: /user_bot/:id
+DESCRIPTION: เรียกดูว่ายูสมีบอทเปิดอยู่ไหม
+METHOD : GET
+PARAMETERS: 
+{
+}
+RESPONSE: 
+Success: {
+            success: true,
+            data: {
+                bot: bot_object // null = ไม่ได้เปิดบอทอยู่
+            }
+        }
+Failed: {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+
+13 Check user has bot
+URL: /rolling_withdraw
+DESCRIPTION: ส่งคำขอถอนค่าโรลลิ่ง
+METHOD : GET
+PARAMETERS: 
+{
+    username: string,
+    amount: float // จำนวนเงิน
+}
+RESPONSE: 
+Success: {
+            success: true,
+            data: withdraw_object,
+            error_code: null,
+            message: ''
+        }
+Failed: {
+            success: false,
+            error_code: 404,
+            message: 'user not found'
+        }
+        {
+            success: false,
+            error_code: 404,
+            message: 'จำนวนเงินมากกว่ายอดโรลลิ่ง'
+        }
+
+/// Socket Channel
+
+server emit
+
+1 channel `user{$userId}` จะแยกจาม data.action อีกที
+    action `bet_success' บอทแทงสำเร็จ
+    action 'bet_result' เกมที่บอมเดิมพันจบแล้ว
+    action 'info' ข้อมูลปัจจุบันของบอทใน memmory ไม่ได้มาจาก database จะได้ต้อง call API /bot_info
+    action 'restart_result' ผลลัพธ์ของ restart x system
+2 channel `all` เกมที่บอมเดิมพันจบแล้ว ใช่เวลา บอทของยูสไม่ได้แทง
+3 channel `bot' บอทวิเคราะห์ ได้แล้วว่าจะแทงอะไร
+
+server listen 
+1 'restart' parameter { userId: userId, type: integer (การรีสตาร์ทกองของ x system 1 กำไร+ขาดทุน 2 กำไร อย่างเดียว )}
+
+/// DATA MODEL
+
+ฺBot Data
+    status: int //1 start, 2 pause, 3 stop
+    bot_type: int // บาคาร่า 2 รูเล็ต
+    money_system: int // การเดินเงิน 1. คงที่ 2.มาติงเกล 5 ไม้ 3.ลาบูแชร์ฺ 4. x system 5. มาติงเกลกำหนดเองได้
+    profit_threshold: float // กำไรเป่าหมาย ค่าเป็น เงินเต็มเลย เช่น ทุน 1000 อยากได้กำไร 500 ส่งค่าเป็น 1500
+    loss_threshold: float // กำหนดว่าเสียแล้วเหลือเงินเท่าไหร่แล้วหยุด
+    profit_percent: float // กำไรคำนวณค่าเป็น % เอาไว้ใช้ใน front
+    loss_percent: float // ขาดทุนคำนวณค่าเป็น % เอาไว้ใช้ใน front
+    init_wallet: float // เงินที่มีอยู่ตอนสร้างบอท
+    init_bet: int // ค่าชิพเริ่มต้น มีผลกับคำนวณการเดินเงิน
+    bet_side: การแทงของบอท บอทบาคาร่า 1. Player/Banker 2. Player Only, 3.Banker Only, 
+                            บอทรูเล็ต   11. Red/Black, 12 Even/Odd, 13 Small/Big 14 Two Zone, 15 One Zone
+    data: string // ข้อมูลการแทงของการเดินเงินต่างๆ เป็น string ที่แปลงมาจาก array
+    is_infinite: boolean // เมื่อกำไรถึงเป้าถอนแล้วเล่นต่อ
+    profit_wallet: float // จำนวนเงินที่ถอนเข้ากระเป๋ากำไร
+    deposite_count: int //จำนวนครั้งที่ถอนเข้ากระเป๋ากำไร 
+    is_opposite: boolean // การแทงสวนบอท(false) ตามบอท(true)
+    turnover: float // turn over ของบอท
+    zero_bet: int // สำหรับ รูเล็ตว่าจะแทง 0 ไว้กี่บาท 0 = ไม่แทง แทงได้ 10 - 1600
+
+ฺBot Transaction Data
+    bot_type: int  //การแทงของ บอท คือค่า bet_side
+    table_id: int // โต๊ะที่แทง อิง truthbet
+    table_title: string // code ของ โต๊ะ อิง truthbet
+    game_id: string // game_id อิง truthbet,
+    shoe: string // อิงจาก truthbet
+    round: int, // อิงจาก truthbet
+    bet: string // ข้างที่แทง เช่น PLAYER, BANKER
+    result: string // ผลลัพธ์ ของเกม PLAYER, BANKER, TIE
+    win_result:string // ผลลัพการแทง WIN, LOSE, TIE,
+
+User Bot Transaction Data
+    value: float // จำนวนเงิน
+    wallet: float // ยอดเงินหลังผลออก
+    user_bet: string // การแทงของบอทของยูส จะไม่เหมือนบอทถ้าสวนบอท
+    result: string // ผลลัพธ์ของยูส WIN, LOSE, TIE จะตรงข้ามกับผลลัพธ์บอท ถ้าแทงสวน

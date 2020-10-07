@@ -28,15 +28,17 @@ async function pullMember() {
             }})
 
             if(data2){
+                
                 console.log(`found ${downline.username}`)
                 let betAll = 0
                 if(downline.stat != null){
                     betAll = downline.stat.betall
+                    console.log(betAll)
                 }
                 data2.email = downline.email
                 data2.mobile = downline.mobile
-                data2.betAll = betAll
-                await data2.save()
+                data2.betall = betAll
+                data2.save()
             }else{
                 console.log(`create ${downline.username}`)
                 let betAll = 0

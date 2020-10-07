@@ -355,6 +355,19 @@ function botplay(currentInfo) {
         round = currentInfo.round
         // predictStatsHistory.push({ ...predictStats })
         predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
+        statCount = {
+            rbCorrect: 0,
+            rbWrong: 0,
+            edCorrect: 0,
+            edWrong: 0,
+            sbCorrect: 0,
+            sbWrong: 0,
+            twoZoneCorrect: 0,
+            twoZoneWrong: 0,
+            oneZoneCorrect: 0,
+            oneZoneWrong: 0
+        }
+        
         if (isPlay == true) {
             isPlay = false
             parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
@@ -366,6 +379,19 @@ function botplay(currentInfo) {
     let playCount = predictStats.predict.length
     let currentRound = currentInfo.round
     if (currentInfo.round == 0) {
+        statCount = {
+            rbCorrect: 0,
+            rbWrong: 0,
+            edCorrect: 0,
+            edWrong: 0,
+            sbCorrect: 0,
+            sbWrong: 0,
+            twoZoneCorrect: 0,
+            twoZoneWrong: 0,
+            oneZoneCorrect: 0,
+            oneZoneWrong: 0
+        }
+
         if (isPlay == true) {
             isPlay = false
             parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
@@ -438,7 +464,7 @@ function botplay(currentInfo) {
             // console.log(status)
             // console.log(statCount)
 
-            if (isPlay && playRound == playCount) {
+            if (isPlay && playRound == playCount && playRound < 99) {
                 isPlay = false
                 // console.log(playList)
                 parentPort.postMessage({
@@ -453,7 +479,11 @@ function botplay(currentInfo) {
                 })
 
                 // playList = []
-            }else if(isPlay && playCount > playRound){
+            }else if(isPlay && playRound > 98){
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
+            }
+            else if(isPlay && playCount > playRound){
                 isPlay = false
                 parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
             }
