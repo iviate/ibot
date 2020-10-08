@@ -798,9 +798,9 @@ myApp.post('/bot', async function (request, response) {
                     ]
                 }).then((res) => {
                     // console.log(res)
-                    delete botWorkerDict[u.id]
-                    delete rotBotWorkerDict[u.id]
-                    delete dtBotWorkerDict[u.id]
+                    delete botWorkerDict[user.id]
+                    delete rotBotWorkerDict[user.id]
+                    delete dtBotWorkerDict[user.id]
                     
                     db.bot.update({
                         status: 3
