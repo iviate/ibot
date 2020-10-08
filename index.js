@@ -1985,7 +1985,7 @@ var betInt;
 var dtBetInt;
 var rotBetInt = {};
 var currentBetData;
-var rotCurrentBetData;
+var rotCurrentBetData = {};
 var dtCurrentBetData;
 var latestBotTransactionId;
 let wPercent = 0
