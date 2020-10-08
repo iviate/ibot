@@ -104,6 +104,7 @@ async function getBank(token) {
 }
 
 myApp.post('/login', async function (request, response) {
+    console.log('login')
     const USERNAME = request.body.username;
     const PASSWORD = request.body.password;
 
@@ -125,7 +126,7 @@ myApp.post('/login', async function (request, response) {
                     }
 
                 }).then((res2) => {
-                    // console.log(res2)
+                    console.log(res2)
                     // getBank(user.truthbet_token)
                     axios.get('https://truthbet.com/api/m/account/edit', {
                         headers: {
@@ -133,16 +134,10 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res3) => {
 
-
-                        // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
-                        if ((res3.data.user.advisor_user_id != 570306 || res3.data.user.agent_user_id != 26054 || res3.data.user.supervisor_user_id != 521727) &&
-                            (USERNAME != 'haoshaman' && USERNAME != 'testf111' && USERNAME != 'kobhilow112233' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa'
-                                && USERNAME != "betforwin")) {
-                            response.json({
-                                success: false,
-                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
-                            });
-                        } else {
+                        if ((res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) || 
+                            (res3.data.user.advisor_user_id == 604990 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
+                            (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                || USERNAME == "betforwin")) { 
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
                             (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
                             (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
@@ -169,6 +164,13 @@ myApp.post('/login', async function (request, response) {
                                 });
                             }
                         }
+                        // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
+                        else {
+                            response.json({
+                                success: false,
+                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                            });
+                        } 
                     })
                 })
             } else {
@@ -210,14 +212,10 @@ myApp.post('/login', async function (request, response) {
                                 }
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                                if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)
-                                    && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa' 
-                                            && USERNAME != "betforwin")) {
-                                    response.json({
-                                        success: false,
-                                        message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
-                                    });
-                                } else {
+                                 if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) || 
+                                (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                                (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                    || USERNAME == "betforwin")) {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
 
                                         db.user.findOne({
@@ -241,6 +239,12 @@ myApp.post('/login', async function (request, response) {
 
                                     });
                                 }
+                                else  {
+                                    response.json({
+                                    success: false,
+                                    message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                                });
+                            }
 
                             })
 
@@ -300,7 +304,7 @@ myApp.post('/login', async function (request, response) {
             try {
                 await page.waitForSelector('.fa-coins', {
                     visible: false,
-                    timeout: 5000
+                    timeout: 7000
                 })
                 let data = await page.evaluate(() => window.App);
 
@@ -311,13 +315,10 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res2) => {
                         // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id != 570306 || res2.data.user.agent_user_id != 26054 || res2.data.user.supervisor_user_id != 521727)
-                            && (USERNAME != "testf111" && USERNAME != 'kobhilow112233' && USERNAME != 'haoshaman' && USERNAME != 'kobhilow1' && USERNAME != 'aaa111aaa')) {
-                            response.json({
-                                success: false,
-                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
-                            });
-                        } else {
+                        if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) || 
+                        (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                        (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                            || USERNAME == "betforwin")) {
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
                                 db.user.create({
                                     username: USERNAME,
@@ -343,6 +344,12 @@ myApp.post('/login', async function (request, response) {
 
                             });
                         }
+                        else {
+                            response.json({
+                                success: false,
+                                message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                            });
+                        }  
                     })
                 } else {
                     response.json({
