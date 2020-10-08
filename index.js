@@ -2507,19 +2507,19 @@ async function mainBody() {
         else if (table.game_id == 10) {
             initiateRotWorker(table)
         }
-        else if (table.game_id == 6) {
-            console.log(table.id)
-            initiateDtWorker(table)
-        }
+        // else if (table.game_id == 6) {
+        //     console.log(table.id)
+        //     initiateDtWorker(table)
+        // }
     }
 
     interval = setInterval(function () {
         playBaccarat();
     }, 7000);
 
-    dtInterval = setInterval(function () {
-        playDragonTiger();
-    }, 5500);
+    // dtInterval = setInterval(function () {
+    //     playDragonTiger();
+    // }, 5500);
 
     rotInterval = setInterval(function () {
         playRot();
