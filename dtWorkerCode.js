@@ -237,7 +237,7 @@ function botplay(currentInfo) {
                         // console.log(response.data);
                         // console.log(`round = ${response.data.info.detail.round}`)
                         let current = response.data.game
-                        console.log(current)
+                        // console.log(current)
                         let sum = predictStats.correct + predictStats.wrong + predictStats.tie
                         let win_percent = 0
                         if (sum != 0) {

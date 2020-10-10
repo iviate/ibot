@@ -106,7 +106,7 @@ async function getBank(token) {
 }
 
 myApp.post('/login', async function (request, response) {
-    console.log('login')
+    // console.log('login')
     const USERNAME = request.body.username;
     const PASSWORD = request.body.password;
 
@@ -128,7 +128,7 @@ myApp.post('/login', async function (request, response) {
                     }
 
                 }).then((res2) => {
-                    console.log(res2)
+                    // console.log(res2)
                     // getBank(user.truthbet_token)
                     axios.get('https://truthbet.com/api/m/account/edit', {
                         headers: {
@@ -486,8 +486,8 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             let nextVal = ret[ret.length - 1] + ret[ret.length - 2]
             ret.push(nextVal)
         }
-        console.log('3 in 9')
-        console.log(ret)
+        // console.log('3 in 9')
+        // console.log(ret)
         return ret
     }
 }
@@ -2236,8 +2236,8 @@ function createRotBotWorker(obj, playData) {
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet.chips.credit
             let winner_result = result.botTransaction.win_result
-            console.log(result.bet, result.botTransaction.bet, result.bet != result.botTransaction.bet, 
-                            result.botTransaction.win_result, result.is_opposite)
+            // console.log(result.bet, result.botTransaction.bet, result.bet != result.botTransaction.bet, 
+            //                 result.botTransaction.win_result, result.is_opposite)
             if (result.botObj.bet_side != 14) {
                 if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
                     if (result.botTransaction.win_result == 'WIN') {
@@ -2259,12 +2259,12 @@ function createRotBotWorker(obj, playData) {
                 botTransactionId: result.botTransactionId
             }
 
-            console.log(userTransactionData)
-            console.log(userWallet, result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
+            // console.log(userTransactionData)
+            // console.log(userWallet, result.botObj.init_wallet, Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
             let indexIsStop = result.isStop || (result.botObj.is_infinite == false
                 && userWallet >= result.botObj.init_wallet + Math.floor((((result.botObj.profit_threshold - result.botObj.init_wallet) * 94) / 100)))
             // || (userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold)
-            console.log(`isStop ${indexIsStop}`)
+            // console.log(`isStop ${indexIsStop}`)
 
             db.userTransaction.create(userTransactionData)
             io.emit(`user${result.botObj.userId}`, {
@@ -2564,7 +2564,7 @@ async function mainBody() {
             initiateRotWorker(table)
         }
         else if (table.game_id == 6) {
-            console.log(table.id)
+            // console.log(table.id)
             initiateDtWorker(table)
         }
     }
@@ -2591,7 +2591,7 @@ function playCasinoRandom() {
 
 function betInterval() {
     let n = new Date().getTime()
-    console.log(n, n - startBet, (remainingBet - 2) * 1000)
+    console.log('bac', n, n - startBet, (remainingBet - 2) * 1000)
     if (n - startBet > (remainingBet - 2) * 1000) {
         clearInterval(betInt)
     } else {
@@ -2611,7 +2611,7 @@ function betInterval() {
 
 function dtBetInterval() {
     let n = new Date().getTime()
-    console.log(n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
+    console.log('dragon tiger', n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
     if (n - dtStartBet > (dtRemainingBet - 2) * 1000) {
         clearInterval(dtBetInt)
     } else {
@@ -2635,7 +2635,7 @@ function rotBetInterval(start, data, tableId) {
     // console.log(startBet)
     // console.log(data)
     let n = new Date().getTime()
-    console.log(tableId, n, n - start, (data.remaining - 2) * 1000)
+    console.log('rot', tableId, n, n - start, (data.remaining - 2) * 1000)
     // console.log(rotBetInt, tableId)
     if (n - start > (data.remaining - 2) * 1000) {
         // console.log('clearInterval ', rotBetInt[tableId])
@@ -2779,7 +2779,7 @@ function playRot() {
         // return
     }
 
-    console.log(countNotFullCurrent)
+    // console.log(countNotFullCurrent)
     if (countNotFullCurrent > 18) {
         console.log('countNotFullCurrent full')
         isFullCurrent = false
@@ -3099,7 +3099,7 @@ function initiateDtWorker(table) {
                     }).then((res) => {
 
 
-                        console.log(res)
+                        // console.log(res)
                         if (res) {
 
                             if (latestBotTransactionId != res.id) {
