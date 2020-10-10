@@ -40,7 +40,9 @@ let botTransactionObj = {
     'SB': null,
     'TWOZONE': null,
     'ONEZONE': null,
-    'DT': null
+    'DT': null,
+    'DRAGON': null,
+    'TIGER': null
 }
 
 let rotPlay = {
@@ -137,7 +139,7 @@ myApp.post('/login', async function (request, response) {
                         if ((res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) || 
                             (res3.data.user.advisor_user_id == 604990 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                || USERNAME == "betforwin")) { 
+                                || USERNAME == "betforwin") || user.is_mock) { 
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
                             (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
                             (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
@@ -819,11 +821,11 @@ myApp.post('/bot', async function (request, response) {
                         botData.id = res.id
                         // console.log(botData)
                         if (botData.bot_type == 1) {
-                            createBotWorker(botData, playData)
+                            createBotWorker(botData, playData, user.is_mock)
                         } else if (botData.bot_type == 2) {
-                            createRotBotWorker(botData, playData)
+                            createRotBotWorker(botData, playData, user.is_mock)
                         } else if (botData.bot_type == 3) {
-                            createDtWorker(botData, playData)
+                            createDtWorker(botData, playData, user.is_mock)
                         }
 
                         response.json({
@@ -1569,6 +1571,26 @@ myApp.get('/user_transaction/:id', async function (request, response) {
             id: request.params.id,
         },
     }).then((user) => {
+        if(user.is_mock){
+            db.mock_user_transacion.findAll({
+                where:{
+                    user_id: id 
+                }
+            }).then((mockRes) => {
+                response.json({
+                    success: true,
+                    error_code: null,
+                    data: {bets: {
+                        total: 0,
+                        perpage: 20,
+                        currentPage: 1,
+                        lastPage: 1,
+                        data: mockRes | []
+                    }}
+                })
+            })
+            
+        }
         if (user) {
             axios.get(`https://truthbet.com/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
                 headers: {
@@ -1739,7 +1761,55 @@ myApp.get('/bot_transaction', function (request, response) {
                 data: botTransactionObj[BET]
             })
         }
-    } else if (BET == 'RB' || BET == 'ED' || BET == 'SB' || BET == 'TWOZONE' || BET == 'ONEZONE') {
+    }if (BET == 'DT' || BET == 'DRAGON' || BET == 'TIGER') {
+        if (botTransactionObj[BET] == null) {
+            if (BET == 'DT') {
+                db.botTransction.findAll({
+                    where: {
+                        bot_type: 3,
+                    },
+                    limit: 100,
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            } else {
+                db.botTransction.findAll({
+                    limit: 100,
+                    where: {
+                        bot_type: 1,
+                        bet: BET
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            }
+
+        } else {
+            // console.log('cache bot trasaction')
+            response.json({
+                success: true,
+                error_code: null,
+                data: botTransactionObj[BET]
+            })
+        }
+    }  
+    else if (BET == 'RB' || BET == 'ED' || BET == 'SB' || BET == 'TWOZONE' || BET == 'ONEZONE') {
         if (botTransactionObj[BET] == null) {
 
             db.botTransction.findAll({
@@ -1778,6 +1848,18 @@ myApp.get('/wallet/:id', function (request, response) {
             id: user_id,
         },
     }).then((user) => {
+        if(user.is_mock){
+            response.json({
+                success: true,
+                error_code: null,
+                data: {
+                    profit_wallet: 0,
+                    all_wallet: user.mock_wallet,
+                    play_wallet: user.mock_wallet,
+                    myWallet: {}
+                }
+            })
+        }
         if (user) {
             axios.get(`https://truthbet.com/api/users/owner`, {
                 headers: {
@@ -1992,7 +2074,7 @@ let wPercent = 0
 
 mainBody();
 
-function createBotWorker(obj, playData) {
+function createBotWorker(obj, playData, is_mock) {
     let cb = (err, result) => {
         if (err) {
             return console.error(err);
@@ -2109,7 +2191,8 @@ function createBotWorker(obj, playData) {
     let w = new Worker(__dirname + '/botWorker.js', {
         workerData: {
             obj: obj,
-            playData: playData
+            playData: playData,
+            is_mock: is_mock
         }
     });
 
@@ -2507,19 +2590,19 @@ async function mainBody() {
         else if (table.game_id == 10) {
             initiateRotWorker(table)
         }
-        // else if (table.game_id == 6) {
-        //     console.log(table.id)
-        //     initiateDtWorker(table)
-        // }
+        else if (table.game_id == 6) {
+            console.log(table.id)
+            initiateDtWorker(table)
+        }
     }
 
     interval = setInterval(function () {
         playBaccarat();
     }, 7000);
 
-    // dtInterval = setInterval(function () {
-    //     playDragonTiger();
-    // }, 5500);
+    dtInterval = setInterval(function () {
+        playDragonTiger();
+    }, 5500);
 
     rotInterval = setInterval(function () {
         playRot();
@@ -2555,14 +2638,14 @@ function betInterval() {
 
 function dtBetInterval() {
     let n = new Date().getTime()
-    console.log(n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
+    console.log('dragon-tiget', n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
     if (n - dtStartBet > (dtRemainingBet - 2) * 1000) {
         clearInterval(dtBetInt)
     } else {
         // console.log('betting')
-        if (Object.keys(botWorkerDict).length > 0) {
-            Object.keys(botWorkerDict).forEach(function (key) {
-                var val = dtWorkerDict[key];
+        if (Object.keys(dtBotWorkerDict).length > 0) {
+            Object.keys(dtBotWorkerDict).forEach(function (key) {
+                var val = dtBotWorkerDict[key];
                 // console.log(key, val)
                 val.postMessage({
                     action: 'bet',
@@ -2594,6 +2677,7 @@ function rotBetInterval(start, data, tableId) {
                     data: data
                 })
             });
+            
         }
     }
 }
@@ -2652,7 +2736,7 @@ function playBaccarat() {
 
 function playDragonTiger() {
     // console.log(Object.keys(botWorkerDict))
-    // console.log(`play ${currentList.length} ${Object.keys(workerDict).length}`)
+    console.log(`play ${dtIsPlay} ${dtCurrentList.length} ${Object.keys(dtWorkerDict).length}`)
     if (dtIsPlay == true) return;
     if (dtIsPlay == false && dtCurrentList.length == 0) {
         Object.keys(dtWorkerDict).forEach(function (key) {
@@ -2670,7 +2754,7 @@ function playDragonTiger() {
     dtCurrentList.sort(compare)
     let found = true
     for (current of dtCurrentList) {
-        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+        console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
         // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
         if (current.winner_percent != 0 && current.bot != null) {
             if (current.winner_percent < 50) {
@@ -2987,14 +3071,14 @@ function initiateDtWorker(table) {
         }
         if (result.action == 'getCurrent') {
             // console.log(result)
-            currentList.push(result)
+            dtCurrentList.push(result)
         }
         if (result.action == 'played') {
             clearInterval(dtBetInt)
             if (result.status == 'FAILED' || result.status == null) {
                 dtIsPlay = false
                 dtIsBet = false
-                currentList = []
+                dtCurrentList = []
                 return
             }
 
@@ -3011,7 +3095,7 @@ function initiateDtWorker(table) {
                     point = latest.point
                 }
 
-                botTransactionObj['DEFAULT'] = null
+                botTransactionObj['DT'] = null
                 botTransactionObj[result.stats.bot] = null
                 if (result.status == 'WIN') {
                     point += 1

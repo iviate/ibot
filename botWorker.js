@@ -5,7 +5,7 @@ const { bot } = require('./app/models');
 const { POINT_CONVERSION_COMPRESSED } = require('constants');
 const e = require('express');
 const db = require('./app/models');
-
+let is_mock = false
 let interval;
 let systemData;
 let current = {}
@@ -538,6 +538,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 }
 
 function registerForEventListening() {
+    is_mock = workerData.is_mock
     playData = workerData.playData
     botObj = workerData.obj
     stopLoss = botObj.init_wallet - botObj.loss_threshold

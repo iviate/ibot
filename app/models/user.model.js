@@ -50,7 +50,16 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       profit_wallet: {
         type: DataTypes.FLOAT,
         defaultValue: 0,
+      },
+      is_mock: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      mock_wallet: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
       }
+      
     });
   
     return User;
