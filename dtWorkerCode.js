@@ -202,7 +202,7 @@ function botplay(currentInfo) {
                 predictStats.wrong++;
                 status = 'LOSE'
             }
-            console.log(workerData.id, predictStats.predict[playCount - 1])
+            // console.log(workerData.id, predictStats.predict[playCount - 1])
             if (isPlay && playRound == statsCount) {
                 isPlay = false
                 parentPort.postMessage({
@@ -211,7 +211,7 @@ function botplay(currentInfo) {
                     stats: predictStats.predict[playCount - 1], 
                     shoe: shoe, 
                     table: workerData,
-                    bot_type: 1 
+                    bot_type: 3
                 })
             }
             bot = null

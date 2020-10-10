@@ -40,7 +40,9 @@ let botTransactionObj = {
     'SB': null,
     'TWOZONE': null,
     'ONEZONE': null,
-    'DT': null
+    'DT': null,
+    'DRAGON': null,
+    'TIGER': null,
 }
 
 let rotPlay = {
@@ -648,6 +650,13 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
                     }else if(botObj.bot_type == 2){
                         if (rotBotWorkerDict[user.id] != undefined) {
                             rotBotWorkerDict[user.id].postMessage({
+                                action: 'set_bet_side',
+                                bet_side: bet_side
+                            })
+                        }
+                    } else if(botObj.bot_type == 3){
+                        if (dtBotWorkerDict[user.id] != undefined) {
+                            dtBotWorkerDict[user.id].postMessage({
                                 action: 'set_bet_side',
                                 bet_side: bet_side
                             })
@@ -1739,6 +1748,53 @@ myApp.get('/bot_transaction', function (request, response) {
                 data: botTransactionObj[BET]
             })
         }
+    }if (BET == 'DT' || BET == 'DRAGON' || BET == 'TIGER') {
+        if (botTransactionObj[BET] == null) {
+            if (BET == 'DT') {
+                db.botTransction.findAll({
+                    where: {
+                        bot_type: 3,
+                    },
+                    limit: 100,
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            } else {
+                db.botTransction.findAll({
+                    limit: 100,
+                    where: {
+                        bot_type: 3,
+                        bet: BET
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            }
+
+        } else {
+            // console.log('cache bot trasaction')
+            response.json({
+                success: true,
+                error_code: null,
+                data: botTransactionObj[BET]
+            })
+        }
     } else if (BET == 'RB' || BET == 'ED' || BET == 'SB' || BET == 'TWOZONE' || BET == 'ONEZONE') {
         if (botTransactionObj[BET] == null) {
 
@@ -2507,19 +2563,19 @@ async function mainBody() {
         else if (table.game_id == 10) {
             initiateRotWorker(table)
         }
-        // else if (table.game_id == 6) {
-        //     console.log(table.id)
-        //     initiateDtWorker(table)
-        // }
+        else if (table.game_id == 6) {
+            console.log(table.id)
+            initiateDtWorker(table)
+        }
     }
 
     interval = setInterval(function () {
         playBaccarat();
     }, 7000);
 
-    // dtInterval = setInterval(function () {
-    //     playDragonTiger();
-    // }, 5500);
+    dtInterval = setInterval(function () {
+        playDragonTiger();
+    }, 5500);
 
     rotInterval = setInterval(function () {
         playRot();
@@ -2560,9 +2616,10 @@ function dtBetInterval() {
         clearInterval(dtBetInt)
     } else {
         // console.log('betting')
-        if (Object.keys(botWorkerDict).length > 0) {
-            Object.keys(botWorkerDict).forEach(function (key) {
-                var val = dtWorkerDict[key];
+        // console.log(dtBotWorkerDict)
+        if (Object.keys(dtBotWorkerDict).length > 0) {
+            Object.keys(dtBotWorkerDict).forEach(function (key) {
+                var val = dtBotWorkerDict[key];
                 // console.log(key, val)
                 val.postMessage({
                     action: 'bet',
@@ -2987,14 +3044,14 @@ function initiateDtWorker(table) {
         }
         if (result.action == 'getCurrent') {
             // console.log(result)
-            currentList.push(result)
+            dtCurrentList.push(result)
         }
         if (result.action == 'played') {
             clearInterval(dtBetInt)
             if (result.status == 'FAILED' || result.status == null) {
                 dtIsPlay = false
                 dtIsBet = false
-                currentList = []
+                dtCurrentList = []
                 return
             }
 
@@ -3011,14 +3068,14 @@ function initiateDtWorker(table) {
                     point = latest.point
                 }
 
-                botTransactionObj['DEFAULT'] = null
+                botTransactionObj['DT'] = null
                 botTransactionObj[result.stats.bot] = null
                 if (result.status == 'WIN') {
                     point += 1
                 } else if (result.status == 'LOSE') {
                     point -= 1
                 }
-                botTransactionData = {
+                let dtBotTransactionData = {
                     bot_type: result.bot_type,
                     table_id: result.table.id,
                     table_title: result.table.title,
@@ -3031,7 +3088,7 @@ function initiateDtWorker(table) {
                     point: point
                 }
 
-                db.botTransction.create(botTransactionData).then((created) => {
+                db.botTransction.create(dtBotTransactionData).then((created) => {
                     db.botTransction.findOne({
                         where: {
                             bot_type: 3,
@@ -3042,7 +3099,7 @@ function initiateDtWorker(table) {
                     }).then((res) => {
 
 
-                        // console.log(res)
+                        console.log(res)
                         if (res) {
 
                             if (latestBotTransactionId != res.id) {
@@ -3053,12 +3110,11 @@ function initiateDtWorker(table) {
                                 latestBotTransactionId = res.id
                             }
 
-                            botTransactionData.id = res.id
+                            dtBotTransactionData.id = res.id
 
                             if (Object.keys(dtBotWorkerDict).length > 0) {
                                 Object.keys(dtBotWorkerDict).forEach(function (key) {
                                     var val = dtBotWorkerDict[key];
-                                    // console.log(key, val)
                                     val.postMessage({
                                         action: 'result_bet',
                                         bot_type: result.bot_type,
