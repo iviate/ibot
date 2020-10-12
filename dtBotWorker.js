@@ -195,7 +195,7 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
-    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
+    console.log(status, betFailed, botObj.bet_side, botObj.is_infinite, data.bot)
     if (betFailed) {
         return
     }
@@ -204,26 +204,25 @@ function bet(data) {
         betFailed = false
         return
     }
-
+    
     if (status == 2) {
         // console.log(`bot ${workerData.obj.userId} pause`)
     } else if (status == 3) {
         // console.log(`bot ${workerData.obj.userId} stop`)
-    } else if (botObj.bet_side == 2 && data.bot == '') {
+    } else if (botObj.bet_side == 33 && data.bot == 'TIGER') {
 
-    } else if (botObj.bet_side == 3 && data.bot == 'TIGER') {
+    } else if (botObj.bet_side == 32 && data.bot == 'DRAGON') {
 
     }
     else {
 
         let betVal = getBetVal()
-        // console.log(`betVal : ${betVal}`)
+        console.log(`betVal : ${betVal}`)
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
         } else if (betVal > 10000) {
             betVal = 10000
         }
-
         if (betVal > maxBet) {
             // console.log('upgrade bet limit')
             let payload = { games: { baccarat: { range: "medium" } } }
@@ -275,7 +274,7 @@ function bet(data) {
             return
         }
 
-        axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+        axios.post(`https://truthbet.com/api/bet/dragontiger`, payload,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -568,7 +567,6 @@ function registerForEventListening() {
             parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
         }
         if (result.action == 'result_bet') {
-            // console.log('action result_bet')
             betFailed = false
             if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
                 processResultBet(result.status, result.botTransactionId, result.botTransaction)

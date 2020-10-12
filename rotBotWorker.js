@@ -594,19 +594,19 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         
         console.log(`last playTurn ${playTurn}`)
     }
-    // if (botObj.money_system == 3 || botObj.money_system == 4) {
-    //     if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-    //         playData = playData.splice(1, playData.length - 2)
-    //     } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
-    //         if (playData.length == 1) {
-    //             playData.push(Math.ceil(playData[0] * 10) / 10)
-    //         } else {
-    //             playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
-    //         }
+    if (botObj.money_system == 3 || botObj.money_system == 4) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playData = playData.splice(1, playData.length - 2)
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            if (playData.length == 1) {
+                playData.push(Math.ceil(playData[0] * 10) / 10)
+            } else {
+                playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
+            }
 
 
-    //     }
-    // }
+        }
+    }
 
     axios.get(`https://truthbet.com/api/users/owner`, {
         headers: {
