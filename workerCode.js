@@ -74,7 +74,7 @@ function registerForEventListening() {
         if (result.action == 'getCurrent') {
             getCurrent()
         } else if (result.action == 'play') {
-            console.log(`Thred id ${workerData.id} action ${result.action}`)
+            // console.log(`Thred id ${workerData.id} action ${result.action}`)
             isPlay = true
             playRound = round + 1
             // betting(result.current)
@@ -236,7 +236,7 @@ function botplay(currentInfo) {
                         // console.log(response.data);
                         // console.log(`round = ${response.data.info.detail.round}`)
                         let current = response.data.game
-                        console.log(current)
+                        // console.log(current)
                         let sum = predictStats.correct + predictStats.wrong + predictStats.tie
                         let win_percent = 0
                         if (sum != 0) {

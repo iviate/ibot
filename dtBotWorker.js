@@ -170,14 +170,17 @@ function getBetVal() {
         if (playData.length == 1) {
 
             betval = playData[0] * (botObj.init_bet / 2)
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-        betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
     }
     else if (botObj.money_system == 4) {
         if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
+        }else{
+            betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
         }
-        betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
+        
     }
 
     let mod = ~~(betval % 10)
@@ -195,7 +198,7 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
-    console.log(status, betFailed, botObj.bet_side, botObj.is_infinite, data.bot)
+    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite, data.bot)
     if (betFailed) {
         return
     }
@@ -217,7 +220,7 @@ function bet(data) {
     else {
 
         let betVal = getBetVal()
-        console.log(`betVal : ${betVal}`)
+        // console.log(`betVal : ${betVal}`)
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
         } else if (betVal > 10000) {
@@ -560,7 +563,7 @@ function registerForEventListening() {
     let cb = (err, result) => {
         if (err) return console.error(err);
         if (result.action == 'bet') {
-            console.log(result.data)
+            // console.log(result.data)
             bet(result.data)
         }
         if (result.action == 'info') {

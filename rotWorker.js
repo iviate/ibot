@@ -139,11 +139,11 @@ function registerForEventListening() {
             if(isPlay == false){
                 playList = []
             }
-            console.log(`Thred id ${workerData.id} action ${result.action}`)
+            // console.log(`Thred id ${workerData.id} action ${result.action}`)
             isPlay = true
             playRound = round + 1
             playList.push(result.type)
-            console.log(playList)
+            // console.log(playList)
             // betting(result.current)
         }
 

@@ -489,6 +489,29 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         // console.log('3 in 9')
         // console.log(ret)
         return ret
+    }else if (money_system == 8){
+       
+        // console.log('3 in 9')
+        // console.log(ret)
+
+        let initSet = [50, 50, 50,
+                        100, 100, 100, 
+                        200, 200, 200, 
+                        400, 400, 400, 
+                        800, 800, 800,
+                        1600, 1600, 1600,
+                        3200, 3200, 3200,
+                        6400, 6400, 6400]
+
+        let ret = []
+        for (let i = 0; i < initSet.length; i++) {
+            if (init_bet > initSet[i]) {
+                continue
+            } else {
+                ret.push(initSet[i])
+            }
+        }
+        return ret
     }
 }
 
@@ -2089,10 +2112,10 @@ function createBotWorker(obj, playData, is_mock) {
         if (result.action == 'bet_success') {
             result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            console.log(`bot ${result.data.current.botObj.userId} bet success`)
+            console.log(`bac bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
-            console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
+            console.log(`bac bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         if (result.action == 'restart_result') {
             io.emit(`user${result.userId}`, result)
@@ -2231,10 +2254,10 @@ function createRotBotWorker(obj, playData) {
         if (result.action == 'bet_success') {
             // result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            console.log(`bot ${result.data.current.botObj.userId} bet success`)
+            console.log(`rot bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
-            console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
+            console.log(`rot bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         // if (result.action == 'restart_result') {
         //     io.emit(`user${result.userId}`, result)
@@ -2380,10 +2403,10 @@ function createDtWorker(obj, playData) {
         if (result.action == 'bet_success') {
             result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            console.log(`bot ${result.data.current.botObj.userId} bet success`)
+            console.log(`dt bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
-            console.log(`bot ${result.botObj.userId} bet failed ${result.error}`)
+            console.log(`dt bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         if (result.action == 'restart_result') {
             io.emit(`user${result.userId}`, result)
@@ -2625,7 +2648,7 @@ function playCasinoRandom() {
 
 function betInterval() {
     let n = new Date().getTime()
-    console.log('bac', n, n - startBet, (remainingBet - 2) * 1000)
+    // console.log('bac', n, n - startBet, (remainingBet - 2) * 1000)
     if (n - startBet > (remainingBet - 2) * 1000) {
         clearInterval(betInt)
     } else {
@@ -2645,7 +2668,7 @@ function betInterval() {
 
 function dtBetInterval() {
     let n = new Date().getTime()
-    console.log('dragon tiger', n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
+    // console.log('dragon tiger', n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
 
     if (n - dtStartBet > (dtRemainingBet - 2) * 1000) {
         clearInterval(dtBetInt)
@@ -2671,7 +2694,7 @@ function rotBetInterval(start, data, tableId) {
     // console.log(startBet)
     // console.log(data)
     let n = new Date().getTime()
-    console.log('rot', tableId, n, n - start, (data.remaining - 2) * 1000)
+    // console.log('rot', tableId, n, n - start, (data.remaining - 2) * 1000)
     // console.log(rotBetInt, tableId)
     if (n - start > (data.remaining - 2) * 1000) {
         // console.log('clearInterval ', rotBetInt[tableId])
@@ -2746,7 +2769,7 @@ function playBaccarat() {
 
 function playDragonTiger() {
     // console.log(Object.keys(botWorkerDict))
-    console.log(`play ${dtIsPlay} ${dtCurrentList.length} ${Object.keys(dtWorkerDict).length}`)
+    // console.log(`play ${dtIsPlay} ${dtCurrentList.length} ${Object.keys(dtWorkerDict).length}`)
     if (dtIsPlay == true) return;
     if (dtIsPlay == false && dtCurrentList.length == 0) {
         Object.keys(dtWorkerDict).forEach(function (key) {
@@ -2763,8 +2786,9 @@ function playDragonTiger() {
 
     dtCurrentList.sort(compare)
     let found = true
+    // console.log(dtCurrentList)
     for (current of dtCurrentList) {
-        console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
         // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
         if (current.winner_percent != 0 && current.bot != null) {
             if (current.winner_percent < 50) {
@@ -3176,7 +3200,7 @@ function initiateDtWorker(table) {
 
             dtIsPlay = false
             dtIsBet = false
-            currentList = []
+            dtCurrentList = []
         }
         if (result.action == 'bet') {
             dtStartBet = new Date().getTime()

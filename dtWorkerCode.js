@@ -35,6 +35,7 @@ function getCurrent() {
     if (sum != 0) {
         winner_percent = ((predictStats.correct + predictStats.tie) / sum) * 100
     }
+    // console.log(workerData.id, predictStats.correct, predictStats.wrong, predictStats.tie, winner_percent)
 
     if (bot != null && round != 0) {
         parentPort.postMessage({
@@ -205,7 +206,7 @@ function botplay(currentInfo) {
             // console.log(workerData.id, predictStats.predict[playCount - 1])
             if (isPlay && playRound == statsCount) {
                 isPlay = false
-                console.log(`${workerData.id} played ${status}`)
+                // console.log(`${workerData.id} played ${status}`)
                 parentPort.postMessage({
                     action: 'played',
                     status: status, 

@@ -32,6 +32,8 @@ var stopLoss = 0
 var stopLossPercent = 0
 var profitloss = 0
 var winStreak = 0
+var XRPreviousWinStreak = 0
+var XRWinStreak = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -169,12 +171,11 @@ function getBetVal() {
         betval = botObj.init_bet
     }
     else if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 6) {
-        console.log(playData, playTurn)
+        // console.log(playData, playTurn)
         betval = playData[playTurn - 1]
     }
     else if (botObj.money_system == 3) {
         if (playData.length == 1) {
-
             betval = playData[0] * (botObj.init_bet / 2)
         }else{
             betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
@@ -191,7 +192,11 @@ function getBetVal() {
     }
     else if(botObj.money_system == 7){
         betval = playData[playTurn - 1]
-        console.log(`bet val ${playTurn} : ${betval}`)
+        // console.log(`bet val ${playTurn} : ${betval}`)
+    }
+    else if(botObj.money_system == 8){
+        betval = playData[playTurn - 1]
+        console.log(`3 in 9 bet val ${playTurn} : ${betval}`)
     }
 
     let mod = ~~(betval % 10)
@@ -313,7 +318,7 @@ function bet(data) {
     }else {
 
         let betVal = getBetVal()
-        console.log(`betVal : ${betVal}`)
+        // console.log(`betVal : ${betVal}`)
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
         } else if (betVal > 10000) {
@@ -321,7 +326,7 @@ function bet(data) {
         }
 
         if (betVal > maxBet) {
-            console.log('upgrade bet limit')
+            // console.log('upgrade bet limit')
             let payload = { games: { baccarat: { range: "medium" } } }
 
             axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
@@ -339,7 +344,7 @@ function bet(data) {
             return
 
         } else if (betVal < minBet) {
-            console.log('dowgrade bet limit')
+            // console.log('dowgrade bet limit')
             let payload = { games: { baccarat: { range: "newbie" } } }
 
             axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
@@ -418,14 +423,14 @@ function bet(data) {
                 payload.chip['credit'] = {}
                 payload.chip.credit[realBet] = betVal
             }else{
-                console.log('opposite one zone')
+                // console.log('opposite one zone')
                 let dozen = ['DOZENx1st', 'DOZENx2nd', 'DOZENx3rd']
                 let index = dozen.indexOf(data.bot.ONEZONE)
-                console.log(index)
+                // console.log(index)
                 if(index != -1){
                     dozen.splice(index, 1)
                     realBet = dozen
-                    console.log(realBet)
+                    // console.log(realBet)
                     payload.chip = {}
                     payload.chip['credit'] = {}
                     payload.chip.credit[realBet[0]] = betVal
@@ -451,7 +456,7 @@ function bet(data) {
             
         }
 
-        console.log(payload)
+        // console.log(payload)
 
         axios.post(`https://truthbet.com/api/bet/roulette`, payload,
             {
@@ -559,7 +564,7 @@ function genLeftProfitXSystem(wallet) {
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 6 || botObj.money_system == 5) {
-        console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
+        // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn = 1
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
@@ -570,8 +575,8 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         }
     }
     else if (botObj.money_system == 7){
-        console.log(`before playTurn ${playTurn}`)
-        console.log(playData[playTurn-1])
+        // console.log(`before playTurn ${playTurn}`)
+        // console.log(playData[playTurn-1])
         if(betStatus == "WIN"){
             winStreak += 1
             profitloss += playData[playTurn-1]
@@ -579,7 +584,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             winStreak = 0
             profitloss += -1 * (playData[playTurn-1] * 2)
         }
-        console.log(`profitloss ${profitloss} winStreak: ${winStreak}`)
+        // console.log(`profitloss ${profitloss} winStreak: ${winStreak}`)
         if(winStreak == 3 || profitloss >= 0){
             playTurn = 1
             profitloss = 0
@@ -592,9 +597,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             profitloss = 0
         }
         
-        console.log(`last playTurn ${playTurn}`)
+        // console.log(`last playTurn ${playTurn}`)
     }
-    if (botObj.money_system == 3 || botObj.money_system == 4) {
+    else if (botObj.money_system == 3 || botObj.money_system == 4) {
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playData = playData.splice(1, playData.length - 2)
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
@@ -606,6 +611,35 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 
 
         }
+    }else if (botObj.money_system == 8) {
+        if(betStatus == "WIN"){
+            XRWinStreak += 1
+        }
+
+        if(playTurn == playData.length){
+            playTurn = 1
+            XRWinStreak = 0
+            XRPreviousWinStreak = 0
+        }
+        else if(playData[playTurn] != playData[playTurn - 1]){
+            if(XRWinStreak == 3){
+                playTurn = 1
+                XRWinStreak = 0
+                XRPreviousWinStreak = 0
+            }else if(XRWinStreak == 2 && XRPreviousWinStreak == 2){
+                playTurn = 1
+                XRWinStreak = 0
+                XRPreviousWinStreak = 0
+            }else{
+                XRPreviousWinStreak = XRWinStreak
+                XRWinStreak = 0
+                playTurn += 1
+            }
+        }else{
+            playTurn += 1
+        }
+
+        console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
     }
 
     axios.get(`https://truthbet.com/api/users/owner`, {
