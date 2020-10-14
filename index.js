@@ -511,6 +511,7 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
                 ret.push(initSet[i])
             }
         }
+        console.log(ret)
         return ret
     }
 }

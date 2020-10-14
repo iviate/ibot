@@ -615,31 +615,49 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         if(betStatus == "WIN"){
             XRWinStreak += 1
         }
+        console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
 
         if(playTurn == playData.length){
+            console.log(`full set`)
             playTurn = 1
             XRWinStreak = 0
             XRPreviousWinStreak = 0
         }
-        else if(playData[playTurn] != playData[playTurn - 1]){
-            if(XRWinStreak == 3){
-                playTurn = 1
-                XRWinStreak = 0
-                XRPreviousWinStreak = 0
-            }else if(XRWinStreak == 2 && XRPreviousWinStreak == 2){
-                playTurn = 1
-                XRWinStreak = 0
-                XRPreviousWinStreak = 0
-            }else{
-                XRPreviousWinStreak = XRWinStreak
-                XRWinStreak = 0
+        else if(playTurn % 3 == 0){
+            console.log('third turn')
+            if(XRWinStreak < 2){
+                console.log(`${XRWinStreak} next turn`)
                 playTurn += 1
+            }else if(XRWinStreak == 2){
+                console.log(`${XRWinStreak} same set`)
+                playTurn -= 2
+                XRWinStreak = 0
+                XRPreviousWinStreak = XRWinStreak
+            }else if(XRWinStreak == 3){
+                console.log(`${XRWinStreak} re set`)
+                playTurn = 1
+                XRWinStreak = 0
+                XRPreviousWinStreak = 0
             }
+        }else if(playTurn % 3 == 2){
+            console.log('secord turn')
+            if(XRWinStreak == 2 && XRPreviousWinStreak == 2){
+                console.log(`${XRWinStreak} re set`)
+                playTurn = 1
+                XRWinStreak = 0
+                XRPreviousWinStreak = 0
+            }
+           else{
+                playTurn += 1
+           }
         }else{
+            console.log('first turn')
+            console.log(playTurn, XRWinStreak)
             playTurn += 1
+            console.log(playTurn, XRWinStreak)
         }
 
-        console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
+        
     }
 
     axios.get(`https://truthbet.com/api/users/owner`, {
@@ -676,6 +694,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         id: botObj.id
                     }
                 }).then((b) => {
+                    console.log('profit wallet')
                     let amount = currentWallet - botObj.profit_wallet - botObj.init_wallet
                     b.profit_wallet += amount
                     b.deposite_count += 1
