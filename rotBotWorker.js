@@ -627,12 +627,14 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             console.log('third turn')
             if(XRWinStreak < 2){
                 console.log(`${XRWinStreak} next turn`)
+                XRPreviousWinStreak = XRWinStreak
                 playTurn += 1
+                XRWinStreak = 0
             }else if(XRWinStreak == 2){
                 console.log(`${XRWinStreak} same set`)
                 playTurn -= 2
-                XRWinStreak = 0
                 XRPreviousWinStreak = XRWinStreak
+                XRWinStreak = 0
             }else if(XRWinStreak == 3){
                 console.log(`${XRWinStreak} re set`)
                 playTurn = 1

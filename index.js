@@ -2842,8 +2842,8 @@ function playRot() {
     }
 
     // console.log(countNotFullCurrent)
-    if (countNotFullCurrent > 18) {
-        console.log('countNotFullCurrent full')
+    if (countNotFullCurrent > 15) {
+        // console.log('countNotFullCurrent full')
         isFullCurrent = false
         countNotFullCurrent = 0
     }
