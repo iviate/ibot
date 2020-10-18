@@ -88,7 +88,10 @@ io.on('connection', (socket) => {
         let type = msg.type
         if (botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined) {
             botWorkerDict[userId].postMessage({ action: 'restart', type: type, userId: userId })
-        } else {
+        } else if(dtBotWorkerDict.hasOwnProperty(userId) && dtBotWorkerDict != undefined) {
+            dtBotWorkerDict[userId].postMessage({ action: 'restart', type: type, userId: userId })
+        }
+        else {
             io.emit(`user${userId}`, { action: 'restart_result', data: { success: false, message: 'ยังไม่ได้สร้างบอท', data: null } })
         }
     });
@@ -2669,7 +2672,7 @@ function betInterval() {
 
 function dtBetInterval() {
     let n = new Date().getTime()
-    // console.log('dragon tiger', n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
+    console.log('dragon tiger', n, n - dtStartBet, (dtRemainingBet - 2) * 1000)
 
     if (n - dtStartBet > (dtRemainingBet - 2) * 1000) {
         clearInterval(dtBetInt)
