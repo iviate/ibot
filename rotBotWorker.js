@@ -483,7 +483,7 @@ function bet(data) {
             })
             .catch(error => {
                 // console.log(error)
-                if (error.response.data.error != 500 && error.response.data.code != "toomany_requests") {
+                if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
                     betFailed = true
                 } else {
                     betFailed = false

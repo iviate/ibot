@@ -292,7 +292,7 @@ function bet(data) {
                 betFailed = true
             })
             .catch(error => {
-                if (error.response.data.code != 500) {
+                if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
                     betFailed = true
                 } else {
                     betFailed = false
