@@ -711,6 +711,135 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
     });
 })
 
+myApp.post('/bot/set_init_bet', async function (request, response) {
+
+    const USERNAME = request.body.username
+    const init_bet = request.body.bet_side || 0
+    // console.log(USERNAME, is_opposite)
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    userId: user.id,
+                    status: 2
+                },
+            }).then((botObj) => {
+                if (botObj) {
+                    botObj.init_bet = init_bet
+                    botObj.save()
+                    
+                    if(botObj.bot_type == 1){
+                        if (botWorkerDict[user.id] != undefined) {
+                            botWorkerDict[user.id].postMessage({
+                                action: 'set_init_bet',
+                                bet_side: bet_side
+                            })
+                        }
+                    }else if(botObj.bot_type == 2){
+                        if (rotBotWorkerDict[user.id] != undefined) {
+                            rotBotWorkerDict[user.id].postMessage({
+                                action: 'set_init_bet',
+                                bet_side: bet_side
+                            })
+                        }
+                    } else if(botObj.bot_type == 3){
+                        if (dtBotWorkerDict[user.id] != undefined) {
+                            dtBotWorkerDict[user.id].postMessage({
+                                action: 'set_init_bet',
+                                bet_side: bet_side
+                            })
+                        }
+                    }  
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: null
+                    })
+                }
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+})
+
+myApp.post('/bot/set_stop_loss', async function (request, response) {
+
+    const USERNAME = request.body.username
+    const loss_threshold = request.body.stop_loss || 0
+    // console.log(USERNAME, is_opposite)
+    db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    }).then((user) => {
+        if (user) {
+            db.bot.findOne({
+                where: {
+                    userId: user.id,
+                    status: 2
+                },
+            }).then((botObj) => {
+                if (botObj) {
+                    botObj.loss_threshold = loss_threshold
+                    botObj.save()
+                    if(botObj.bot_type == 1){
+                        if (botWorkerDict[user.id] != undefined) {
+                            botWorkerDict[user.id].postMessage({
+                                action: 'set_init_bet',
+                                bet_side: bet_side
+                            })
+                        }
+                    }else if(botObj.bot_type == 2){
+                        if (rotBotWorkerDict[user.id] != undefined) {
+                            rotBotWorkerDict[user.id].postMessage({
+                                action: 'set_init_bet',
+                                bet_side: bet_side
+                            })
+                        }
+                    } else if(botObj.bot_type == 3){
+                        if (dtBotWorkerDict[user.id] != undefined) {
+                            dtBotWorkerDict[user.id].postMessage({
+                                action: 'set_init_bet',
+                                bet_side: bet_side
+                            })
+                        }
+                    }  
+                    response.json({
+                        success: true,
+                        error_code: null
+                    })
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: null
+                    })
+                }
+            })
+        } else {
+            response.json({
+                success: false,
+                error_code: 404,
+                message: 'user not found'
+            })
+        }
+
+    });
+})
+
 myApp.post('/bot/set_zero', async function (request, response) {
 
     const USERNAME = request.body.username

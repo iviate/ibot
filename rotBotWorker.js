@@ -561,11 +561,19 @@ function genLeftProfitXSystem(wallet) {
     return ret
 }
 
-async function processResultBet(betStatus, botTransactionId, botTransaction) {
+async function processResultBet(betStatus, botTransactionId, botTransaction, gameResult) {
+    
+    let gameResultObj = JSON.parse(gameResult)
+    console.log(gameResultObj.winner)
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 6 || botObj.money_system == 5) {
         // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
-        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+        if (gameResultObj.winner == 0){
+            playTurn++
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
+        }else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn = 1
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             playTurn++
@@ -580,7 +588,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         if(betStatus == "WIN"){
             winStreak += 1
             profitloss += playData[playTurn-1]
-        }else if(betStatus == 'LOSE'){
+        }else if(betStatus == 'LOSE' || gameResultObj.winner == 0){
             winStreak = 0
             profitloss += -1 * (playData[playTurn-1] * 2)
         }
@@ -600,7 +608,13 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         // console.log(`last playTurn ${playTurn}`)
     }
     else if (botObj.money_system == 3 || botObj.money_system == 4) {
-        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+        if(gameResultObj.winner == 0){
+            if (playData.length == 1) {
+                playData.push(Math.ceil(playData[0] * 10) / 10)
+            } else {
+                playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
+            }
+        }else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playData = playData.splice(1, playData.length - 2)
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             if (playData.length == 1) {
@@ -615,10 +629,10 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         if(betStatus == "WIN"){
             XRWinStreak += 1
         }
-        console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
+        // console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
 
         if(playTurn == playData.length){
-            console.log(`full set`)
+            // console.log(`full set`)
             playTurn = 1
             XRWinStreak = 0
             XRPreviousWinStreak = 0
@@ -626,17 +640,17 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         else if(playTurn % 3 == 0){
             console.log('third turn')
             if(XRWinStreak < 2){
-                console.log(`${XRWinStreak} next turn`)
+                // console.log(`${XRWinStreak} next turn`)
                 XRPreviousWinStreak = XRWinStreak
                 playTurn += 1
                 XRWinStreak = 0
             }else if(XRWinStreak == 2){
-                console.log(`${XRWinStreak} same set`)
+                // console.log(`${XRWinStreak} same set`)
                 playTurn -= 2
                 XRPreviousWinStreak = XRWinStreak
                 XRWinStreak = 0
             }else if(XRWinStreak == 3){
-                console.log(`${XRWinStreak} re set`)
+                // console.log(`${XRWinStreak} re set`)
                 playTurn = 1
                 XRWinStreak = 0
                 XRPreviousWinStreak = 0
@@ -644,7 +658,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         }else if(playTurn % 3 == 2){
             console.log('secord turn')
             if(XRWinStreak == 2 && XRPreviousWinStreak == 2){
-                console.log(`${XRWinStreak} re set`)
+                // console.log(`${XRWinStreak} re set`)
                 playTurn = 1
                 XRWinStreak = 0
                 XRPreviousWinStreak = 0
@@ -653,7 +667,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                 playTurn += 1
            }
         }else{
-            console.log('first turn')
+            // console.log('first turn')
             console.log(playTurn, XRWinStreak)
             playTurn += 1
             console.log(playTurn, XRWinStreak)
@@ -853,7 +867,7 @@ function registerForEventListening() {
                 result.shoe == current.shoe && 
                 mapBotTypeAndBetSide[botObj.bet_side] == result.botTransaction.bot_type) {
                 
-                processResultBet(result.status, result.botTransactionId, result.botTransaction)
+                processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
             }
         }
         if (result.action == 'set_opposite') {

@@ -44,6 +44,8 @@ let token = null
 let isPlay = false;
 var date = new Date();
 var playList = []
+
+let statsLen = null
 // var resultStats = ''
 // var threeCutPlay = {}
 // var fourCutPlay = {}
@@ -176,7 +178,7 @@ function inititalInfo() {
                 // playRound = round + 1
                 // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
-                
+                statsLen = detail.statistic.length
                 if (predictStats.predict.length != detail.statistic.length) {
                     for(let j = 1; j <= round; j++){
                         predictStats.predict.push({round: j, bot: null, isResult: true })
@@ -409,6 +411,9 @@ function botplay(currentInfo) {
     // console.log(lastStat)
     if (currentInfo.round > playCount && lastPlay.isResult == false) {
         // cal correct wrong and collect stats
+        if(currentInfo.statistic.length == statsLen){
+            lastStat = null
+        }
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
         if (bot != null) {
             let status = {
@@ -419,46 +424,62 @@ function botplay(currentInfo) {
                 ONEZONE: 'LOSE'
             }
 
-            let addition = lastStat.addition
-
             // console.log(workerData.id)
             // console.log(addition)
-
-            if (addition.findIndex((item) => item == bot.RB) != -1) {
+            if(currentInfo.statistic.length > statsLen){
+                console.log(`table ${workerData.id} round ${currentInfo.round} OK!!!!!`)
+                let addition = lastStat.addition
+                if (addition.findIndex((item) => item == bot.RB) != -1) {
+                    statCount.rbCorrect++;
+                    status.RB = 'WIN'
+                } else {
+                    statCount.rbWrong++;
+                }
+    
+                if (addition.findIndex((item) => item == bot.ED) != -1) {
+                    statCount.edCorrect++;
+                    status.ED = 'WIN'
+                } else {
+                    statCount.edWrong++;
+                }
+    
+                if (addition.findIndex((item) => item == bot.SB) != -1) {
+                    statCount.sbCorrect++;
+                    status.SB = 'WIN'
+                } else {
+                    statCount.sbCorrect++;
+                }
+    
+                if (addition.findIndex((item) => item == bot.TWOZONE[0]) != -1 ||
+                    addition.findIndex((item) => item == bot.TWOZONE[1]) != -1) {
+                    statCount.twoZoneCorrect++;
+                    status.TWOZONE = 'WIN'
+                } else {
+                    statCount.twoZoneWrong++;
+                }
+    
+                if (addition.findIndex((item) => item == bot.ONEZONE) != -1) {
+                    statCount.oneZoneCorrect++;
+                    status.ONEZONE = 'WIN'
+                } else {
+                    statCount.oneZoneWrong++;
+                }
+            }else{
+                console.log(`table ${workerData.id} ball out of field @@@@@@`)
+                status = {
+                    RB: 'TIE',
+                    ED: 'TIE',
+                    SB: 'TIE',
+                    TWOZONE: 'TIE',
+                    ONEZONE: 'TIE'
+                }
                 statCount.rbCorrect++;
-                status.RB = 'WIN'
-            } else {
-                statCount.rbWrong++;
-            }
-
-            if (addition.findIndex((item) => item == bot.ED) != -1) {
                 statCount.edCorrect++;
-                status.ED = 'WIN'
-            } else {
-                statCount.edWrong++;
-            }
-
-            if (addition.findIndex((item) => item == bot.SB) != -1) {
                 statCount.sbCorrect++;
-                status.SB = 'WIN'
-            } else {
-                statCount.sbCorrect++;
-            }
-
-            if (addition.findIndex((item) => item == bot.TWOZONE[0]) != -1 ||
-                addition.findIndex((item) => item == bot.TWOZONE[1]) != -1) {
                 statCount.twoZoneCorrect++;
-                status.TWOZONE = 'WIN'
-            } else {
-                statCount.twoZoneWrong++;
-            }
-
-            if (addition.findIndex((item) => item == bot.ONEZONE) != -1) {
                 statCount.oneZoneCorrect++;
-                status.ONEZONE = 'WIN'
-            } else {
-                statCount.oneZoneWrong++;
             }
+            
 
             // console.log(bot)
             // console.log(status)
@@ -489,6 +510,7 @@ function botplay(currentInfo) {
             }
             
             bot = null
+            statsLen = currentInfo.statistic.length
         }
     }
 
