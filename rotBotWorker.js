@@ -196,7 +196,7 @@ function getBetVal() {
     }
     else if(botObj.money_system == 8){
         betval = playData[playTurn - 1]
-        console.log(`3 in 9 bet val ${playTurn} : ${betval}`)
+        // console.log(`3 in 9 bet val ${playTurn} : ${betval}`)
     }
 
     let mod = ~~(betval % 10)
@@ -564,7 +564,7 @@ function genLeftProfitXSystem(wallet) {
 async function processResultBet(betStatus, botTransactionId, botTransaction, gameResult) {
     
     let gameResultObj = JSON.parse(gameResult)
-    console.log(gameResultObj.winner)
+    // console.log(gameResultObj.winner)
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 6 || botObj.money_system == 5) {
         // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
@@ -599,7 +599,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
         }else{
             playTurn += 1
         }
-        console.log(`after playTurn ${playTurn}`)
+        // console.log(`after playTurn ${playTurn}`)
         if(playTurn > 9){
             playTurn = 1
             profitloss = 0
@@ -638,7 +638,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
             XRPreviousWinStreak = 0
         }
         else if(playTurn % 3 == 0){
-            console.log('third turn')
+            // console.log('third turn')
             if(XRWinStreak < 2){
                 // console.log(`${XRWinStreak} next turn`)
                 XRPreviousWinStreak = XRWinStreak
@@ -656,7 +656,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                 XRPreviousWinStreak = 0
             }
         }else if(playTurn % 3 == 2){
-            console.log('secord turn')
+            // console.log('secord turn')
             if(XRWinStreak == 2 && XRPreviousWinStreak == 2){
                 // console.log(`${XRWinStreak} re set`)
                 playTurn = 1
@@ -668,9 +668,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
            }
         }else{
             // console.log('first turn')
-            console.log(playTurn, XRWinStreak)
+            // console.log(playTurn, XRWinStreak)
             playTurn += 1
-            console.log(playTurn, XRWinStreak)
+            // console.log(playTurn, XRWinStreak)
         }
 
         
@@ -710,7 +710,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                         id: botObj.id
                     }
                 }).then((b) => {
-                    console.log('profit wallet')
+                    // console.log('profit wallet')
                     let amount = currentWallet - botObj.profit_wallet - botObj.init_wallet
                     b.profit_wallet += amount
                     b.deposite_count += 1

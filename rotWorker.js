@@ -427,7 +427,7 @@ function botplay(currentInfo) {
             // console.log(workerData.id)
             // console.log(addition)
             if(currentInfo.statistic.length > statsLen){
-                console.log(`table ${workerData.id} round ${currentInfo.round} OK!!!!!`)
+                // console.log(`table ${workerData.id} round ${currentInfo.round} OK!!!!!`)
                 let addition = lastStat.addition
                 if (addition.findIndex((item) => item == bot.RB) != -1) {
                     statCount.rbCorrect++;
@@ -465,7 +465,7 @@ function botplay(currentInfo) {
                     statCount.oneZoneWrong++;
                 }
             }else{
-                console.log(`table ${workerData.id} ball out of field @@@@@@`)
+                // console.log(`table ${workerData.id} ball out of field @@@@@@`)
                 status = {
                     RB: 'TIE',
                     ED: 'TIE',
