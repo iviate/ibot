@@ -84,7 +84,7 @@ function registerForEventListening() {
         // //  setting up interval to call method to multiple with factor
         
     };
-    setInterval(predictPlay, 5000);
+    setInterval(predictPlay, 7000);
 
     // registering to events to receive messages from the main thread
     parentPort.on('error', cb);
@@ -134,7 +134,7 @@ function inititalInfo() {
 async function predictPlay() {
     
     let current = new Date().getTime()
-    if(current - last_pull_timestamp < 4500){
+    if(current - last_pull_timestamp < 6500){
         // console.log(`${workerData.title} not pull`)
         return
     }else{
@@ -156,6 +156,10 @@ async function predictPlay() {
         })
         .catch((error) => {
             console.log(`table error ${workerData.id} ${error}`);
+            if (isPlay == true) {
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: null })
+            }
         });
 }
 

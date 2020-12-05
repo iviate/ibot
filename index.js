@@ -2245,10 +2245,10 @@ function createBotWorker(obj, playData, is_mock) {
         if (result.action == 'bet_success') {
             result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            // console.log(`bac bot ${result.data.current.botObj.userId} bet success`)
+            console.log(`bac bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
-            // console.log(`bac bot ${result.botObj.userId} bet failed ${result.error}`)
+            console.log(`bac bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         if (result.action == 'restart_result') {
             io.emit(`user${result.userId}`, result)
@@ -2387,10 +2387,10 @@ function createRotBotWorker(obj, playData) {
         if (result.action == 'bet_success') {
             // result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            // console.log(`rot bot ${result.data.current.botObj.userId} bet success`)
+            console.log(`rot bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
-            // console.log(`rot bot ${result.botObj.userId} bet failed ${result.error}`)
+            console.log(`rot bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         // if (result.action == 'restart_result') {
         //     io.emit(`user${result.userId}`, result)
@@ -2536,10 +2536,10 @@ function createDtWorker(obj, playData) {
         if (result.action == 'bet_success') {
             result.win_percent = win_percent
             io.emit(`user${result.data.current.botObj.userId}`, result)
-            // console.log(`dt bot ${result.data.current.botObj.userId} bet success`)
+            console.log(`dt bot ${result.data.current.botObj.userId} bet success`)
         }
         if (result.action == 'bet_failed') {
-            // console.log(`dt bot ${result.botObj.userId} bet failed ${result.error}`)
+            console.log(`dt bot ${result.botObj.userId} bet failed ${result.error}`)
         }
         if (result.action == 'restart_result') {
             io.emit(`user${result.userId}`, result)

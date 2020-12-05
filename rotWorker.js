@@ -190,6 +190,10 @@ function inititalInfo() {
         })
         .catch(error => {
             console.log(error);
+            if (isPlay == true) {
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData })
+            }
         });
 }
 
