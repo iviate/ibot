@@ -517,6 +517,30 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         // console.log(ret)
         return ret
     }
+    else if (money_system == 9){
+       
+        // console.log('3 in 9')
+        // console.log(ret)
+
+        let initSet = [1, 2, 3,
+                        5, 8, 13, 
+                        21, 34, 55, 
+                        89, 144, 233]
+
+        let ret = []
+        for (let i = 0; i < initSet.length; i++) {
+            let bVal = initSet[i] * init_bet
+            if(bVal < 10000){
+                ret.push(bVal)
+            }else{
+                ret.push(10000)
+                break;
+            }
+            
+        }
+        // console.log(ret)
+        return ret
+    }
 }
 
 myApp.post('/bot/set_opposite', async function (request, response) {
@@ -3100,6 +3124,7 @@ function initiateWorker(table) {
         if (result.action == 'played') {
             clearInterval(betInt)
             if (result.status == 'FAILED' || result.status == null) {
+                console.log('bet failed')
                 isPlay = false
                 isBet = false
                 currentList = []

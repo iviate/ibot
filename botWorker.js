@@ -182,6 +182,9 @@ function getBetVal() {
         }
         
     }
+    else if(botObj.money_system == 9){
+        betval = playData[playTurn - 1] * botObj.init_bet
+    }
 
     let mod = ~~(betval % 10)
     // console.log(mod, betval)
@@ -392,6 +395,17 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             } else {
                 playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
             }
+
+
+        }
+    }else if (botObj.money_system == 9) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playTurn -= 2
+            if(playTurn < 1){
+                playTurn = 1
+            }
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            playTurn += 1
 
 
         }

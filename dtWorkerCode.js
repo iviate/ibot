@@ -158,7 +158,7 @@ async function predictPlay() {
         .catch((error) => {
             if (isPlay == true) {
                 isPlay = false
-                parentPort.postMessage({ action: 'played', status: null })
+                parentPort.postMessage({ action: 'played', status: 'FAILED' })
             }
             console.log(`table error ${workerData.id} ${error}`);
         });
