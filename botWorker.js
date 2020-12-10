@@ -183,7 +183,7 @@ function getBetVal() {
         
     }
     else if(botObj.money_system == 9){
-        betval = playData[playTurn - 1] * botObj.init_bet
+        betval = playData[playTurn - 1]
     }
 
     let mod = ~~(betval % 10)
