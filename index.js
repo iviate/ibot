@@ -2896,7 +2896,7 @@ function playBaccarat() {
     currentList.sort(compare)
     let found = true
     for (current of currentList) {
-        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+        console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
         // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
         if (current.winner_percent != 0 && current.bot != null) {
             if (current.winner_percent < 50) {
@@ -3245,7 +3245,7 @@ function initiateWorker(table) {
     };
 
     // start worker
-    myWorker = startWorker(table, __dirname + '/workerCode.js', cb);
+    myWorker = startWorker(table, __dirname + '/bacWorker.js', cb);
 
     if (myWorker != null) {
         workerDict[table.id] = {
