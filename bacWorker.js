@@ -164,6 +164,7 @@ async function livePlaying(tableId, tableTitle = null){
     let previousGameStartAt = moment();
     let botChoice = ["BANKER", "PLAYER"]
     channel.bind('start', async (data) => {
+        round = data.round
         console.log(`${tableId}-baccarat-start`)
         console.log(data)
         previousGameStartAt = data.started_at
@@ -181,10 +182,17 @@ async function livePlaying(tableId, tableTitle = null){
             return
         }
 
+        if(isPlay && playRound < data.round){
+            isPlay = false
+            parentPort.postMessage({ action: 'played', status: 'FAILED' })
+            return
+        }
+
         if (data.round < 2) {
             bot = null
             predictStats.predict.push({ round: data.round, bot: null, isResult: false })
-            if (isPlay && playRound == data.round) {
+            if (isPlay && playRound < 4) {
+                isPlay = false
                 parentPort.postMessage({ action: 'played', status: 'FAILED' })
             }
         } else {
@@ -225,6 +233,7 @@ async function livePlaying(tableId, tableTitle = null){
                         win_percent: win_percent
                     } })
                 }else{
+                    isPlay = false
                     parentPort.postMessage({ action: 'played', status: 'FAILED' })
                 }
 
@@ -234,7 +243,7 @@ async function livePlaying(tableId, tableTitle = null){
 
         }
 
-        round = data.round
+        
         // let gameId = data.id;
         // liveData.round = round;
         // liveData.gameId = gameId;
