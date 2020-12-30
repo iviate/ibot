@@ -234,6 +234,7 @@ async function livePlaying(tableId, tableTitle = null){
                     } })
                 }else{
                     isPlay = false
+                    
                     parentPort.postMessage({ action: 'played', status: 'FAILED' })
                 }
 
@@ -294,14 +295,17 @@ async function livePlaying(tableId, tableTitle = null){
             if (isPlay && playRound == round) {
                 playRound = null
                 isPlay = false
-                parentPort.postMessage({
-                    action: 'played',
-                    status: status, 
-                    stats: predictStats.predict[playCount - 1], 
-                    shoe: shoe, 
-                    table: workerData,
-                    bot_type: 1 
-                })
+                setTimeout(function () {
+                    parentPort.postMessage({
+                        action: 'played',
+                        status: status, 
+                        stats: predictStats.predict[playCount - 1], 
+                        shoe: shoe, 
+                        table: workerData,
+                        bot_type: 1 
+                    })
+                  }, 5000)
+                
             }
             bot = null
         }
