@@ -24,6 +24,7 @@ db.member_record = require("./member_record.model.js")(sequelize, Sequelize, Dat
 db.agent_record = require("./agent_record.model.js")(sequelize, Sequelize, DataTypes)
 db.rolling = require("./rolling.model")(sequelize, Sequelize, DataTypes)
 db.rolling_withdraw = require("./rolling_withdraw.model")(sequelize, Sequelize, DataTypes)
+db.mockUserTransaction = require("./mock_user_transaction.model")(sequelize, Sequelize, DataTypes)
 
 db.user.hasMany(db.bot, { as: "bots" });
 db.bot.belongsTo(db.user, {
@@ -48,6 +49,8 @@ db.wallet_transfer.belongsTo(db.bot, {
   foreignKey: "botId",
   as: "bot"
 })
+
+
 
 
 

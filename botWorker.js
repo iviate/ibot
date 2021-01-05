@@ -27,6 +27,8 @@ var latestBetSuccess = {
     shoe: null,
     round: null
 }
+
+var bet_time = null
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -166,23 +168,23 @@ function getBetVal() {
     else if (botObj.money_system == 2 || botObj.money_system == 5) {
         betval = playData[playTurn - 1]
     }
-    else if (botObj.money_system == 3 ) {
+    else if (botObj.money_system == 3) {
         if (playData.length == 1) {
             betval = playData[0] * (botObj.init_bet / 2)
-        }else{
+        } else {
             betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-        
+
     }
     else if (botObj.money_system == 4) {
         if (playData.length == 1) {
             betval = playData[0] * botObj.init_bet
-        }else{
+        } else {
             betval = (playData[0] + playData[playData.length - 1]) * botObj.init_bet
         }
-        
+
     }
-    else if(botObj.money_system == 9){
+    else if (botObj.money_system == 9) {
         betval = playData[playTurn - 1]
     }
 
@@ -206,7 +208,7 @@ function bet(data) {
         return
     }
 
-    if(current.shoe == data.shoe && current.round == data.round){
+    if (current.shoe == data.shoe && current.round == data.round) {
         betFailed = false
         return
     }
@@ -230,40 +232,44 @@ function bet(data) {
             betVal = 10000
         }
 
-        if (betVal > maxBet) {
-            // console.log('upgrade bet limit')
-            let payload = { games: { baccarat: { range: "medium" } } }
-
-            axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
-                headers: {
-                    Authorization: `Bearer ${workerData.obj.token}`
-                }
-            }).then(res => {
-                minBet = 200
-                maxBet = 10000
-            })
-                .catch(error => {
-                    // console.log(error)
+        if(!is_mock){
+            if (betVal > maxBet) {
+                // console.log('upgrade bet limit')
+                let payload = { games: { baccarat: { range: "medium" } } }
+    
+                axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
+                    headers: {
+                        Authorization: `Bearer ${workerData.obj.token}`
+                    }
+                }).then(res => {
+                    minBet = 200
+                    maxBet = 10000
                 })
-            return
-
-        } else if (betVal < minBet) {
-            // console.log('dowgrade bet limit')
-            let payload = { games: { baccarat: { range: "newbie" } } }
-
-            axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
-                headers: {
-                    Authorization: `Bearer ${workerData.obj.token}`
-                }
-            }).then(res => {
-                minBet = 50
-                maxBet = 2500
-            })
-                .catch(error => {
-                    // console.log(error)
+                    .catch(error => {
+                        // console.log(error)
+                    })
+                return
+    
+            } else if (betVal < minBet) {
+                // console.log('dowgrade bet limit')
+                let payload = { games: { baccarat: { range: "newbie" } } }
+    
+                axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
+                    headers: {
+                        Authorization: `Bearer ${workerData.obj.token}`
+                    }
+                }).then(res => {
+                    minBet = 50
+                    maxBet = 2500
                 })
-            return
+                    .catch(error => {
+                        // console.log(error)
+                    })
+                return
+            }
         }
+
+        
 
         let payload = { table_id: data.table.id, game_id: data.game_id }
         let realBet = data.bot
@@ -281,7 +287,8 @@ function bet(data) {
             return
         }
 
-        axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
+        if(!is_mock){
+            axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -303,6 +310,15 @@ function bet(data) {
                 }
                 parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error })
             });
+        }else{
+            turnover += betVal
+            current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
+            parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
+            betFailed = true
+            bet_time = Date.now()
+        }
+
+        
     }
 
 }
@@ -398,10 +414,10 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 
 
         }
-    }else if (botObj.money_system == 9) {
+    } else if (botObj.money_system == 9) {
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn -= 2
-            if(playTurn < 1){
+            if (playTurn < 1) {
                 playTurn = 1
             }
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
@@ -411,14 +427,169 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
         }
     }
 
-    axios.get(`https://truthbet.com/api/users/owner`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    })
-        .then(async (res) => {
-            // console.log(playData)
-            let currentWallet = res.data.chips.credit
+    if (!is_mock) {
+        axios.get(`https://truthbet.com/api/users/owner`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(async (res) => {
+                // console.log(playData)
+                let currentWallet = res.data.chips.credit
+                let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
+                if (playData.length == 0) {
+                    if (botObj.is_infinite == false && currentWallet - botObj.profit_wallet >= cutProfit) {
+                        isStop = true
+                    } else {
+
+                        // if (botObj.money_system == 3) {
+                        //     playData = genLeftProfitLabaushare(currentWallet)
+                        // } else if (botObj.money_system == 4) {
+                        //     playData = genLeftProfitXSystem(currentWallet)
+                        // }
+                        playData = JSON.parse(botObj.data)
+                        // console.log('re labuashare')
+                        // console.log(playData)
+                    }
+                }
+
+
+
+                // console.log(currentWallet, cutProfit)
+                if (botObj.is_infinite && currentWallet - botObj.profit_wallet >= cutProfit) {
+                    db.bot.findOne({
+                        where: {
+                            id: botObj.id
+                        }
+                    }).then((b) => {
+                        let amount = currentWallet - botObj.profit_wallet - botObj.init_wallet
+                        b.profit_wallet += amount
+                        b.deposite_count += 1
+                        botObj.profit_wallet += amount
+                        botObj.deposite_count += 1
+                        playData = JSON.parse(botObj.data)
+                        playTurn = 1
+                        // console.log(botObj.profit_wallet, b.profit_wallet)
+                        b.save()
+                        db.wallet_transfer.create({ botId: botObj.id, amount: amount }).then((created) => { })
+                        parentPort.postMessage({
+                            action: 'process_result',
+                            status: betStatus,
+                            wallet: res.data.chips.credit,
+                            betVal: current.betVal,
+                            bet: current.bet,
+                            is_opposite: current.is_opposite,
+                            botObj: botObj,
+                            playData: playData,
+                            botTransactionId: botTransactionId,
+                            botTransaction: botTransaction,
+                            isStop: isStop,
+                            turnover: turnover,
+                            playTurn: playTurn,
+                            is_mock: is_mock
+                        })
+
+
+                    })
+                } else {
+                    if (botObj.is_infinite && playData.length === 0) {
+                        playData = JSON.parse(botObj.data)
+                    }
+                    // console.log(currentWallet - botObj.profit_wallet <= botObj.loss_threshold, currentWallet > 50)
+                    if (parseInt(currentWallet) - parseInt(botObj.profit_wallet) <= parseInt(botObj.loss_threshold) + 1) {
+                        let currentBot = await db.bot.findOne({
+                            where: {
+                                id: botObj.id
+                            }
+                        })
+                        let new_loss = currentBot.loss_threshold - stopLoss
+                        let new_loss_percent = currentBot.loss_percent + stopLossPercent
+                        // console.log(currentWallet, new_loss, currentWallet <= new_loss, currentWallet - botObj.profit_wallet > 50)
+                        while (parseInt(currentWallet) <= new_loss + 1 + 10 && currentWallet - botObj.profit_wallet > 50) {
+                            new_loss -= stopLoss
+                            new_loss_percent += currentBot.stopLossPercent
+                        }
+
+                        if (new_loss_percent > 100 || new_loss < 0) {
+                            new_loss_percent = 100
+                            new_loss = 0
+                        }
+
+                        currentBot.loss_threshold = new_loss
+                        currentBot.loss_percent = new_loss_percent
+                        currentBot.status = 2
+
+                        await currentBot.save()
+                        botObj.loss_threshold = new_loss
+                        botObj.loss_percent = new_loss_percent
+                        botObj.status = 2
+                        status = 2
+                        if (currentWallet - botObj.profit_wallet < 50) {
+                            isStop = true
+                        }
+                        parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
+                        parentPort.postMessage({
+                            action: 'process_result',
+                            status: betStatus,
+                            wallet: res.data.chips.credit,
+                            betVal: current.betVal,
+                            bet: current.bet,
+                            botObj: botObj,
+                            playData: playData,
+                            is_opposite: current.is_opposite,
+                            botTransactionId: botTransactionId,
+                            botTransaction: botTransaction,
+                            isStop: currentWallet - botObj.profit_wallet < 50 ? true : false,
+                            turnover: turnover,
+                            is_mock: is_mock
+                        })
+                    } else {
+                        parentPort.postMessage({
+                            action: 'process_result',
+                            status: betStatus,
+                            wallet: res.data.chips.credit,
+                            betVal: current.betVal,
+                            bet: current.bet,
+                            botObj: botObj,
+                            is_opposite: current.is_opposite,
+                            playData: playData,
+                            botTransactionId: botTransactionId,
+                            botTransaction: botTransaction,
+                            isStop: isStop,
+                            turnover: turnover,
+                            is_mock: is_mock
+                        })
+                    }
+
+
+
+                }
+
+            })
+            .catch(error => {
+                console.log(error)
+            })
+    } else {
+        console.log('process result mock')
+        db.user.findOne({
+            where: {
+                id: botObj.userId
+            }
+        }).then( async (u) =>  {
+
+            if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+                if(current.bet == 'PLAYER'){
+                    u.mock_wallet += current.betVal
+                }else{
+                    u.mock_wallet += current.betVal * 0.95
+                }
+            } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+                u.mock_wallet -= current.betVal
+            }
+            let currentWallet = u.mock_wallet
+            u.save()
+            console.log(u)
+
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
             if (playData.length == 0) {
                 if (botObj.is_infinite == false && currentWallet - botObj.profit_wallet >= cutProfit) {
@@ -458,7 +629,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                     parentPort.postMessage({
                         action: 'process_result',
                         status: betStatus,
-                        wallet: res.data,
+                        wallet: u.mock_wallet,
                         betVal: current.betVal,
                         bet: current.bet,
                         is_opposite: current.is_opposite,
@@ -468,7 +639,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         botTransaction: botTransaction,
                         isStop: isStop,
                         turnover: turnover,
-                        playTurn: playTurn
+                        playTurn: playTurn,
+                        is_mock: is_mock,
+                        bet_time: bet_time
                     })
 
 
@@ -500,20 +673,20 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                     currentBot.loss_threshold = new_loss
                     currentBot.loss_percent = new_loss_percent
                     currentBot.status = 2
-                    
+
                     await currentBot.save()
                     botObj.loss_threshold = new_loss
                     botObj.loss_percent = new_loss_percent
                     botObj.status = 2
                     status = 2
-                    if(currentWallet - botObj.profit_wallet < 50){
+                    if (currentWallet - botObj.profit_wallet < 50) {
                         isStop = true
                     }
                     parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
                     parentPort.postMessage({
                         action: 'process_result',
                         status: betStatus,
-                        wallet: res.data,
+                        wallet: u.mock_wallet,
                         betVal: current.betVal,
                         bet: current.bet,
                         botObj: botObj,
@@ -521,14 +694,16 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         is_opposite: current.is_opposite,
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
-                        isStop: currentWallet - botObj.profit_wallet < 50? true: false,
-                        turnover: turnover
+                        isStop: currentWallet - botObj.profit_wallet < 50 ? true : false,
+                        turnover: turnover,
+                        is_mock: is_mock,
+                        bet_time: bet_time
                     })
-                }else{
+                } else {
                     parentPort.postMessage({
                         action: 'process_result',
                         status: betStatus,
-                        wallet: res.data,
+                        wallet: u.mock_wallet,
                         betVal: current.betVal,
                         bet: current.bet,
                         botObj: botObj,
@@ -537,18 +712,19 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                         botTransactionId: botTransactionId,
                         botTransaction: botTransaction,
                         isStop: isStop,
-                        turnover: turnover
+                        turnover: turnover,
+                        is_mock: is_mock,
+                        bet_time: bet_time
                     })
                 }
 
-                
-                
-            }
 
+
+            }
         })
-        .catch(error => {
-            console.log(error)
-        })
+
+    }
+
 }
 
 function registerForEventListening() {

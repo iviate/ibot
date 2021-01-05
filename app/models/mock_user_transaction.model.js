@@ -4,6 +4,9 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         user_id: {
             type: DataTypes.INTEGER
         },
+        game_info: {
+            type: DataTypes.STRING
+        },
         bet: {
             type: DataTypes.TEXT
         },
@@ -14,8 +17,7 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
             type: DataTypes.FLOAT
         },
         bet_time: {
-            type: DataTypes.DATE,
-            defaultValue: 0.0
+            type: DataTypes.DATE
         }
     })
     return Member;

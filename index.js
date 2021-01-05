@@ -88,7 +88,7 @@ io.on('connection', (socket) => {
         let type = msg.type
         if (botWorkerDict.hasOwnProperty(userId) && botWorkerDict != undefined) {
             botWorkerDict[userId].postMessage({ action: 'restart', type: type, userId: userId })
-        } else if(dtBotWorkerDict.hasOwnProperty(userId) && dtBotWorkerDict != undefined) {
+        } else if (dtBotWorkerDict.hasOwnProperty(userId) && dtBotWorkerDict != undefined) {
             dtBotWorkerDict[userId].postMessage({ action: 'restart', type: type, userId: userId })
         }
         else {
@@ -107,6 +107,121 @@ async function getBank(token) {
     // console.log(res.data.accounts[0])
     return res.data.accounts[0]
 }
+
+myApp.post('/create_mock_user', async function (request, response) {
+    const USERNAME = request.body.username;
+    const PASSWORD = request.body.password;
+    const WALLET = request.body.wallet
+    // console.log(WALLET)
+
+    const user = await db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    });
+    if (user) {
+        response.json({
+            success: false,
+            data: {
+                user_id: user.id,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    } else {
+        bcrypt.hash(PASSWORD, 12, function (err, hash) {
+            db.user.create({
+                username: USERNAME,
+                password: hash,
+                is_mock: true,
+                mock_wallet: WALLET
+            }).then((result) => {
+                db.user.findOne({
+                    where: {
+                        username: USERNAME
+                    }
+                }).then((res) => {
+                    response.json({
+                        success: true,
+                        data: {
+                            user_id: res.id,
+                            bot: null,
+                            username: USERNAME,
+                            mock_wallet: res.mock_wallet
+                        }
+                    });
+                })
+            })
+
+        });
+    }
+})
+
+myApp.post('/set_mock_wallet', async function (request, response) {
+    const USERNAME = request.body.username;
+    const WALLET = request.body.wallet
+    // console.log(WALLET)
+
+    const user = await db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    });
+    if (user && user.is_mock) {
+        user.mock_wallet = WALLET
+        user.save()
+        response.json({
+            success: true,
+            data: {
+                user_id: user.id,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    } else {
+        response.json({
+            success: false,
+            data: {
+                user_id: null,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    }
+})
+
+myApp.post('/add_mock_wallet', async function (request, response) {
+    const USERNAME = request.body.username;
+    const WALLET = request.body.wallet
+    // console.log(WALLET)
+
+    const user = await db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    });
+    if (user && user.is_mock) {
+        user.mock_wallet += WALLET
+        user.save()
+        response.json({
+            success: true,
+            data: {
+                user_id: user.id,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    } else {
+        response.json({
+            success: false,
+            data: {
+                user_id: null,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    }
+})
 
 myApp.post('/login', async function (request, response) {
     // console.log('login')
@@ -132,21 +247,36 @@ myApp.post('/login', async function (request, response) {
 
                 }).then((res2) => {
                     // console.log(res2)
+                    if (user.is_mock) {
+                        let hasBot = null
+                        if (res2) {
+                            hasBot = res2
+                        }
+                        response.json({
+                            success: true,
+                            data: {
+                                user_id: user.id,
+                                bot: hasBot,
+                                username: USERNAME
+                            }
+                        });
+
+                        return
+                    }
                     // getBank(user.truthbet_token)
                     axios.get('https://truthbet.com/api/m/account/edit', {
                         headers: {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
                     }).then((res3) => {
-
-                        if ((res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) || 
+                        if ((res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (res3.data.user.advisor_user_id == 604990 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (res3.data.user.advisor_user_id == 625045 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                || USERNAME == "betforwin") || user.is_mock) { 
-                            if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                            (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                            (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
+                                || USERNAME == "betforwin") || user.is_mock) {
+                            if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                                (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                                (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
                                 let hasBot = null
                                 if (res2) {
                                     hasBot = res2
@@ -176,7 +306,7 @@ myApp.post('/login', async function (request, response) {
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
                             });
-                        } 
+                        }
                     })
                 })
             } else {
@@ -218,11 +348,11 @@ myApp.post('/login', async function (request, response) {
                                 }
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                                 if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) || 
-                                (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                                (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                                (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                    || USERNAME == "betforwin")) {
+                                if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                                    (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                                    (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                                    (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                        || USERNAME == "betforwin")) {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
 
                                         db.user.findOne({
@@ -246,12 +376,12 @@ myApp.post('/login', async function (request, response) {
 
                                     });
                                 }
-                                else  {
+                                else {
                                     response.json({
-                                    success: false,
-                                    message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
-                                });
-                            }
+                                        success: false,
+                                        message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                                    });
+                                }
 
                             })
 
@@ -322,11 +452,11 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res2) => {
                         // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) || 
-                        (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                        (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                        (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                            || USERNAME == "betforwin")) {
+                        if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                            (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                            (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                            (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                || USERNAME == "betforwin")) {
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
                                 db.user.create({
                                     username: USERNAME,
@@ -357,7 +487,7 @@ myApp.post('/login', async function (request, response) {
                                 success: false,
                                 message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
                             });
-                        }  
+                        }
                     })
                 } else {
                     response.json({
@@ -486,28 +616,28 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             }
         }
         return ret
-    }else if (money_system == 7){
+    } else if (money_system == 7) {
         let ret = [init_bet, init_bet]
-        for(let i = 0; i < 7; i++){
+        for (let i = 0; i < 7; i++) {
             let nextVal = ret[ret.length - 1] + ret[ret.length - 2]
             ret.push(nextVal)
         }
         // console.log('3 in 9')
         // console.log(ret)
         return ret
-    }else if (money_system == 8){
-       
+    } else if (money_system == 8) {
+
         // console.log('3 in 9')
         // console.log(ret)
 
         let initSet = [50, 50, 50,
-                        100, 100, 100, 
-                        200, 200, 200, 
-                        400, 400, 400, 
-                        800, 800, 800,
-                        1600, 1600, 1600,
-                        3200, 3200, 3200,
-                        6400, 6400, 6400]
+            100, 100, 100,
+            200, 200, 200,
+            400, 400, 400,
+            800, 800, 800,
+            1600, 1600, 1600,
+            3200, 3200, 3200,
+            6400, 6400, 6400]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
@@ -520,26 +650,26 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         // console.log(ret)
         return ret
     }
-    else if (money_system == 9){
-       
+    else if (money_system == 9) {
+
         // console.log('3 in 9')
         // console.log(ret)
 
         let initSet = [1, 2, 3,
-                        5, 8, 13, 
-                        21, 34, 55, 
-                        89, 144, 233]
+            5, 8, 13,
+            21, 34, 55,
+            89, 144, 233]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
             let bVal = initSet[i] * init_bet
-            if(bVal < 10000){
+            if (bVal < 10000) {
                 ret.push(bVal)
-            }else{
+            } else {
                 ret.push(10000)
                 break;
             }
-            
+
         }
         // console.log(ret)
         return ret
@@ -694,28 +824,28 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
                 if (botObj) {
                     botObj.bet_side = bet_side
                     botObj.save()
-                    if(botObj.bot_type == 1){
+                    if (botObj.bot_type == 1) {
                         if (botWorkerDict[user.id] != undefined) {
                             botWorkerDict[user.id].postMessage({
                                 action: 'set_bet_side',
                                 bet_side: bet_side
                             })
                         }
-                    }else if(botObj.bot_type == 2){
+                    } else if (botObj.bot_type == 2) {
                         if (rotBotWorkerDict[user.id] != undefined) {
                             rotBotWorkerDict[user.id].postMessage({
                                 action: 'set_bet_side',
                                 bet_side: bet_side
                             })
                         }
-                    } else if(botObj.bot_type == 3){
+                    } else if (botObj.bot_type == 3) {
                         if (dtBotWorkerDict[user.id] != undefined) {
                             dtBotWorkerDict[user.id].postMessage({
                                 action: 'set_bet_side',
                                 bet_side: bet_side
                             })
                         }
-                    }  
+                    }
                     response.json({
                         success: true,
                         error_code: null
@@ -758,29 +888,29 @@ myApp.post('/bot/set_init_bet', async function (request, response) {
                 if (botObj) {
                     botObj.init_bet = init_bet
                     botObj.save()
-                    
-                    if(botObj.bot_type == 1){
+
+                    if (botObj.bot_type == 1) {
                         if (botWorkerDict[user.id] != undefined) {
                             botWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
                                 bet_side: bet_side
                             })
                         }
-                    }else if(botObj.bot_type == 2){
+                    } else if (botObj.bot_type == 2) {
                         if (rotBotWorkerDict[user.id] != undefined) {
                             rotBotWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
                                 bet_side: bet_side
                             })
                         }
-                    } else if(botObj.bot_type == 3){
+                    } else if (botObj.bot_type == 3) {
                         if (dtBotWorkerDict[user.id] != undefined) {
                             dtBotWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
                                 bet_side: bet_side
                             })
                         }
-                    }  
+                    }
                     response.json({
                         success: true,
                         error_code: null
@@ -823,28 +953,28 @@ myApp.post('/bot/set_stop_loss', async function (request, response) {
                 if (botObj) {
                     botObj.loss_threshold = loss_threshold
                     botObj.save()
-                    if(botObj.bot_type == 1){
+                    if (botObj.bot_type == 1) {
                         if (botWorkerDict[user.id] != undefined) {
                             botWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
                                 bet_side: bet_side
                             })
                         }
-                    }else if(botObj.bot_type == 2){
+                    } else if (botObj.bot_type == 2) {
                         if (rotBotWorkerDict[user.id] != undefined) {
                             rotBotWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
                                 bet_side: bet_side
                             })
                         }
-                    } else if(botObj.bot_type == 3){
+                    } else if (botObj.bot_type == 3) {
                         if (dtBotWorkerDict[user.id] != undefined) {
                             dtBotWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
                                 bet_side: bet_side
                             })
                         }
-                    }  
+                    }
                     response.json({
                         success: true,
                         error_code: null
@@ -891,7 +1021,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
                             success: false,
                             error_code: null
                         })
-                        
+
                     } else if (botObj.bot_type == 2) {
                         botObj.zero_bet = zero_bet
                         botObj.open_zero = open_zero
@@ -901,7 +1031,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
                                 action: 'set_zero',
                                 zero_bet: zero_bet,
                                 open_zero: open_zero
-                            })    
+                            })
                         }
                     }
 
@@ -916,7 +1046,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
                         success: true,
                         error_code: null
                     })
-                    
+
                 } else {
                     response.json({
                         success: false,
@@ -993,7 +1123,7 @@ myApp.post('/bot', async function (request, response) {
                     delete botWorkerDict[user.id]
                     delete rotBotWorkerDict[user.id]
                     delete dtBotWorkerDict[user.id]
-                    
+
                     db.bot.update({
                         status: 3
                     }, {
@@ -1069,7 +1199,7 @@ myApp.post('/start', async function (request, response) {
                             action: 'start'
                         })
                     }
-                    if(dtBotWorkerDict[user.id] != undefined){
+                    if (dtBotWorkerDict[user.id] != undefined) {
                         dtBotWorkerDict[user.id].postMessage({
                             action: 'start'
                         })
@@ -1670,9 +1800,9 @@ myApp.get('/user_bot/:id', async function (request, response) {
                 }
 
             }).then((res2) => {
-                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) || 
-                                (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) || 
-                                (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined) )) {
+                if (res2 && ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
+                    (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
+                    (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined))) {
 
                     hasBot = res2
                     response.json({
@@ -1725,15 +1855,15 @@ myApp.get('/bot_info/:id', async function (request, response) {
             }).then((res2) => {
                 if (res2 && (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
-                }else if (res2 && res2.bot_type == 2 && ((rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
+                } else if (res2 && res2.bot_type == 2 && ((rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
                     (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     // console.log('get rot bot info')
                     rotBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
-                if (res2 && (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined)){
+                if (res2 && (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined)) {
                     rotBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
-                if (res2 && (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)){
+                if (res2 && (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
                     dtBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
                 response.json({
@@ -1761,25 +1891,47 @@ myApp.get('/user_transaction/:id', async function (request, response) {
             id: request.params.id,
         },
     }).then((user) => {
-        if(user.is_mock){
-            db.mock_user_transacion.findAll({
-                where:{
-                    user_id: id 
-                }
+        if (user.is_mock) {
+            let limit = 20
+            let offset = (page - 1) * 20
+            db.mockUserTransaction.findAndCountAll({
+                where: {
+                    user_id: user.id
+                },
+                order: [
+                    ['id', 'desc']
+                ],
+                raw: true,
+                limit: limit,
+                offset: offset,
             }).then((mockRes) => {
+                let arrayData = []
+                mockRes.rows.forEach(mock => {
+                    let b = mock.bet
+                    // console.log(mock)
+                    let tmp = mock
+                    tmp.bet = {data:{credit:{}}}
+                    tmp.bet.data.credit[b] = mock.bet_credit_chip_amount
+                    arrayData.push(tmp)
+                    // console.log(arrayData)
+    
+                });
+                // console.log(mockRes.count)
                 response.json({
                     success: true,
                     error_code: null,
-                    data: {bets: {
-                        total: 0,
-                        perpage: 20,
-                        currentPage: 1,
-                        lastPage: 1,
-                        data: mockRes | []
-                    }}
+                    data: {
+                        bets: {
+                            total: mockRes.count,
+                            perpage: limit,
+                            currentPage: page,
+                            lastPage: Math.ceil(mockRes.count / limit),
+                            data: arrayData
+                        }
+                    }
                 })
             })
-            
+
         }
         if (user) {
             axios.get(`https://truthbet.com/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
@@ -1951,7 +2103,7 @@ myApp.get('/bot_transaction', function (request, response) {
                 data: botTransactionObj[BET]
             })
         }
-    }if (BET == 'DT' || BET == 'DRAGON' || BET == 'TIGER') {
+    } if (BET == 'DT' || BET == 'DRAGON' || BET == 'TIGER') {
         if (botTransactionObj[BET] == null) {
             if (BET == 'DT') {
                 db.botTransction.findAll({
@@ -2038,7 +2190,9 @@ myApp.get('/wallet/:id', function (request, response) {
             id: user_id,
         },
     }).then((user) => {
-        if(user.is_mock){
+        
+        if (user && user.is_mock) {
+            // console.log(user.mock_wallet)
             response.json({
                 success: true,
                 error_code: null,
@@ -2050,7 +2204,7 @@ myApp.get('/wallet/:id', function (request, response) {
                 }
             })
         }
-        if (user) {
+        else if (user) {
             axios.get(`https://truthbet.com/api/users/owner`, {
                 headers: {
                     Authorization: `Bearer ${user.truthbet_token}`
@@ -2309,7 +2463,7 @@ function createBotWorker(obj, playData, is_mock) {
         if (result.action == 'process_result') {
             // console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
-            let userWallet = result.wallet.chips.credit
+            let userWallet = result.wallet
             let winner_result = result.botTransaction.win_result
             if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
                 if (result.botTransaction.win_result == 'WIN') {
@@ -2321,7 +2475,7 @@ function createBotWorker(obj, playData, is_mock) {
             let userTransactionData = {
                 value: result.betVal,
                 user_bet: result.bet,
-                wallet: result.wallet.chips.credit,
+                wallet: result.wallet,
                 botId: result.botObj.id,
                 result: winner_result,
                 botTransactionId: result.botTransactionId
@@ -2341,7 +2495,6 @@ function createBotWorker(obj, playData, is_mock) {
                 status: result.status,
                 isStop: indexIsStop,
                 value: result.betVal,
-                wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 botTransactionId: result.botTransactionId,
                 botTransaction: result.botTransaction,
@@ -2361,7 +2514,7 @@ function createBotWorker(obj, playData, is_mock) {
                     }
                 }).then((res) => {
                     res.status = 3
-                    res.stop_wallet = result.wallet.chips.credit
+                    res.stop_wallet = result.wallet
                     res.turnover = result.turnover
                     res.stop_by = (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
                     // userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
@@ -2374,6 +2527,29 @@ function createBotWorker(obj, playData, is_mock) {
                     }
 
                 })
+            }
+
+            if (result.is_mock) {
+                let paid = result.betVal
+                if(result.status == 'WIN' && result.bet == 'BANKER'){
+                    paid += result.betVal * 0.95
+                }else if(result.status == 'WIN' && result.bet == 'PLAYER'){
+                    paid += result.betVal
+                }else if(result.status == 'LOSE'){
+                    paid = 0
+                }
+                var zerofilled = ('000'+result.botTransaction.round).slice(-3);
+
+                let mock_transaction = {
+                    game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
+                    user_id: result.botObj.userId,
+                    bet: result.bet,
+                    bet_credit_chip_amount: result.betVal,
+                    sum_paid_credit_amount: paid,
+                    bet_time: result.bet_time
+                }
+
+                db.mockUserTransaction.create(mock_transaction)
             }
         }
     };
@@ -2467,9 +2643,9 @@ function createRotBotWorker(obj, playData) {
 
             let userTransactionData = {
                 value: result.betVal,
-                user_bet: 
+                user_bet:
                     result.botObj.bet_side == 14 ||
-                    (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
+                        (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                 wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 result: winner_result,
@@ -2870,7 +3046,7 @@ function rotBetInterval(start, data, tableId) {
                     data: data
                 })
             });
-            
+
         }
     }
 }
@@ -2896,7 +3072,7 @@ function playBaccarat() {
     currentList.sort(compare)
     let found = true
     for (current of currentList) {
-        console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
+        // console.log(`table: ${current.table_id} percent: ${current.winner_percent} bot: ${current.bot}`)
         // console.log(current.winner_percent != 0, current.current.remaining >= 10, current.bot != null)
         if (current.winner_percent != 0 && current.bot != null) {
             if (current.winner_percent < 50) {
@@ -3366,7 +3542,7 @@ function initiateDtWorker(table) {
         if (result.action == 'bet') {
             dtStartBet = new Date().getTime()
             dtBetInt = setInterval(function () {
-               dtBetInterval();
+                dtBetInterval();
             }, 2400);
 
             dtRemainingBet = result.data.remaining
