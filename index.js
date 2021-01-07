@@ -2531,10 +2531,15 @@ function createBotWorker(obj, playData, is_mock) {
 
             if (result.is_mock) {
                 let paid = result.betVal
-                if(result.status == 'WIN' && result.bet == 'BANKER'){
-                    paid += result.betVal * 0.95
-                }else if(result.status == 'WIN' && result.bet == 'PLAYER'){
-                    paid += result.betVal
+                if(((result.status == 'WIN' && result.is_opposite == false) || (result.status == 'LOSE' && result.is_opposite == true))
+                 && result.bet == 'BANKER'){
+                    if(result.bet == 'BANKER')
+                    {
+                        paid += result.betVal * 0.95
+                    }else{
+                        aid += result.betVal
+                    }
+                    
                 }else if(result.status == 'LOSE'){
                     paid = 0
                 }

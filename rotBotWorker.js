@@ -198,6 +198,9 @@ function getBetVal() {
         betval = playData[playTurn - 1]
         // console.log(`3 in 9 bet val ${playTurn} : ${betval}`)
     }
+    else if(botObj.money_system == 9){
+        betval = playData[playTurn - 1]
+    }
 
     let mod = ~~(betval % 10)
     // console.log(mod, betval)
@@ -674,6 +677,21 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
         }
 
         
+    }
+    else if (botObj.money_system == 9) {
+        if (gameResultObj.winner == 0){
+            playTurn += 1
+            // if (playTurn > playData.length) {
+            //     playTurn = 1
+            // }
+        }else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playTurn -= 2
+            if(playTurn < 1){
+                playTurn = 1
+            }
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            playTurn += 1
+        }
     }
 
     axios.get(`https://truthbet.com/api/users/owner`, {
