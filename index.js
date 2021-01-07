@@ -2536,7 +2536,7 @@ function createBotWorker(obj, playData, is_mock) {
                     {
                         paid += result.betVal * 0.95
                     }else{
-                        aid += result.betVal
+                        paid += result.betVal
                     }
                     
                 }else if(winner_result == "LOSE"){
