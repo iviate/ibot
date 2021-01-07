@@ -1933,7 +1933,7 @@ myApp.get('/user_transaction/:id', async function (request, response) {
             })
 
         }
-        if (user) {
+        if (user && !user.is_mock) {
             axios.get(`https://truthbet.com/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
                 headers: {
                     Authorization: `Bearer ${user.truthbet_token}`
