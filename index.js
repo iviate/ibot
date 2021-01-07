@@ -2531,8 +2531,7 @@ function createBotWorker(obj, playData, is_mock) {
 
             if (result.is_mock) {
                 let paid = result.betVal
-                if(((result.status == 'WIN' && result.is_opposite == false) || (result.status == 'LOSE' && result.is_opposite == true))
-                 && result.bet == 'BANKER'){
+                if(winner_result == "WIN"){
                     if(result.bet == 'BANKER')
                     {
                         paid += result.betVal * 0.95
@@ -2540,7 +2539,7 @@ function createBotWorker(obj, playData, is_mock) {
                         aid += result.betVal
                     }
                     
-                }else if(result.status == 'LOSE'){
+                }else if(winner_result == "LOSE"){
                     paid = 0
                 }
                 var zerofilled = ('000'+result.botTransaction.round).slice(-3);
@@ -2736,7 +2735,7 @@ function createRotBotWorker(obj, playData) {
     });
 }
 
-function createDtWorker(obj, playData) {
+function createDtWorker(obj, playData, is_mock) {
     let cb = (err, result) => {
         if (err) {
             return console.error(err);
@@ -2781,7 +2780,7 @@ function createDtWorker(obj, playData) {
         if (result.action == 'process_result') {
             // console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
-            let userWallet = result.wallet.chips.credit
+            let userWallet = result.wallet
             let winner_result = result.botTransaction.win_result
             if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
                 if (result.botTransaction.win_result == 'WIN') {
@@ -2793,7 +2792,7 @@ function createDtWorker(obj, playData) {
             let userTransactionData = {
                 value: result.betVal,
                 user_bet: result.bet,
-                wallet: result.wallet.chips.credit,
+                wallet: result.wallet,
                 botId: result.botObj.id,
                 result: winner_result,
                 botTransactionId: result.botTransactionId
@@ -2813,7 +2812,6 @@ function createDtWorker(obj, playData) {
                 status: result.status,
                 isStop: indexIsStop,
                 value: result.betVal,
-                wallet: result.wallet.chips.credit,
                 botId: result.botObj.id,
                 botTransactionId: result.botTransactionId,
                 botTransaction: result.botTransaction,
@@ -2833,7 +2831,7 @@ function createDtWorker(obj, playData) {
                     }
                 }).then((res) => {
                     res.status = 3
-                    res.stop_wallet = result.wallet.chips.credit
+                    res.stop_wallet = result.wallet
                     res.turnover = result.turnover
                     res.stop_by = (result.botObj.is_infinite == false && Math.floor(((result.botObj.profit_threshold * 94) / 100)) >= userWallet) ? 2 : result.isStop ? 1 : 4
                     // userWallet - result.botObj.profit_wallet <= result.botObj.loss_threshold ? 3 : 
@@ -2847,13 +2845,37 @@ function createDtWorker(obj, playData) {
 
                 })
             }
+
+            if (result.is_mock) {
+                let paid = result.betVal
+                if(winner_result == 'WIN'){
+                    paid += result.betVal
+                }else if(winner_result == 'LOSE'){
+                    paid = 0
+                }else if(winner_result == 'TIE'){
+                    paid = result.betVal / 2
+                }
+                var zerofilled = ('000'+result.botTransaction.round).slice(-3);
+
+                let mock_transaction = {
+                    game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
+                    user_id: result.botObj.userId,
+                    bet: result.bet,
+                    bet_credit_chip_amount: result.betVal,
+                    sum_paid_credit_amount: paid,
+                    bet_time: result.bet_time
+                }
+
+                db.mockUserTransaction.create(mock_transaction)
+            }
         }
     };
 
     let w = new Worker(__dirname + '/dtBotWorker.js', {
         workerData: {
             obj: obj,
-            playData: playData
+            playData: playData,
+            is_mock: is_mock
         }
     });
 
@@ -3530,7 +3552,7 @@ function initiateDtWorker(table) {
                                         status: result.status,
                                         user_count: 0,
                                         botTransactionId: res.id,
-                                        botTransaction: botTransactionData
+                                        botTransaction: dtBotTransactionData
 
                                     })
                                 });
@@ -3568,7 +3590,7 @@ function initiateDtWorker(table) {
     };
 
     // start worker
-    myWorker = startWorker(table, __dirname + '/dtWorkerCode.js', cb);
+    myWorker = startWorker(table, __dirname + '/dtWorkerCode2.js', cb);
 
     if (myWorker != null) {
         dtWorkerDict[table.id] = {

@@ -570,7 +570,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                 console.log(error)
             })
     } else {
-        console.log('process result mock')
+        // console.log('process result mock')
         db.user.findOne({
             where: {
                 id: botObj.userId
