@@ -424,11 +424,12 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             if (playTurn < 1) {
                 playTurn = 1
             }
-        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true) ||
+        betStatus == 'TIE') {
             playTurn += 1
 
 
-        }
+        } 
     }
 
     if (!is_mock) {
@@ -586,7 +587,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             }
             let currentWallet = u.mock_wallet
             u.save()
-            console.log(u)
+            // console.log(u)
 
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
             if (playData.length == 0) {

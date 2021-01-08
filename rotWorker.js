@@ -500,7 +500,6 @@ function botplay(currentInfo) {
                     shoe: shoe,
                     table: workerData,
                     bot_type: 2,
-                    table: workerData
                 })
 
                 // playList = []

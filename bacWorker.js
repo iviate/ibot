@@ -139,7 +139,7 @@ async function livePlaying(tableId, tableTitle = null){
         cluster: 'ap1',
     });
     const channel = pusher.subscribe(`game.${tableId}`);
-    console.log("start", `game.${tableId}`);
+    // console.log("start", `game.${tableId}`);
 
     const io = global['io'];
 
@@ -276,7 +276,7 @@ async function livePlaying(tableId, tableTitle = null){
         let playCount = predictStats.predict.length
         let lastPlay = { ...predictStats.predict[playCount - 1] }
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, data }
-        console.log(bot, winner, lastPlay.bot, isPlay, playRound, round)
+        // console.log(bot, winner, lastPlay.bot, isPlay, playRound, round)
         if (bot != null) {
             let status = ''
             if (winner == 'TIE') {
