@@ -9,7 +9,7 @@
             "url": "https://opensource.org/licenses/MIT"
         }
     },
-    "host": "api.ibot.bet",
+    "host": "localhost",
     "basePath": "/",
     "tags": [
         {
