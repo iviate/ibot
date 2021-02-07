@@ -1,0 +1,203 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "My User Project CRUD",
+        "description": "My User Project Application API",
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        }
+    },
+    "host": "api.ibot.bet",
+    "basePath": "/",
+    "tags": [
+        {
+            "name": "Test Users",
+            "description": "API for test users in the system"
+        }
+    ],
+    "schemes": [
+        "http"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/create_mock_user": {
+            "post": {
+                "tags": [
+                    "Test Users"
+                ],
+                "description": "สร้างยูสเทส",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "body",
+                        "description": "สร้างยูสเทส",
+                        "schema": {
+                            "$ref": "#/definitions/TestUser"
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "success": true,
+                        "data": {
+                            "user_id": 1,
+                            "bot": null,
+                            "username": "",
+                            "mock_wallet": 0
+                        }
+                    }
+                }
+            }
+        },
+        "/add_mock_wallet": {
+            "post": {
+                "tags": [
+                    "Test Users"
+                ],
+                "description": "เติมเงิน",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "body",
+                        "description": "เติมเงิน",
+                        "schema": {
+                            "$ref": "#/definitions/UpdateTestUser"
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "success": true,
+                        "data": {
+                            "user_id": 1,
+                            "bot": null,
+                            "username": "",
+                            "mock_wallet": 0
+                        }
+                    }
+                }
+            }
+        },
+        "/set_mock_wallet": {
+            "post": {
+                "tags": [
+                    "Test Users"
+                ],
+                "description": "เซตเงิน",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "body",
+                        "description": "เซตเงิน",
+                        "schema": {
+                            "$ref": "#/definitions/UpdateTestUser"
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "success": true,
+                        "data": {
+                            "user_id": 1,
+                            "bot": null,
+                            "username": "",
+                            "mock_wallet": 0
+                        }
+                    }
+                }
+            }
+        },
+        "/clear_port": {
+            "post": {
+                "tags": [
+                    "Test Users"
+                ],
+                "description": "ล้างพอร์ท",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "body",
+                        "description": "ล้างพอร์ท",
+                        "schema": {
+                            "$ref": "#/definitions/DeleteTestUser"
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "success": true,
+                        "data": {
+                            "user_id": 1,
+                            "bot": null,
+                            "username": "",
+                            "mock_wallet": 0
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "TestUser": {
+            "required": [
+                "username",
+                "password",
+                "wallet"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "wallet": {
+                    "type": "number"
+                }
+            }
+        },
+        "UpdateTestUser": {
+            "required": [
+                "username",
+                "wallet"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "wallet": {
+                    "type": "number"
+                }
+            }
+        },
+        "DeleteTestUser": {
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -29,6 +29,8 @@ db.sequelize.sync({
     alter: true
 });
 
+
+
 let BOT_CODE = ['BAC', 'ROT_RB', 'ROT_ED', 'ROT_SB', 'ROT_TWO_ZONE', 'ROT_ONE_ZONE', "DT"]
 
 let botTransactionObj = {
@@ -76,6 +78,11 @@ let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMz
 var myApp = require('express')();
 myApp.use(bodyParser.json())
 myApp.use(cors())
+
+const swaggerUi = require("swagger-ui-express"),
+swaggerDocument = require("./swagger.json");
+
+myApp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 var http = require('http').Server(myApp);
 var io = require('socket.io')(http);
@@ -222,6 +229,43 @@ myApp.post('/add_mock_wallet', async function (request, response) {
         });
     }
 })
+
+
+myApp.post('/clear_port', async function (request, response) {
+    const USERNAME = request.body.username;
+    // console.log(WALLET)
+
+    const user = await db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    });
+    if (user && user.is_mock) {
+        db.mockUserTransaction.destroy({
+            where: {
+              user_id: user.id
+            }
+          });
+        response.json({
+            success: true,
+            data: {
+                user_id: user.id,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    } else {
+        response.json({
+            success: false,
+            data: {
+                user_id: null,
+                bot: null,
+                username: USERNAME
+            }
+        });
+    }
+})
+
 
 myApp.post('/login', async function (request, response) {
     // console.log('login')
@@ -407,7 +451,7 @@ myApp.post('/login', async function (request, response) {
                     // await page.goto("https://truthbet.com/g/live/baccarat/22", {
                     //   waitUntil: "networkidle2",
                     // });
-                    // await browser.close();
+                    await browser.close();
                 })(USERNAME, PASSWORD);
             }
 
@@ -509,7 +553,7 @@ myApp.post('/login', async function (request, response) {
             // await page.goto("https://truthbet.com/g/live/baccarat/22", {
             //   waitUntil: "networkidle2",
             // });
-            // await browser.close();
+            await browser.close();
         })(USERNAME, PASSWORD);
     }
 
@@ -3189,7 +3233,7 @@ function playRot() {
     // console.log(Object.keys(botWorkerDict))
     let hasNotPlay = !isPlayRot.RB || !isPlayRot.ED || !isPlayRot.SB || !isPlayRot.ZONE
     let isAllPlay = isPlayRot.RB && isPlayRot.ED && isPlayRot.SB && isPlayRot.ZONE
-    // console.log(hasNotPlay, isAllPlay)
+    // console.log(isPlayRot)
     // console.log(isPlayRot)
     if (isAllPlay) return;
     if (hasNotPlay) {

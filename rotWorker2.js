@@ -643,7 +643,7 @@ async function livePlaying(tableId, tableTitle = null){
     let botChoice = ["BANKER", "PLAYER"]
     channel.bind('start', async (data) => {
         round = data.round
-        //console.log(`${tableId}-baccarat-start`)
+        console.log(`${tableId}-baccarat-start round ${data.shoe_id}-${data.round}`)
         //console.log(data)
         previousGameStartAt = data.started_at
 
@@ -771,7 +771,7 @@ async function livePlaying(tableId, tableTitle = null){
     });
 
     channel.bind('result', async (data) => {
-        //console.log(`${tableId}-baccarat-result`)
+        console.log(`${tableId}-baccarat-result`)
         console.log(data)
         let winner = data.winner;
         let playCount = predictStats.predict.length
