@@ -9,7 +9,7 @@
             "url": "https://opensource.org/licenses/MIT"
         }
     },
-    "host": "https://api.ibot.bet",
+    "host": "api.ibot.bet",
     "basePath": "/",
     "tags": [
         {
@@ -18,7 +18,8 @@
         }
     ],
     "schemes": [
-        "https"
+        "https",
+        "http"
     ],
     "consumes": [
         "application/json"
