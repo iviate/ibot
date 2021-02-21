@@ -80,7 +80,7 @@ myApp.use(bodyParser.json())
 myApp.use(cors())
 
 const swaggerUi = require("swagger-ui-express"),
-swaggerDocument = require("./swagger.json");
+    swaggerDocument = require("./swagger.json");
 
 myApp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
@@ -243,9 +243,9 @@ myApp.post('/clear_port', async function (request, response) {
     if (user && user.is_mock) {
         db.mockUserTransaction.destroy({
             where: {
-              user_id: user.id
+                user_id: user.id
             }
-          });
+        });
         response.json({
             success: true,
             data: {
@@ -1954,11 +1954,11 @@ myApp.get('/user_transaction/:id', async function (request, response) {
                     let b = mock.bet
                     // console.log(mock)
                     let tmp = mock
-                    tmp.bet = {data:{credit:{}}}
+                    tmp.bet = { data: { credit: {} } }
                     tmp.bet.data.credit[b] = mock.bet_credit_chip_amount
                     arrayData.push(tmp)
                     // console.log(arrayData)
-    
+
                 });
                 // console.log(mockRes.count)
                 response.json({
@@ -2100,7 +2100,7 @@ myApp.get('/bot_transaction', function (request, response) {
         'ONEZONE': 25
     }
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
-    if (BET == 'DEFAULT' || BET == 'PLAYER' || BET == 'BANKER') {
+    if (BET == 'DEFAULT' || BET == 'PLAYER' || BET == 'BANKER' || BET == 'THREECUT' || BET == 'FOURCUT') {
         if (botTransactionObj[BET] == null) {
             if (BET == 'DEFAULT') {
                 db.botTransction.findAll({
@@ -2119,12 +2119,46 @@ myApp.get('/bot_transaction', function (request, response) {
                         data: res
                     })
                 })
-            } else {
+            } else if (BET == 'PLAYER' || BET == 'BANKER') {
                 db.botTransction.findAll({
                     limit: 100,
                     where: {
                         bot_type: 1,
                         bet: BET
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            } else if (BET == 'THREECUT') {
+                db.botTransction.findAll({
+                    limit: 100,
+                    where: {
+                        bot_type: 4
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ],
+                }).then((res) => {
+                    botTransactionObj[BET] = res
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: res
+                    })
+                })
+            } else if (BET == 'FOURCUT') {
+                db.botTransction.findAll({
+                    limit: 100,
+                    where: {
+                        bot_type: 5
                     },
                     order: [
                         ['id', 'DESC']
@@ -2234,7 +2268,7 @@ myApp.get('/wallet/:id', function (request, response) {
             id: user_id,
         },
     }).then((user) => {
-        
+
         if (user && user.is_mock) {
             // console.log(user.mock_wallet)
             response.json({
@@ -2452,6 +2486,7 @@ var remainingBet;
 var rotRemainingBet;
 var dtRemainingBet;
 var betInt;
+
 var dtBetInt;
 var rotBetInt = {};
 var currentBetData;
@@ -2459,6 +2494,16 @@ var rotCurrentBetData = {};
 var dtCurrentBetData;
 var latestBotTransactionId;
 let wPercent = 0
+
+var threeCutStartBet;
+var threeCutBetInt;
+var isThreeCutBet = false;
+var threeCutRemainingBet;
+
+var fourCutStartBet;
+var fourCutBetInt;
+var isFourCutBet = false;
+var fourCutRemainingBet;
 
 mainBody();
 
@@ -2575,18 +2620,17 @@ function createBotWorker(obj, playData, is_mock) {
 
             if (result.is_mock) {
                 let paid = result.betVal
-                if(winner_result == "WIN"){
-                    if(result.bet == 'BANKER')
-                    {
+                if (winner_result == "WIN") {
+                    if (result.bet == 'BANKER') {
                         paid += result.betVal * 0.95
-                    }else{
+                    } else {
                         paid += result.betVal
                     }
-                    
-                }else if(winner_result == "LOSE"){
+
+                } else if (winner_result == "LOSE") {
                     paid = 0
                 }
-                var zerofilled = ('000'+result.botTransaction.round).slice(-3);
+                var zerofilled = ('000' + result.botTransaction.round).slice(-3);
 
                 let mock_transaction = {
                     game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
@@ -2892,14 +2936,14 @@ function createDtWorker(obj, playData, is_mock) {
 
             if (result.is_mock) {
                 let paid = result.betVal
-                if(winner_result == 'WIN'){
+                if (winner_result == 'WIN') {
                     paid += result.betVal
-                }else if(winner_result == 'LOSE'){
+                } else if (winner_result == 'LOSE') {
                     paid = 0
-                }else if(winner_result == 'TIE'){
+                } else if (winner_result == 'TIE') {
                     paid = result.betVal / 2
                 }
-                var zerofilled = ('000'+result.botTransaction.round).slice(-3);
+                var zerofilled = ('000' + result.botTransaction.round).slice(-3);
 
                 let mock_transaction = {
                     game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
@@ -3067,6 +3111,47 @@ function betInterval() {
                 val.postMessage({
                     action: 'bet',
                     data: currentBetData
+                })
+            });
+        }
+    }
+}
+
+
+function threeCutBetInterval() {
+    let n = new Date().getTime()
+    // console.log('bac', n, n - startBet, (remainingBet - 2) * 1000)
+    if (n - threeCutStartBet > (threeCutRemainingBet - 2) * 1000) {
+        clearInterval(threeCutBetInt)
+    } else {
+        // console.log('betting')
+        if (Object.keys(botWorkerDict).length > 0) {
+            Object.keys(botWorkerDict).forEach(function (key) {
+                var val = botWorkerDict[key];
+                // console.log(key, val)
+                val.postMessage({
+                    action: 'three_cut_bet',
+                    data: threeCutCurrentBetData
+                })
+            });
+        }
+    }
+}
+
+function fourCutBetInterval() {
+    let n = new Date().getTime()
+    // console.log('bac', n, n - startBet, (remainingBet - 2) * 1000)
+    if (n - fourCutStartBet > (fourCutRemainingBet - 2) * 1000) {
+        clearInterval(fourCutBetInt)
+    } else {
+        // console.log('betting')
+        if (Object.keys(botWorkerDict).length > 0) {
+            Object.keys(botWorkerDict).forEach(function (key) {
+                var val = botWorkerDict[key];
+                // console.log(key, val)
+                val.postMessage({
+                    action: 'four_cut_bet',
+                    data: fourCutCurrentBetData
                 })
             });
         }
@@ -3468,6 +3553,235 @@ function initiateWorker(table) {
             isBet = false
             currentList = []
         }
+
+        if (result.action == 'three_cut_played') {
+            if (result.table.id != threeCutCurrentBetData.table.id || result.stats.round != threeCutCurrentBetData.round || result.shoe != threeCutCurrentBetData.shoe) {
+            } else {
+                // console.log('three_cut_played')
+                // console.log(result.table.id, result.stats.round, result.shoe)
+                // console.log(threeCutCurrentBetData)
+                clearInterval(threeCutBetInt)
+                if (result.status == 'FAILED' || result.status == null) {
+                    console.log('bet failed')
+                    isThreeCutBet = false
+                    return
+                }
+
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 4,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    // console.log(latest)
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+
+                    botTransactionObj['THREECUT'] = null
+                    if (result.status == 'WIN') {
+                        point += 1
+                    } else if (result.status == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: result.bot_type,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: result.stats.bot,
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status,
+                        user_count: 0,
+                        point: point
+                    }
+
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 4,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+
+
+                            // console.log(res)
+                            if (res) {
+
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 4,
+                                        bet: res.bet
+                                    })
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(botWorkerDict).length > 0) {
+                                    Object.keys(botWorkerDict).forEach(function (key) {
+                                        var val = botWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'threecut_result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: result.stats.bot,
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
+                            }
+                        })
+                    })
+                })
+                isThreeCutBet = false
+            }
+        }
+
+        if (result.action == 'four_cut_played') {
+            if (result.table.id != fourCutCurrentBetData.table.id || result.stats.round != fourCutCurrentBetData.round || result.shoe != fourCutCurrentBetData.shoe) {
+            } else {
+                clearInterval(fourCutBetInt)
+                if (result.status == 'FAILED' || result.status == null) {
+                    console.log('bet failed')
+                    isFourCutBet = false
+                    return
+                }
+
+                db.botTransction.findOne({
+                    where: {
+                        bot_type: 5,
+                    },
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                }).then((latest) => {
+                    let point = 0
+                    if (latest) {
+                        point = latest.point
+                    }
+
+                    botTransactionObj['FOURCUT'] = null
+                    if (result.status == 'WIN') {
+                        point += 1
+                    } else if (result.status == 'LOSE') {
+                        point -= 1
+                    }
+                    botTransactionData = {
+                        bot_type: result.bot_type,
+                        table_id: result.table.id,
+                        table_title: result.table.title,
+                        shoe: result.shoe,
+                        round: result.stats.round,
+                        bet: result.stats.bot,
+                        result: JSON.stringify(result.stats),
+                        win_result: result.status,
+                        user_count: 0,
+                        point: point
+                    }
+
+                    db.botTransction.create(botTransactionData).then((created) => {
+                        db.botTransction.findOne({
+                            where: {
+                                bot_type: 5,
+                            },
+                            order: [
+                                ['id', 'DESC']
+                            ]
+                        }).then((res) => {
+
+
+                            // console.log(res)
+                            if (res) {
+
+                                if (latestBotTransactionId != res.id) {
+                                    io.emit('all', {
+                                        bot_type: 5,
+                                        bet: res.bet
+                                    })
+                                    latestBotTransactionId = res.id
+                                }
+
+                                botTransactionData.id = res.id
+
+                                if (Object.keys(botWorkerDict).length > 0) {
+                                    Object.keys(botWorkerDict).forEach(function (key) {
+                                        var val = botWorkerDict[key];
+                                        // console.log(key, val)
+                                        val.postMessage({
+                                            action: 'fourcut_result_bet',
+                                            bot_type: result.bot_type,
+                                            table_id: result.table.id,
+                                            table_title: result.table.title,
+                                            shoe: result.shoe,
+                                            round: result.stats.round,
+                                            bet: result.stats.bot,
+                                            result: JSON.stringify(result.stats),
+                                            status: result.status,
+                                            user_count: 0,
+                                            botTransactionId: res.id,
+                                            botTransaction: botTransactionData
+
+                                        })
+                                    });
+                                }
+                            }
+                        })
+                    })
+                })
+                isFourCutBet = false
+            }
+
+        }
+
+        if (result.action == 'three_cut_bet') {
+            console.log('three_cut_bet', isThreeCutBet)
+            if (isThreeCutBet) {
+            } else {
+                isThreeCutBet = true
+                threeCutStartBet = new Date().getTime()
+                threeCutBetInt = setInterval(function () {
+                    threeCutBetInterval();
+                }, 2400);
+
+                threeCutRemainingBet = result.data.remaining
+                threeCutCurrentBetData = result.data
+                io.emit('bot', { action: 'three_cut_play', data: result.data })
+            }
+
+        }
+
+        if (result.action == 'four_cut_bet') {
+            console.log('four_cut_bet', isFourCutBet)
+            if (isFourCutBet) {
+            } else {
+                isFourCutBet = true
+                fourCutStartBet = new Date().getTime()
+                fourCutBetInt = setInterval(function () {
+                    fourCutBetInterval();
+                }, 2400);
+
+                fourCutRemainingBet = result.data.remaining
+                fourCutCurrentBetData = result.data
+                io.emit('bot', { action: 'four_cut_play', data: result.data })
+            }
+        }
+
         if (result.action == 'bet') {
             startBet = new Date().getTime()
             betInt = setInterval(function () {
@@ -4107,6 +4421,436 @@ function initiateRotWorker(table) {
             // }
             rotCurrentList = []
         }
+
+        // if (result.action == 'static_played') {
+        //     let resultTableId = result.table.id
+        //     let mapBotType = {
+        //         33: {
+        //             RB: 211,
+        //             ED: 212,
+        //             SB: 213,
+        //             TWOZ: 214,
+        //             ONRZ: 215
+        //         },
+        //         34: {
+        //             RB: 221,
+        //             ED: 222,
+        //             SB: 223,
+        //             TWOZ: 224,
+        //             ONRZ: 225
+        //         }
+
+        //     }
+        //     // console.log('rot played', result)
+        //     clearInterval(rotStaticBetInt[result.table.id])
+        //     if (result.status == 'FAILED' || result.status == null) {
+        //         return
+        //     }
+
+        //     db.botTransction.findOne({
+        //         where: {
+        //             bot_type: mapBotType[resultTableId].RB,
+        //         },
+        //         order: [
+        //             ['id', 'DESC']
+        //         ]
+        //     }).then((latest) => {
+        //         let point = 0
+        //         if (latest) {
+        //             point = latest.point
+        //         }
+        //         botTransactionObj[`${resultTableId}RB`] = null
+        //         if (result.status.RB == 'WIN') {
+        //             point += 1
+        //         } else if (result.status.RB == 'LOSE') {
+        //             point -= 1
+        //         }
+        //         let RBbotTransactionData = {
+        //             bot_type: mapBotType[resultTableId].RB,
+        //             table_id: result.table.id,
+        //             table_title: result.table.title,
+        //             shoe: result.shoe,
+        //             round: result.stats.round,
+        //             bet: result.stats.bot.RB,
+        //             result: JSON.stringify(result.stats),
+        //             win_result: result.status.RB,
+        //             user_count: 0,
+        //             point: point
+        //         }
+
+        //         db.botTransction.create(RBbotTransactionData).then((created) => {
+        //             db.botTransction.findOne({
+        //                 where: {
+        //                     bot_type: mapBotType[resultTableId].RB,
+        //                 },
+        //                 order: [
+        //                     ['id', 'DESC']
+        //                 ]
+        //             }).then((res) => {
+        //                 // console.log(res)
+        //                 if (res) {
+
+        //                     if (latestBotTransactionId != res.id) {
+        //                         io.emit('all', {
+        //                             bot_type: mapBotType[resultTableId].RB,
+        //                             bet: res.bet
+        //                         })
+        //                         latestBotTransactionId = res.id
+        //                     }
+
+        //                     RBbotTransactionData.id = res.id
+
+        //                     if (Object.keys(rotBotWorkerDict).length > 0) {
+        //                         Object.keys(rotBotWorkerDict).forEach(function (key) {
+        //                             var val = rotBotWorkerDict[key];
+        //                             // console.log(key, val)
+        //                             val.postMessage({
+        //                                 action: 'result_bet',
+        //                                 bot_type: result.bot_type,
+        //                                 table_id: result.table.id,
+        //                                 table_title: result.table.title,
+        //                                 shoe: result.shoe,
+        //                                 round: result.stats.round,
+        //                                 bet: result.stats.bot.RB,
+        //                                 result: JSON.stringify(result.stats),
+        //                                 status: result.status.RB,
+        //                                 user_count: 0,
+        //                                 botTransactionId: res.id,
+        //                                 botTransaction: RBbotTransactionData
+
+        //                             })
+        //                         });
+        //                     }
+        //                 }
+        //             })
+        //         })
+        //     })
+
+
+        //     db.botTransction.findOne({
+        //         where: {
+        //             bot_type: mapBotType[resultTableId].ED,
+        //         },
+        //         order: [
+        //             ['id', 'DESC']
+        //         ]
+        //     }).then((latest) => {
+        //         let point = 0
+        //         if (latest) {
+        //             point = latest.point
+        //         }
+        //         botTransactionObj[`${resultTableId}ED`] = null
+        //         if (result.status.ED == 'WIN') {
+        //             point += 1
+        //         } else if (result.status.ED == 'LOSE') {
+        //             point -= 1
+        //         }
+        //         let EDbotTransactionData = {
+        //             bot_type: mapBotType[resultTableId].ED,
+        //             table_id: result.table.id,
+        //             table_title: result.table.title,
+        //             shoe: result.shoe,
+        //             round: result.stats.round,
+        //             bet: result.stats.bot.ED,
+        //             result: JSON.stringify(result.stats),
+        //             win_result: result.status.ED,
+        //             user_count: 0,
+        //             point: point
+        //         }
+
+        //         db.botTransction.create(EDbotTransactionData).then((created) => {
+        //             db.botTransction.findOne({
+        //                 where: {
+        //                     bot_type: mapBotType[resultTableId].ED,
+        //                 },
+        //                 order: [
+        //                     ['id', 'DESC']
+        //                 ]
+        //             }).then((res) => {
+        //                 // console.log(res)
+        //                 if (res) {
+
+        //                     if (latestBotTransactionId != res.id) {
+        //                         io.emit('all', {
+        //                             bot_type: mapBotType[resultTableId].ED,
+        //                             bet: res.bet
+        //                         })
+        //                         latestBotTransactionId = res.id
+        //                     }
+
+        //                     EDbotTransactionData.id = res.id
+
+        //                     if (Object.keys(rotBotWorkerDict).length > 0) {
+        //                         Object.keys(rotBotWorkerDict).forEach(function (key) {
+        //                             var val = rotBotWorkerDict[key];
+        //                             // console.log(key, val)
+        //                             val.postMessage({
+        //                                 action: 'result_bet',
+        //                                 bot_type: result.bot_type,
+        //                                 table_id: result.table.id,
+        //                                 table_title: result.table.title,
+        //                                 shoe: result.shoe,
+        //                                 round: result.stats.round,
+        //                                 bet: result.stats.bot.ED,
+        //                                 result: JSON.stringify(result.stats),
+        //                                 status: result.status.ED,
+        //                                 user_count: 0,
+        //                                 botTransactionId: res.id,
+        //                                 botTransaction: EDbotTransactionData
+
+        //                             })
+        //                         });
+        //                     }
+        //                 }
+        //             })
+        //         })
+        //     })
+        //     isPlayRot.ED = false
+
+        //     if (result.playList.findIndex((item) => item == 'SB') != -1) {
+        //         db.botTransction.findOne({
+        //             where: {
+        //                 bot_type: 23,
+        //             },
+        //             order: [
+        //                 ['id', 'DESC']
+        //             ]
+        //         }).then((latest) => {
+        //             let point = 0
+        //             if (latest) {
+        //                 point = latest.point
+        //             }
+        //             botTransactionObj['SB'] = null
+        //             if (result.status.SB == 'WIN') {
+        //                 point += 1
+        //             } else if (result.status.SB == 'LOSE') {
+        //                 point -= 1
+        //             }
+        //             let SBbotTransactionData = {
+        //                 bot_type: 23,
+        //                 table_id: result.table.id,
+        //                 table_title: result.table.title,
+        //                 shoe: result.shoe,
+        //                 round: result.stats.round,
+        //                 bet: result.stats.bot.SB,
+        //                 result: JSON.stringify(result.stats),
+        //                 win_result: result.status.SB,
+        //                 user_count: 0,
+        //                 point: point
+        //             }
+
+        //             db.botTransction.create(SBbotTransactionData).then((created) => {
+        //                 db.botTransction.findOne({
+        //                     where: {
+        //                         bot_type: 23,
+        //                     },
+        //                     order: [
+        //                         ['id', 'DESC']
+        //                     ]
+        //                 }).then((res) => {
+        //                     // console.log(res)
+        //                     if (res) {
+
+        //                         if (latestBotTransactionId != res.id) {
+        //                             io.emit('all', {
+        //                                 bot_type: 23,
+        //                                 bet: res.bet
+        //                             })
+        //                             latestBotTransactionId = res.id
+        //                         }
+
+        //                         SBbotTransactionData.id = res.id
+
+        //                         if (Object.keys(rotBotWorkerDict).length > 0) {
+        //                             Object.keys(rotBotWorkerDict).forEach(function (key) {
+        //                                 var val = rotBotWorkerDict[key];
+        //                                 // console.log(key, val)
+        //                                 val.postMessage({
+        //                                     action: 'result_bet',
+        //                                     bot_type: result.bot_type,
+        //                                     table_id: result.table.id,
+        //                                     table_title: result.table.title,
+        //                                     shoe: result.shoe,
+        //                                     round: result.stats.round,
+        //                                     bet: result.stats.bot.SB,
+        //                                     result: JSON.stringify(result.stats),
+        //                                     status: result.status.SB,
+        //                                     user_count: 0,
+        //                                     botTransactionId: res.id,
+        //                                     botTransaction: SBbotTransactionData
+
+        //                                 })
+        //                             });
+        //                         }
+        //                     }
+        //                 })
+        //             })
+        //         })
+        //         isPlayRot.SB = false
+        //     }
+
+        //     if (result.playList.findIndex((item) => item == 'ZONE') != -1) {
+        //         db.botTransction.findOne({
+        //             where: {
+        //                 bot_type: 24,
+        //             },
+        //             order: [
+        //                 ['id', 'DESC']
+        //             ]
+        //         }).then((latest) => {
+        //             let point = 0
+        //             if (latest) {
+        //                 point = latest.point
+        //             }
+        //             botTransactionObj['TWOZONE'] = null
+        //             if (result.status.TWOZONE == 'WIN') {
+        //                 point += 1
+        //             } else if (result.status.TWOZONE == 'LOSE') {
+        //                 point -= 1
+        //             }
+        //             let TWOZONEbotTransactionData = {
+        //                 bot_type: 24,
+        //                 table_id: result.table.id,
+        //                 table_title: result.table.title,
+        //                 shoe: result.shoe,
+        //                 round: result.stats.round,
+        //                 bet: JSON.stringify(result.stats.bot.TWOZONE),
+        //                 result: JSON.stringify(result.stats),
+        //                 win_result: result.status.TWOZONE,
+        //                 user_count: 0,
+        //                 point: point
+        //             }
+
+        //             db.botTransction.create(TWOZONEbotTransactionData).then((created) => {
+        //                 db.botTransction.findOne({
+        //                     where: {
+        //                         bot_type: 24,
+        //                     },
+        //                     order: [
+        //                         ['id', 'DESC']
+        //                     ]
+        //                 }).then((res) => {
+        //                     // console.log(res)
+        //                     if (res) {
+
+        //                         if (latestBotTransactionId != res.id) {
+        //                             io.emit('all', {
+        //                                 bot_type: 24,
+        //                                 bet: res.bet
+        //                             })
+        //                             latestBotTransactionId = res.id
+        //                         }
+
+        //                         TWOZONEbotTransactionData.id = res.id
+
+        //                         if (Object.keys(rotBotWorkerDict).length > 0) {
+        //                             Object.keys(rotBotWorkerDict).forEach(function (key) {
+        //                                 var val = rotBotWorkerDict[key];
+        //                                 // console.log(key, val)
+        //                                 val.postMessage({
+        //                                     action: 'result_bet',
+        //                                     bot_type: result.bot_type,
+        //                                     table_id: result.table.id,
+        //                                     table_title: result.table.title,
+        //                                     shoe: result.shoe,
+        //                                     round: result.stats.round,
+        //                                     bet: JSON.stringify(result.stats.bot.TWOZONE),
+        //                                     result: JSON.stringify(result.stats),
+        //                                     status: result.status.TWOZONE,
+        //                                     user_count: 0,
+        //                                     botTransactionId: res.id,
+        //                                     botTransaction: TWOZONEbotTransactionData
+
+        //                                 })
+        //                             });
+        //                         }
+        //                     }
+        //                 })
+        //             })
+        //         })
+
+        //         db.botTransction.findOne({
+        //             where: {
+        //                 bot_type: 25,
+        //             },
+        //             order: [
+        //                 ['id', 'DESC']
+        //             ]
+        //         }).then((latest) => {
+        //             let point = 0
+        //             if (latest) {
+        //                 point = latest.point
+        //             }
+        //             botTransactionObj['ONEZONE'] = null
+        //             if (result.status.ONEZONE == 'WIN') {
+        //                 point += 1
+        //             } else if (result.status.ONEZONE == 'LOSE') {
+        //                 point -= 1
+        //             }
+        //             let ONEZONEbotTransactionData = {
+        //                 bot_type: 25,
+        //                 table_id: result.table.id,
+        //                 table_title: result.table.title,
+        //                 shoe: result.shoe,
+        //                 round: result.stats.round,
+        //                 bet: result.stats.bot.ONEZONE,
+        //                 result: JSON.stringify(result.stats),
+        //                 win_result: result.status.ONEZONE,
+        //                 user_count: 0,
+        //                 point: point
+        //             }
+
+        //             db.botTransction.create(ONEZONEbotTransactionData).then((created) => {
+        //                 db.botTransction.findOne({
+        //                     where: {
+        //                         bot_type: 25,
+        //                     },
+        //                     order: [
+        //                         ['id', 'DESC']
+        //                     ]
+        //                 }).then((res) => {
+        //                     // console.log(res)
+        //                     if (res) {
+
+        //                         if (latestBotTransactionId != res.id) {
+        //                             io.emit('all', {
+        //                                 bot_type: 25,
+        //                                 bet: res.bet
+        //                             })
+        //                             latestBotTransactionId = res.id
+        //                         }
+
+        //                         ONEZONEbotTransactionData.id = res.id
+
+        //                         if (Object.keys(rotBotWorkerDict).length > 0) {
+        //                             Object.keys(rotBotWorkerDict).forEach(function (key) {
+        //                                 var val = rotBotWorkerDict[key];
+        //                                 // console.log(key, val)
+        //                                 val.postMessage({
+        //                                     action: 'result_bet',
+        //                                     bot_type: result.bot_type,
+        //                                     table_id: result.table.id,
+        //                                     table_title: result.table.title,
+        //                                     shoe: result.shoe,
+        //                                     round: result.stats.round,
+        //                                     bet: result.stats.bot.ONEZONE,
+        //                                     result: JSON.stringify(result.stats),
+        //                                     status: result.status.ONEZONE,
+        //                                     user_count: 0,
+        //                                     botTransactionId: res.id,
+        //                                     botTransaction: ONEZONEbotTransactionData
+
+        //                                 })
+        //                             });
+        //                         }
+        //                     }
+        //                 })
+        //             })
+        //         })
+        //     }
+        // }
+
+
         if (result.action == 'bet') {
             rotStartBet = new Date().getTime()
             rotBetInt[result.data.table.id] = setInterval(function () {

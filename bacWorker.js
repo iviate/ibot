@@ -18,10 +18,16 @@ let predictStats = { shoe: '', correct: 0, wrong: 0, tie: 0, info: {}, predict: 
 // let predictStatsHistory = [];
 let statsCount;
 let bot = null;
+let threecutBot = null;
+let fourcutBot = null;
 let playRound = null;
 let token = null
 let isPlay = false;
 var date = new Date();
+var threecutResult = []
+var isThreeCutPlay = false;
+var fourcutResult = []
+var isFourCutPlay = false;
 // var resultStats = ''
 // var threeCutPlay = {}
 // var fourCutPlay = {}
@@ -170,6 +176,8 @@ async function livePlaying(tableId, tableTitle = null){
         previousGameStartAt = data.started_at
 
         if (shoe != data.shoe_id) {
+            threecutResult = []
+            fourcutResult = []
             shoe = data.shoe_id
             round = data.round
             // predictStatsHistory.push({ ...predictStats })
@@ -179,8 +187,90 @@ async function livePlaying(tableId, tableTitle = null){
                 bot = null
                 parentPort.postMessage({ action: 'played', status: 'FAILED' })
             }
+
+            if(isThreeCutPlay){
+                isThreeCutPlay = false
+                threecutBot = null
+                parentPort.postMessage({ action: 'three_cut_played', status: 'FAILED' })
+            }
+
+            if(isFourCutPlay){
+                isFourCutPlay = false
+                fourcutBot = null
+                parentPort.postMessage({ action: 'four_cut_played', status: 'FAILED' })
+            }
             return
         }
+        let remainBet = Math.max(WAITNG_TIME - Math.round((moment() - previousGameStartAt) / 1000), 0)
+        if(isThreeCutPlay){
+            isThreeCutPlay = false
+            threecutBot = null
+            parentPort.postMessage({ action: 'three_cut_played', status: 'FAILED' })
+        }
+
+        if(isFourCutPlay){
+            isFourCutPlay = false
+            fourcutBot = null
+            parentPort.postMessage({ action: 'four_cut_played', status: 'FAILED' })
+        }
+
+
+        if(threecutResult.length == 4){
+            if(threecutResult[0] == 'BANKER' && threecutResult[1] == 'PLAYER' && threecutResult[2] == 'PLAYER' && threecutResult[3] == 'PLAYER'){
+                isThreeCutPlay = true
+                threecutBot = 'BANKER'
+                parentPort.postMessage({ action: 'three_cut_bet', data: { 
+                    bot: threecutBot, 
+                    table: workerData, 
+                    shoe: shoe, 
+                    round: data.round, 
+                    game_id: data.id, 
+                    remaining: remainBet,
+                    win_percent: Math.floor(Math.random() * 32) + 55
+                } })
+            }else if(threecutResult[0] == 'PLAYER' && threecutResult[1] == 'BANKER' && threecutResult[2] == 'BANKER' && threecutResult[3] == 'BANKER'){
+                isThreeCutPlay = true
+                threecutBot = 'PLAYER'
+                parentPort.postMessage({ action: 'three_cut_bet', data: { 
+                    bot: threecutBot, 
+                    table: workerData, 
+                    shoe: shoe, 
+                    round: data.round, 
+                    game_id: data.id, 
+                    remaining: remainBet,
+                    win_percent: Math.floor(Math.random() * 32) + 55
+                } })
+            }
+        }
+
+        if(fourcutResult.length == 5){
+            if(fourcutResult[0] == 'BANKER' && fourcutResult[1] == 'PLAYER' && fourcutResult[2] == 'PLAYER' && fourcutResult[3] == 'PLAYER' && fourcutResult[4] == 'PLAYER'){
+                isFourCutPlay = true
+                fourcutBot = 'BANKER'
+                parentPort.postMessage({ action: 'four_cut_bet', data: { 
+                    bot: fourcutBot, 
+                    table: workerData, 
+                    shoe: shoe, 
+                    round: data.round, 
+                    game_id: data.id, 
+                    remaining: remainBet,
+                    win_percent: Math.floor(Math.random() * 32) + 55
+                } })
+            }else if(fourcutResult[0] == 'PLAYER' && fourcutResult[1] == 'BANKER' && fourcutResult[2] == 'BANKER' && fourcutResult[3] == 'BANKER' && fourcutResult[4] == 'BANKER'){
+                isFourCutPlay = true
+                fourcutBot = 'PLAYER'
+                parentPort.postMessage({ action: 'four_cut_bet', data: { 
+                    bot: fourcutBot, 
+                    table: workerData, 
+                    shoe: shoe, 
+                    round: data.round, 
+                    game_id: data.id, 
+                    remaining: remainBet,
+                    win_percent: Math.floor(Math.random() * 32) + 55
+                } })
+            }
+        }
+        
 
         if(isPlay && playRound < data.round){
             isPlay = false
@@ -204,7 +294,7 @@ async function livePlaying(tableId, tableTitle = null){
                 // let current = response.data.game
                 // console.log(current)
                 
-                let remainBet = Math.max(WAITNG_TIME - Math.round((moment() - previousGameStartAt) / 1000), 0)
+                
                 if (remainBet > 10) {
 
                     let sum = predictStats.correct + predictStats.wrong + predictStats.tie
@@ -277,6 +367,79 @@ async function livePlaying(tableId, tableTitle = null){
         let lastPlay = { ...predictStats.predict[playCount - 1] }
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, data }
         // console.log(bot, winner, lastPlay.bot, isPlay, playRound, round)
+        if(threecutResult.length < 4 && winner != 'TIE'){
+            threecutResult.push(winner)
+        }else if(threecutResult.length == 4 && winner != 'TIE'){
+            threecutResult[0] = threecutResult[1]
+            threecutResult[1] = threecutResult[2]
+            threecutResult[2] = threecutResult[3]
+            threecutResult[3] = winner
+        }
+
+        if(fourcutResult.length < 5 && winner != 'TIE'){
+            fourcutResult.push(winner)
+        }else if(fourcutResult.length == 5 && winner != 'TIE'){
+            fourcutResult[0] = fourcutResult[1]
+            fourcutResult[1] = fourcutResult[2]
+            fourcutResult[2] = fourcutResult[3]
+            fourcutResult[3] = fourcutResult[4]
+            fourcutResult[4] = winner
+        }
+
+        // console.log(`table ${tableId} three cut`, threecutResult)
+        // console.log(`table ${tableId} four cut`, fourcutResult)
+        // console.log('tree cut', isThreeCutPlay, threecutBot)
+        if(isThreeCutPlay && threecutBot != null){
+            
+            let status = ''
+            if (winner == 'TIE') {
+                status = 'TIE'
+            }else if (threecutBot == winner) {
+                status = 'WIN'
+            } else {
+                status = 'LOSE'
+            }
+
+            setTimeout(function () {
+                parentPort.postMessage({
+                    action: 'three_cut_played',
+                    status: status, 
+                    stats: predictStats.predict[playCount - 1], 
+                    shoe: shoe, 
+                    table: workerData,
+                    bot_type: 4
+                })
+              }, 5000)
+            
+            isThreeCutPlay = false
+            threecutBot = null
+        }
+
+        if(isFourCutPlay && fourcutBot != null){
+            let status = ''
+            if (winner == 'TIE') {
+                status = 'TIE'
+            }else if (fourcutBot == winner) {
+                status = 'WIN'
+            } else {
+                status = 'LOSE'
+            }
+
+            setTimeout(function () {
+                parentPort.postMessage({
+                    action: 'four_cut_played',
+                    status: status, 
+                    stats: predictStats.predict[playCount - 1], 
+                    shoe: shoe, 
+                    table: workerData,
+                    bot_type: 5
+                })
+              }, 5000)
+            
+            isFourCutPlay = false
+            fourcutBot = null
+        }
+
         if (bot != null) {
             let status = ''
             if (winner == 'TIE') {

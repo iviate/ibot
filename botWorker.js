@@ -203,6 +203,7 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
+    // console.log(data)
     // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite)
     if (betFailed) {
         return
@@ -232,11 +233,11 @@ function bet(data) {
             betVal = 10000
         }
 
-        if(!is_mock){
+        if (!is_mock) {
             if (betVal > maxBet) {
                 // console.log('upgrade bet limit')
                 let payload = { games: { baccarat: { range: "medium" } } }
-    
+
                 axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
                     headers: {
                         Authorization: `Bearer ${workerData.obj.token}`
@@ -249,11 +250,11 @@ function bet(data) {
                         // console.log(error)
                     })
                 return
-    
+
             } else if (betVal < minBet) {
                 // console.log('dowgrade bet limit')
                 let payload = { games: { baccarat: { range: "newbie" } } }
-    
+
                 axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
                     headers: {
                         Authorization: `Bearer ${workerData.obj.token}`
@@ -269,7 +270,7 @@ function bet(data) {
             }
         }
 
-        
+
 
         let payload = { table_id: data.table.id, game_id: data.game_id }
         let realBet = data.bot
@@ -287,30 +288,33 @@ function bet(data) {
             return
         }
 
-        if(!is_mock){
+        if (!is_mock) {
             axios.post(`https://truthbet.com/api/bet/baccarat`, payload,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'content-type': 'application/json'
-                }
-            })
-            .then(response => {
-                // console.log(response.data);
-                turnover += betVal
-                current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
-                parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
-                betFailed = true
-            })
-            .catch(error => {
-                if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'content-type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    // console.log(response.data);
+                    // console.log('bet sucesssssss')
+                    turnover += betVal
+                    current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
+                    parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                     betFailed = true
-                } else {
-                    betFailed = false
-                }
-                parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error })
-            });
-        }else{
+                   
+                })
+                .catch(error => {
+                    if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
+                        betFailed = true
+                    } else {
+                        betFailed = false
+                    }
+                    // console.log('bet faileddddddd')
+                    parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error })
+                });
+        } else {
             turnover += betVal
             current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
             parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
@@ -318,7 +322,7 @@ function bet(data) {
             bet_time = Date.now()
         }
 
-        
+
     }
 
 }
@@ -575,12 +579,12 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             where: {
                 id: botObj.userId
             }
-        }).then( async (u) =>  {
+        }).then(async (u) => {
 
             if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-                if(current.bet == 'PLAYER'){
+                if (current.bet == 'PLAYER') {
                     u.mock_wallet += current.betVal
-                }else{
+                } else {
                     u.mock_wallet += current.betVal * 0.95
                 }
             } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
@@ -758,16 +762,56 @@ function registerForEventListening() {
     let cb = (err, result) => {
         if (err) return console.error(err);
         if (result.action == 'bet') {
-            bet(result.data)
+            if (botObj.bet_side != 4 && botObj.bet_side != 5) {
+                bet(result.data)
+            }
+
+        }
+        if (result.action == 'three_cut_bet') {
+            // console.log('play three cut', botObj.bet_side)
+            if (botObj.bet_side == 4) {
+                // console.log('bet')
+                bet(result.data)
+            }
+
+        }
+        if (result.action == 'four_cut_bet') {
+            // console.log('play four cut', botObj.bet_side)
+            if (botObj.bet_side == 5) {
+                bet(result.data)
+            }
+
         }
         if (result.action == 'info') {
             parentPort.postMessage({ action: 'info', botObj: botObj, playData: playData, turnover: turnover, userId: botObj.userId, table: table, current: current })
         }
+        if (result.action == 'threecut_result_bet') {
+            if (botObj.bet_side == 4) {
+                // console.log('action threecut result bet')
+                betFailed = false
+                if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
+                    processResultBet(result.status, result.botTransactionId, result.botTransaction)
+                }
+            }
+
+        }
+        if (result.action == 'fourcut_result_bet') {
+            // console.log('action fourcut result bet')
+            if (botObj.bet_side == 5) {
+                betFailed = false
+                if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
+                    processResultBet(result.status, result.botTransactionId, result.botTransaction)
+                }
+            }
+
+        }
         if (result.action == 'result_bet') {
             // console.log('action result_bet')
-            betFailed = false
-            if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
-                processResultBet(result.status, result.botTransactionId, result.botTransaction)
+            if (botObj.bet_side != 4 && botObj.bet_side != 5) {
+                betFailed = false
+                if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
+                    processResultBet(result.status, result.botTransactionId, result.botTransaction)
+                }
             }
         }
         if (result.action == 'set_opposite') {
