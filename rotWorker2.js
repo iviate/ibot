@@ -15,6 +15,8 @@ let HalfED = ['HALFxEVEN', 'HALFxODD']
 let HalfSB = ['HALFxSMALL', 'HALFxBIG']
 let Dozen = ['DOZENx1st', 'DOZENx2nd', 'DOZENx3rd']
 
+let botType = null
+
 let isPlayHalfRB = false
 let isPlayHalfED = false
 let isPlayHalfSB = false
@@ -129,6 +131,14 @@ function getCurrent() {
 
 function registerForEventListening() {
     // console.log('start rot')
+    if (workerData.id == 33) {
+        botType = 210
+    }
+    else if (workerData.id == 34) {
+        botType = 220
+    }
+
+
     token = workerData.token
     inititalInfo()
     // callback method is defined to receive data from main thread
@@ -140,7 +150,7 @@ function registerForEventListening() {
             // console.log(getCurrent)
             getCurrent()
         } else if (result.action == 'play') {
-            if(isPlay == false){
+            if (isPlay == false) {
                 playList = []
             }
             // console.log(`Thred id ${workerData.id} action ${result.action}`)
@@ -182,8 +192,8 @@ function inititalInfo() {
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
                 statsLen = detail.statistic.length
                 if (predictStats.predict.length != detail.statistic.length) {
-                    for(let j = 1; j <= round; j++){
-                        predictStats.predict.push({round: j, bot: null, isResult: true })
+                    for (let j = 1; j <= round; j++) {
+                        predictStats.predict.push({ round: j, bot: null, isResult: true })
                     }
                 }
 
@@ -375,7 +385,7 @@ function getOnezoneWinerPercent() {
 //             oneZoneCorrect: 0,
 //             oneZoneWrong: 0
 //         }
-        
+
 //         if (isPlay == true) {
 //             isPlay = false
 //             parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
@@ -406,7 +416,7 @@ function getOnezoneWinerPercent() {
 //         }else{
 //             isPlay = false
 //         }
-        
+
 //         return;
 
 //     }
@@ -441,21 +451,21 @@ function getOnezoneWinerPercent() {
 //                 } else {
 //                     statCount.rbWrong++;
 //                 }
-    
+
 //                 if (addition.findIndex((item) => item == bot.ED) != -1) {
 //                     statCount.edCorrect++;
 //                     status.ED = 'WIN'
 //                 } else {
 //                     statCount.edWrong++;
 //                 }
-    
+
 //                 if (addition.findIndex((item) => item == bot.SB) != -1) {
 //                     statCount.sbCorrect++;
 //                     status.SB = 'WIN'
 //                 } else {
 //                     statCount.sbCorrect++;
 //                 }
-    
+
 //                 if (addition.findIndex((item) => item == bot.TWOZONE[0]) != -1 ||
 //                     addition.findIndex((item) => item == bot.TWOZONE[1]) != -1) {
 //                     statCount.twoZoneCorrect++;
@@ -463,7 +473,7 @@ function getOnezoneWinerPercent() {
 //                 } else {
 //                     statCount.twoZoneWrong++;
 //                 }
-    
+
 //                 if (addition.findIndex((item) => item == bot.ONEZONE) != -1) {
 //                     statCount.oneZoneCorrect++;
 //                     status.ONEZONE = 'WIN'
@@ -485,7 +495,7 @@ function getOnezoneWinerPercent() {
 //                 statCount.twoZoneCorrect++;
 //                 statCount.oneZoneCorrect++;
 //             }
-            
+
 
 //             // console.log(bot)
 //             // console.log(status)
@@ -514,7 +524,7 @@ function getOnezoneWinerPercent() {
 //                 isPlay = false
 //                 parentPort.postMessage({ action: 'played', status: null, playList: playList, table: workerData})
 //             }
-            
+
 //             bot = null
 //             statsLen = currentInfo.statistic.length
 //         }
@@ -611,7 +621,7 @@ function getOnezoneWinerPercent() {
 // }
 
 
-async function livePlaying(tableId, tableTitle = null){
+async function livePlaying(tableId, tableTitle = null) {
     const APP_KEY = 'ef1bd779bdd77aad75f8'
     const pusher = new Pusher(APP_KEY, {
         cluster: 'ap1',
@@ -642,6 +652,36 @@ async function livePlaying(tableId, tableTitle = null){
     let previousGameStartAt = moment();
     let botChoice = ["BANKER", "PLAYER"]
     channel.bind('start', async (data) => {
+        let playCount = predictStats.predict.length
+        let lastPlay = { ...predictStats.predict[playCount - 1] }
+        if (!lastPlay.isResult && isPlay && playRound < data.round) {
+            status = {
+                RB: 'TIE',
+                ED: 'TIE',
+                SB: 'TIE',
+                TWOZONE: 'TIE',
+                ONEZONE: 'TIE'
+            }
+            statCount.rbCorrect++;
+            statCount.edCorrect++;
+            statCount.sbCorrect++;
+            statCount.twoZoneCorrect++;
+            statCount.oneZoneCorrect++;
+
+            isPlay = false
+            // console.log(playList)
+            parentPort.postMessage({
+                action: 'played',
+                status: status,
+                playList: playList,
+                stats: predictStats.predict[playCount - 1],
+                shoe: shoe,
+                table: workerData,
+                bot_type: 2,
+                table: workerData
+            })
+        }
+
         round = data.round
         console.log(`${tableId}-baccarat-start round ${data.shoe_id}-${data.round}`)
         //console.log(data)
@@ -664,7 +704,7 @@ async function livePlaying(tableId, tableTitle = null){
                 oneZoneCorrect: 0,
                 oneZoneWrong: 0
             }
-            if(isPlay){
+            if (isPlay) {
                 isPlay = false
                 bot = null
                 parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
@@ -672,20 +712,22 @@ async function livePlaying(tableId, tableTitle = null){
             return
         }
 
-        if(isPlay && playRound < data.round){
-            isPlay = false
-            parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
-            return
-        }
+        // if (isPlay && playRound < data.round) {
+        //     isPlay = false
+        //     parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
+        //     return
+        // }
 
         if (data.round < 2) {
             bot = null
             predictStats.predict.push({ round: data.round, bot: null, isResult: false })
             if (isPlay && playRound < 4) {
                 isPlay = false
-                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData})
+                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
             }
         } else {
+
+            let remainBet = Math.max(WAITNG_TIME - Math.round((moment() - previousGameStartAt) / 1000), 0)
             let twozone = randomTwoZone()
             bot = {
                 RB: randomHalfRB(),
@@ -694,25 +736,43 @@ async function livePlaying(tableId, tableTitle = null){
                 TWOZONE: twozone,
                 ONEZONE: randomOneZone(twozone)
             }
+            let winPercent = {
+                RB: getRBWinerPercent(),
+                ED: getEDWinerPercent(),
+                SB: getSBWinerPercent(),
+                TWOZONE: getTwozoneWinerPercent(),
+                ONEZONE: getOnezoneWinerPercent()
+            }
+            console.log(`remainBet ${remainBet}`)
+            if (remainBet > 10) {
+                parentPort.postMessage({
+                    action: 'static_bet', data: {
+                        bot: bot,
+                        table: workerData,
+                        shoe: shoe,
+                        round: data.round,
+                        game_id: data.id,
+                        remaining: remainBet,
+                        win_percent: winPercent,
+                        playList: ['RB', 'ED', 'SB', 'ZONE']
+                    }
+                })
+            } else {
+                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: ['RB', 'ED', 'SB', 'ZONE'], table: workerData })
+            }
+
+
+
             predictStats.predict.push({ round: data.round, bot: bot, isResult: false })
             if (isPlay && playRound == data.round && playRound < 99) {
                 // console.log(response.data);
                 // console.log(`round = ${response.data.info.detail.round}`)
                 // let current = response.data.game
                 // console.log(current)
-                
-                let remainBet = Math.max(WAITNG_TIME - Math.round((moment() - previousGameStartAt) / 1000), 0)
+
+
                 if (remainBet > 10) {
 
-    
-                    let winPercent = {
-                        RB: getRBWinerPercent(),
-                        ED: getEDWinerPercent(),
-                        SB: getSBWinerPercent(),
-                        TWOZONE: getTwozoneWinerPercent(),
-                        ONEZONE: getOnezoneWinerPercent()
-                    }
-                    
                     parentPort.postMessage({
                         action: 'bet', data: {
                             bot: bot,
@@ -725,27 +785,27 @@ async function livePlaying(tableId, tableTitle = null){
                             playList: playList
                         }
                     })
-                    
-                }else{
+
+                } else {
                     isPlay = false
-                    
+
                     parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
                 }
 
-                    
-            }else if(isPlay && playRound > 98){
+
+            } else if (isPlay && playRound > 98) {
                 isPlay = false
-                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData})
+                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
             }
-            else if(isPlay && playCount > playRound){
+            else if (isPlay && playCount > playRound) {
                 isPlay = false
-                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData})
+                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
             }
 
 
         }
 
-        
+
         // let gameId = data.id;
         // liveData.round = round;
         // liveData.gameId = gameId;
@@ -772,13 +832,15 @@ async function livePlaying(tableId, tableTitle = null){
 
     channel.bind('result', async (data) => {
         console.log(`${tableId}-baccarat-result`)
-        console.log(data)
+        // console.log(data)
         let winner = data.winner;
         let playCount = predictStats.predict.length
         let lastPlay = { ...predictStats.predict[playCount - 1] }
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, data }
         // console.log(bot, winner, lastPlay.bot, isPlay, playRound, round)
         if (bot != null) {
+
+            // parentPort.postMessage({ action: 'clear_static_bet' })
             let status = {
                 RB: 'LOSE',
                 ED: 'LOSE',
@@ -824,24 +886,40 @@ async function livePlaying(tableId, tableTitle = null){
                 statCount.oneZoneWrong++;
             }
 
+
+            parentPort.postMessage({
+                action: 'static_played',
+                status: status,
+                stats: predictStats.predict[playCount - 1],
+                shoe: shoe,
+                table: workerData,
+                bot_type: 2,
+                playList: ['RB', 'ED', 'SB', 'ZONE'],
+            })
+
+
             if (isPlay && playRound == round) {
                 playRound = null
                 isPlay = false
-                setTimeout(function () {
-                    parentPort.postMessage({
-                        action: 'played',
-                        status: status, 
-                        stats: predictStats.predict[playCount - 1], 
-                        shoe: shoe, 
-                        table: workerData,
-                        bot_type: 2,
-                        playList: playList,
-                    })
-                  }, 5000)
-                
+
+                parentPort.postMessage({
+                    action: 'played',
+                    status: status,
+                    stats: predictStats.predict[playCount - 1],
+                    shoe: shoe,
+                    table: workerData,
+                    bot_type: 2,
+                    playList: playList,
+                })
+            } else if (isPlay && playRound > 98) {
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
+            }
+            else if (isPlay && playCount > playRound) {
+                isPlay = false
+                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: playList, table: workerData })
             }
             bot = null
-            playList = []
         }
     });
 

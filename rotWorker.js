@@ -555,6 +555,7 @@ function botplay(currentInfo) {
                             ONEZONE: getOnezoneWinerPercent()
                         }
 
+
                         if (current.round == currentInfo.round && current.remaining > 10) {
                             parentPort.postMessage({
                                 action: 'bet', data: {

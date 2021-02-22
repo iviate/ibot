@@ -40,6 +40,8 @@ async function pullMemberRecord() {
             if(downline.stat != null){
                 
                 let stat = downline.stat
+                console.log(downline.username, stat.betall)
+                // if(downline.username.toLo)
                 let user_data = {
                     username: downline.username,
                     all_point_casino: stat.all_point_casino,
