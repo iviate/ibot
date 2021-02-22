@@ -744,21 +744,25 @@ async function livePlaying(tableId, tableTitle = null) {
                 ONEZONE: getOnezoneWinerPercent()
             }
             console.log(`remainBet ${remainBet}`)
-            if (remainBet > 10) {
-                parentPort.postMessage({
-                    action: 'static_bet', data: {
-                        bot: bot,
-                        table: workerData,
-                        shoe: shoe,
-                        round: data.round,
-                        game_id: data.id,
-                        remaining: remainBet,
-                        win_percent: winPercent,
-                        playList: ['RB', 'ED', 'SB', 'ZONE']
-                    }
-                })
+            if (remainBet > 17) {
+
+                setTimeout(function () {
+                    parentPort.postMessage({
+                        action: 'static_bet', data: {
+                            bot: bot,
+                            table: workerData,
+                            shoe: shoe,
+                            round: data.round,
+                            game_id: data.id,
+                            remaining: remainBet,
+                            win_percent: winPercent,
+                            playList: ['RB', 'ED', 'SB', 'ZONE']
+                        }
+                    })
+                }, 6500)
+               
             } else {
-                parentPort.postMessage({ action: 'played', status: 'FAILED', playList: ['RB', 'ED', 'SB', 'ZONE'], table: workerData })
+                // parentPort.postMessage({ action: 'played', status: 'FAILED', playList: ['RB', 'ED', 'SB', 'ZONE'], table: workerData })
             }
 
 

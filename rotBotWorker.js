@@ -1118,7 +1118,7 @@ function registerForEventListening() {
                     betFailed = false
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
-                    }, 4000)
+                    }, 3000)
 
                 }
             }
