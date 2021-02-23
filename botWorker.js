@@ -790,7 +790,7 @@ function registerForEventListening() {
                 // console.log('action threecut result bet')
                 betFailed = false
                 if (result.table_id == current.table_id && result.round == current.round && result.shoe == current.shoe) {
-                    processResultBet(result.status, result.botTransactionId, result.botTransaction)
+                        processResultBet(result.status, result.botTransactionId, result.botTransaction)
                 }
             }
 

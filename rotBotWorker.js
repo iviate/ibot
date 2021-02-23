@@ -587,11 +587,12 @@ function genLeftProfitXSystem(wallet) {
 async function processResultBet(betStatus, botTransactionId, botTransaction, gameResult) {
     // console.log('rot bot worker process result')
     let gameResultObj = JSON.parse(gameResult)
-    // console.log(gameResultObj.winner)
+    let score = gameResultObj.data.score
+    console.log(`score ${score}`)
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 6 || botObj.money_system == 5) {
         // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
-        if (gameResultObj.winner == 0) {
+        if (score == 0) {
             playTurn++
             if (playTurn > playData.length) {
                 playTurn = 1
@@ -608,10 +609,14 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
     else if (botObj.money_system == 7) {
         // console.log(`before playTurn ${playTurn}`)
         // console.log(playData[playTurn-1])
-        if (betStatus == "WIN") {
+        if(score == 0){
+            winStreak = 0
+            profitloss += -1 * (playData[playTurn - 1] * 2)
+        }
+        else if (betStatus == "WIN") {
             winStreak += 1
             profitloss += playData[playTurn - 1]
-        } else if (betStatus == 'LOSE' || gameResultObj.winner == 0) {
+        } else if (betStatus == 'LOSE') {
             winStreak = 0
             profitloss += -1 * (playData[playTurn - 1] * 2)
         }
@@ -649,7 +654,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
 
         }
     } else if (botObj.money_system == 8) {
-        if (betStatus == "WIN") {
+        if(score == 0){
+        }
+        else if (betStatus == "WIN") {
             XRWinStreak += 1
         }
         // console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
@@ -699,7 +706,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
 
     }
     else if (botObj.money_system == 9) {
-        if (gameResultObj.winner == 0) {
+        if (score == 0) {
             playTurn += 1
             // if (playTurn > playData.length) {
             //     playTurn = 1
@@ -1081,6 +1088,7 @@ function registerForEventListening() {
                     result.round == current.round &&
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[botObj.bet_side] == result.botTransaction.bot_type) {
+                   
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
                     }, 5000)
@@ -1116,6 +1124,7 @@ function registerForEventListening() {
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[result.table_id][botObj.bet_side] == result.botTransaction.bot_type) {
                     betFailed = false
+                    // console.log(result)
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
                     }, 3000)
