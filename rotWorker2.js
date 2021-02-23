@@ -677,8 +677,17 @@ async function livePlaying(tableId, tableTitle = null) {
                 stats: predictStats.predict[playCount - 1],
                 shoe: shoe,
                 table: workerData,
+                bot_type: 2
+            })
+
+            parentPort.postMessage({
+                action: 'static_played',
+                status: status,
+                stats: predictStats.predict[playCount - 1],
+                shoe: shoe,
+                table: workerData,
                 bot_type: 2,
-                table: workerData
+                playList: ['RB', 'ED', 'SB', 'ZONE'],
             })
         }
 

@@ -367,18 +367,18 @@ async function livePlaying(tableId, tableTitle = null){
         let lastPlay = { ...predictStats.predict[playCount - 1] }
         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, data }
         // console.log(bot, winner, lastPlay.bot, isPlay, playRound, round)
-        if(threecutResult.length < 4 && winner != 'TIE'){
+        if(threecutResult.length < 4){
             threecutResult.push(winner)
-        }else if(threecutResult.length == 4 && winner != 'TIE'){
+        }else if(threecutResult.length == 4){
             threecutResult[0] = threecutResult[1]
             threecutResult[1] = threecutResult[2]
             threecutResult[2] = threecutResult[3]
             threecutResult[3] = winner
         }
 
-        if(fourcutResult.length < 5 && winner != 'TIE'){
+        if(fourcutResult.length < 5){
             fourcutResult.push(winner)
-        }else if(fourcutResult.length == 5 && winner != 'TIE'){
+        }else if(fourcutResult.length == 5){
             fourcutResult[0] = fourcutResult[1]
             fourcutResult[1] = fourcutResult[2]
             fourcutResult[2] = fourcutResult[3]
