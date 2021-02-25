@@ -290,10 +290,13 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
-    // console.log(status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
+    
+
     if (betFailed) {
         return
     }
+    // console.log(table.id)
+    // console.log(table.id, status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
 
     if (current.shoe == data.shoe && current.round == data.round) {
         betFailed = false
@@ -585,10 +588,13 @@ function genLeftProfitXSystem(wallet) {
 }
 
 async function processResultBet(betStatus, botTransactionId, botTransaction, gameResult) {
+    if(betStatus == 'TIE'){
+        console.log('rot bot worker process result TIEEEEEEEEEE')
+    }
     // console.log('rot bot worker process result')
     let gameResultObj = JSON.parse(gameResult)
     let score = gameResultObj.data.score
-    console.log(`score ${score}`)
+    // console.log(`score ${score}`)
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 6 || botObj.money_system == 5) {
         // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
@@ -1064,6 +1070,11 @@ function registerForEventListening() {
         }
 
         if (result.action == 'static_bet') {
+
+            if(result.table == 34){
+                console.log('static_betttttttt')
+            }
+
             // console.log(`static bet ${botObj.bot_type} table ${result.table}`)
             if ((botObj.bot_type == 210 && result.table == 33) || (botObj.bot_type == 220 && result.table == 34)) {
                 bet(result.data)
@@ -1083,6 +1094,7 @@ function registerForEventListening() {
             }
             if (botObj.bot_type != 210 && botObj.bot_type != 220) {
                 // console.log('action result_bet')
+                
                 betFailed = false
                 if (result.table_id == current.table_id &&
                     result.round == current.round &&
@@ -1100,7 +1112,7 @@ function registerForEventListening() {
             betFailed = false
         }
         if (result.action == 'static_result_bet') {
-            // console.log('rot bot worker static_result_bet')
+            
             let mapBotTypeAndBetSide = {
                 33: {
                     11: 211,

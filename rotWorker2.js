@@ -655,7 +655,7 @@ async function livePlaying(tableId, tableTitle = null) {
         let playCount = predictStats.predict.length
         let lastPlay = { ...predictStats.predict[playCount - 1] }
         if (!lastPlay.isResult && isPlay && playRound < data.round) {
-            status = {
+            let status = {
                 RB: 'TIE',
                 ED: 'TIE',
                 SB: 'TIE',

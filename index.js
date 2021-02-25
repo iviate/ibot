@@ -4512,6 +4512,11 @@ function initiateRotWorker(table) {
         }
 
         if (result.action == 'static_played') {
+            if(result.status.RB == 'TIE'){
+                console.log('Played static TIEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
+            }
+
+
             let resultTableId = result.table.id
             let mapTableId = { 33 : 210, 34: 220}
             let cvtTableId = mapTableId[resultTableId]
