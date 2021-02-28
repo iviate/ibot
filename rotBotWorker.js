@@ -642,7 +642,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
         // console.log(`last playTurn ${playTurn}`)
     }
     else if (botObj.money_system == 3 || botObj.money_system == 4) {
-        if (gameResultObj.winner == 0) {
+        if (score == 0) {
             if (playData.length == 1) {
                 playData.push(Math.ceil(playData[0] * 10) / 10)
             } else {
@@ -877,7 +877,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                 id: botObj.userId
             }
         }).then(async (u) => {
-            if (gameResultObj.winner == 0) {
+            if (score == 0) {
                 u.mock_wallet -= current.betVal
             }
             if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {

@@ -49,6 +49,8 @@ let isPlay = false;
 var date = new Date();
 var playList = []
 
+let isStaticPlayed = false 
+
 let statsLen = null
 // var resultStats = ''
 // var threeCutPlay = {}
