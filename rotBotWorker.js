@@ -291,12 +291,12 @@ function getBetVal() {
 function bet(data) {
     table = data.table
     
-
+    // console.log(table.id, status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
     if (betFailed) {
         return
     }
     // console.log(table.id)
-    // console.log(table.id, status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
+    
 
     if (current.shoe == data.shoe && current.round == data.round) {
         betFailed = false
@@ -1070,9 +1070,8 @@ function registerForEventListening() {
         }
 
         if (result.action == 'static_bet') {
-
             if(result.table == 34){
-                console.log('static_betttttttt')
+                // console.log('static_betttttttt')
             }
 
             // console.log(`static bet ${botObj.bot_type} table ${result.table}`)
@@ -1131,11 +1130,11 @@ function registerForEventListening() {
 
             }
             if ((botObj.bot_type == 210 && result.table_id == 33) || (botObj.bot_type == 220 && result.table_id == 34)) {
+                betFailed = false
                 if (result.table_id == current.table_id &&
                     result.round == current.round &&
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[result.table_id][botObj.bet_side] == result.botTransaction.bot_type) {
-                    betFailed = false
                     // console.log(result)
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
