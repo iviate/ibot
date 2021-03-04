@@ -27,6 +27,8 @@ var latestBetSuccess = {
     shoe: null,
     round: null
 }
+var allInStreak = 0
+var allInBetVal = 0
 
 var bet_time = null
 registerForEventListening();
@@ -186,6 +188,9 @@ function getBetVal() {
     }
     else if (botObj.money_system == 9) {
         betval = playData[playTurn - 1]
+    }
+    else if(botObj.money_system == 10){
+        betVal = allInBetVal
     }
 
     let mod = ~~(betval % 10)
@@ -430,6 +435,24 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 
         }
     }
+    else if (botObj.money_system == 10) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            allInStreak += 1
+            if(allInStreak >= playData.length){
+                allInStreak = 0
+                allInBetVal = botObj.init_bet
+            }else{
+                if (current.bet == 'PLAYER') {
+                    allInBetVal += current.betVal
+                } else {
+                    allInBetVal += current.betVal * 0.95
+                }
+            }
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            allInStreak = 0
+            allInBetVal = botObj.init_bet
+        }
+    }
 
     if (!is_mock) {
         axios.get(`https://truthbet.com/api/users/owner`, {
@@ -592,7 +615,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             }
             let currentWallet = u.mock_wallet
             u.save()
-            console.log(u)
+            // console.log(u)
 
             let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
             if (playData.length == 0) {
@@ -735,6 +758,7 @@ function registerForEventListening() {
     is_mock = workerData.is_mock
     playData = workerData.playData
     botObj = workerData.obj
+    allInBetVal = botObj.init_bet
     stopLoss = botObj.init_wallet - botObj.loss_threshold
     stopLossPercent = botObj.loss_percent
     token = workerData.obj.token

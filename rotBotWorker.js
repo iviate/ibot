@@ -36,6 +36,9 @@ var XRPreviousWinStreak = 0
 var XRWinStreak = 0
 var is_mock = false;
 var bet_time = null
+
+var allInStreak = 0
+var allInBetVal = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
@@ -202,6 +205,9 @@ function getBetVal() {
     }
     else if (botObj.money_system == 9) {
         betval = playData[playTurn - 1]
+    }
+    else if(botObj.money_system == 10){
+        betVal = allInBetVal
     }
 
     let mod = ~~(betval % 10)
@@ -726,6 +732,24 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
             playTurn += 1
         }
     }
+    else if (botObj.money_system == 10) {
+        if (score == 0) {
+            allInStreak = 0
+            allInBetVal = botObj.init_bet
+        }
+        else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            allInStreak += 1
+            if(allInStreak >= playData.length){
+                allInStreak = 0
+                allInBetVal = botObj.init_bet
+            }else{
+                allInBetVal += current.betVal
+            }
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            allInStreak = 0
+            allInBetVal = botObj.init_bet
+        }
+    }
 
     if (!is_mock) {
         axios.get(`https://truthbet.com/api/users/owner`, {
@@ -1035,6 +1059,7 @@ function registerForEventListening() {
     is_mock = workerData.is_mock
     playData = workerData.playData
     botObj = workerData.obj
+    allInBetVal = botObj.init_bet
     stopLoss = botObj.init_wallet - botObj.loss_threshold
     stopLossPercent = botObj.loss_percent
     token = workerData.obj.token
