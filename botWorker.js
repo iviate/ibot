@@ -190,7 +190,9 @@ function getBetVal() {
         betval = playData[playTurn - 1]
     }
     else if(botObj.money_system == 10){
-        betVal = allInBetVal
+        
+        betval = allInBetVal
+        // console.log('get bet val', allInBetVal, betval)
     }
 
     let mod = ~~(betval % 10)
@@ -438,6 +440,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
     else if (botObj.money_system == 10) {
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             allInStreak += 1
+            console.log(current.bet, allInStreak, playData.length)
             if(allInStreak >= playData.length){
                 allInStreak = 0
                 allInBetVal = botObj.init_bet
@@ -448,9 +451,11 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
                     allInBetVal += current.betVal * 0.95
                 }
             }
+            // console.log(`win`, allInBetVal)
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             allInStreak = 0
             allInBetVal = botObj.init_bet
+            // console.log(`lose`, allInBetVal)
         }
     }
 
