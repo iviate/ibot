@@ -169,7 +169,7 @@ function getBetVal() {
     if (botObj.money_system == 1) {
         betval = botObj.init_bet
     }
-    else if (botObj.money_system == 2 || botObj.money_system == 5) {
+    else if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 11) {
         betval = playData[playTurn - 1]
     }
     else if (botObj.money_system == 3) {
@@ -449,6 +449,16 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             betStatus == 'TIE') {
             allInStreak = 0
             allInBetVal = botObj.init_bet
+        }
+    } else if (botObj.money_system == 11) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playTurn += 1
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true) ||
+            betStatus == 'TIE') {
+            playTurn = 1
         }
     }
     

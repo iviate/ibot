@@ -167,7 +167,7 @@ function getBetVal() {
     if (botObj.money_system == 1) {
         betval = botObj.init_bet
     }
-    else if (botObj.money_system == 2 || botObj.money_system == 5) {
+    else if (botObj.money_system == 2 || botObj.money_system == 5 || botObj.money_system == 11) {
         betval = playData[playTurn - 1]
     }
     else if (botObj.money_system == 3) {
@@ -176,7 +176,6 @@ function getBetVal() {
         } else {
             betval = (playData[0] + playData[playData.length - 1]) * (botObj.init_bet / 2)
         }
-
     }
     else if (botObj.money_system == 4) {
         if (playData.length == 1) {
@@ -456,6 +455,15 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             allInStreak = 0
             allInBetVal = botObj.init_bet
             // console.log(`lose`, allInBetVal)
+        }
+    }else if (botObj.money_system == 11) {
+        if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            playTurn += 1
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
+            playTurn = 1
         }
     }
 
