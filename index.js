@@ -313,7 +313,8 @@ myApp.post('/login', async function (request, response) {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
                     }).then((res3) => {
-                        if ((res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
+                        if ((res3.data.user.advisor_user_id == 643424 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
+                        (res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (res3.data.user.advisor_user_id == 604990 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (res3.data.user.advisor_user_id == 625045 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
@@ -392,7 +393,8 @@ myApp.post('/login', async function (request, response) {
                                 }
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                                if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                                if ((res2.data.user.advisor_user_id == 643424 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                                    (res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                                     (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                                     (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                                     (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
@@ -496,7 +498,8 @@ myApp.post('/login', async function (request, response) {
                         }
                     }).then((res2) => {
                         // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                        if ((res2.data.user.advisor_user_id == 643424 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
+                            (res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                             (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                             (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                             (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
