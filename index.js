@@ -318,7 +318,7 @@ myApp.post('/login', async function (request, response) {
                             (res3.data.user.advisor_user_id == 604990 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (res3.data.user.advisor_user_id == 625045 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
                             (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                || USERNAME == "betforwin") || user.is_mock) {
+                            || USERNAME == 'vegasboyv2' || USERNAME == "betforwin") || user.is_mock) {
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                                 (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                                 (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
@@ -398,7 +398,7 @@ myApp.post('/login', async function (request, response) {
                                     (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                                     (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                                     (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                        || USERNAME == "betforwin")) {
+                                    || USERNAME == 'vegasboyv2' || USERNAME == "betforwin")) {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
 
                                         db.user.findOne({
@@ -503,7 +503,7 @@ myApp.post('/login', async function (request, response) {
                             (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                             (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
                             (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                || USERNAME == "betforwin")) {
+                            || USERNAME == 'vegasboyv2' || USERNAME == "betforwin")) {
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
                                 db.user.create({
                                     username: USERNAME,
