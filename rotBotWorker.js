@@ -918,14 +918,19 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                 u.mock_wallet -= current.betVal
             }
             if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-                if ((botObj.bet_side == 14 && current.is_opposite == false) || (botObj.bet_side == 15 && current.is_opposite == true)) {
+                if ((botObj.bet_side == 14 && current.is_opposite == true) || (botObj.bet_side == 15 && current.is_opposite == false)) {
                     u.mock_wallet += (current.betVal * 2)
                 } else {
                     u.mock_wallet += current.betVal
                 }
 
             } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
-                u.mock_wallet -= current.betVal
+                if ((botObj.bet_side == 14 && current.is_opposite == false) || (botObj.bet_side == 15 && current.is_opposite == true)) {
+                    u.mock_wallet -= (current.betVal * 2)
+                } else {
+                    u.mock_wallet -= current.betVal
+                }
+                
             } else if (betStatus == 'TIE') {
             }
             let currentWallet = u.mock_wallet
