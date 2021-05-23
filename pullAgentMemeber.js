@@ -22,7 +22,7 @@ async function pullMember() {
         // console.log(all_page)
         // console.log(all_page)
         for(let downline of downlines.data){
-            // console.log(downline)
+            console.log(downline.username)
             let data2 = await db.member.findOne({where:{
                 username: downline.username
             }})
