@@ -426,11 +426,23 @@ function bet(data) {
                 return
             }
         } else if (botObj.bet_side == 14 || botObj.bet_side == 214 | botObj.bet_side == 224) {
-            realBet = data.bot.TWOZONE
-            payload.chip = {}
-            payload.chip['credit'] = {}
-            payload.chip.credit[realBet[0]] = betVal
-            payload.chip.credit[realBet[1]] = betVal
+            if (!is_opposite) {
+                realBet = data.bot.TWOZONE
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet[0]] = betVal
+                payload.chip.credit[realBet[1]] = betVal
+            } else {
+                let dozen = ['DOZENx1st', 'DOZENx2nd', 'DOZENx3rd']
+                let index1 = dozen.indexOf(data.bot.TWOZONE[0])
+                dozen.splice(index1, 1)
+                let index2 = dozen.indexOf(data.bot.TWOZONE[1])
+                dozen.splice(index2, 1)
+                // console.log(dozen[0])
+                realBet = dozen[0]
+                payload.chip.credit[realBet] = betVal
+            }
+            
         } else if (botObj.bet_side == 15 || botObj.bet_side == 215 | botObj.bet_side == 225) {
             if (!is_opposite) {
                 realBet = data.bot.ONEZONE
@@ -486,7 +498,7 @@ function bet(data) {
                         turnover += payload.chip.credit['STRAIGHTUPx0']
                     }
 
-                    if (botObj.bet_side == 14 || (botObj.bet_side == 15 && is_opposite == true)) {
+                    if (( botObj.bet_side == 14 && is_opposite == false ) || (botObj.bet_side == 15 && is_opposite == true)) {
                         turnover += betVal * 2
                     } else {
                         turnover += betVal
@@ -510,7 +522,7 @@ function bet(data) {
                 turnover += payload.chip.credit['STRAIGHTUPx0']
             }
 
-            if (botObj.bet_side == 14 || (botObj.bet_side == 15 && is_opposite == true)) {
+            if (( botObj.bet_side == 14 && is_opposite == false ) || (botObj.bet_side == 15 && is_opposite == true)) {
                 turnover += betVal * 2
             } else {
                 turnover += betVal
@@ -917,7 +929,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
             if (score == 0) {
                 u.mock_wallet -= current.betVal
             }
-            if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
+            else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
                 if ((botObj.bet_side == 14 && current.is_opposite == true) || (botObj.bet_side == 15 && current.is_opposite == false)) {
                     u.mock_wallet += (current.betVal * 2)
                 } else {

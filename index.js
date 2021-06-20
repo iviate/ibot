@@ -2754,20 +2754,20 @@ function createRotBotWorker(obj, playData, is_mock) {
             let winner_result = result.botTransaction.win_result
             // console.log(result.bet, result.botTransaction.bet, result.bet != result.botTransaction.bet, 
             //                 result.botTransaction.win_result, result.is_opposite)
-            if (result.botObj.bet_side != 14) {
-                if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
-                    if (result.botTransaction.win_result == 'WIN') {
-                        winner_result = 'LOSE'
-                    } else if (result.botTransaction.win_result == 'LOSE') {
-                        winner_result = 'WIN'
-                    }
+
+            if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
+                if (result.botTransaction.win_result == 'WIN') {
+                    winner_result = 'LOSE'
+                } else if (result.botTransaction.win_result == 'LOSE') {
+                    winner_result = 'WIN'
                 }
             }
+
 
             let userTransactionData = {
                 value: result.betVal,
                 user_bet:
-                    result.botObj.bet_side == 14 ||
+                    (result.botObj.bet_side == 14 && !result.is_opposite) || 
                         (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                 wallet: result.wallet,
                 botId: result.botObj.id,
@@ -2836,7 +2836,7 @@ function createRotBotWorker(obj, playData, is_mock) {
                 let mock_transaction = {
                     game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
                     user_id: result.botObj.userId,
-                    bet: result.botObj.bet_side == 14 ||
+                    bet: (result.botObj.bet_side == 14  && !result.is_opposite) ||
                     (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                     bet_credit_chip_amount: result.betVal,
                     sum_paid_credit_amount: paid,
