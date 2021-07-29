@@ -432,8 +432,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
             }
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             playTurn += 1
-
-
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
         }
     }
     else if (botObj.money_system == 10) {

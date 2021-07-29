@@ -732,9 +732,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
     else if (botObj.money_system == 9) {
         if (score == 0) {
             playTurn += 1
-            // if (playTurn > playData.length) {
-            //     playTurn = 1
-            // }
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
         } else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn -= 2
             if (playTurn < 1) {
@@ -742,6 +742,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
             }
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             playTurn += 1
+            if (playTurn > playData.length) {
+                playTurn = 1
+            }
         }
     }
     else if (botObj.money_system == 10) {
