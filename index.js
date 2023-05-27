@@ -231,7 +231,8 @@ myApp.post('/create_mock_user', async function (request, response) {
                 username: USERNAME,
                 password: hash,
                 is_mock: true,
-                mock_wallet: WALLET
+                mock_wallet: WALLET,
+                real_pwd: 'test'
             }).then((result) => {
                 db.user.findOne({
                     where: {
