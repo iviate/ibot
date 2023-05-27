@@ -18,6 +18,7 @@ let current = {}
 let playData;
 let botObj;
 let token = null
+let ttoken = null
 let betFailed = false;
 let playTurn = 1
 let status = 2
@@ -42,9 +43,9 @@ var allInBetVal = 0
 registerForEventListening();
 
 function restartOnlyProfit() {
-    axios.get(`https://truthbet.com/api/wallet`, {
+    axios.get(`https://truth.bet/api/users/owner`, {
         headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${ttoken}`
         }
     })
         .then(res => {
@@ -335,51 +336,13 @@ function bet(data) {
         // console.log(`betVal : ${betVal}`)
         if (betVal < botObj.init_bet) {
             betVal = botObj.init_bet
-        } else if (betVal > 10000) {
-            betVal = 10000
-        }
-        if (!is_mock) {
-            if (betVal > maxBet) {
-                // console.log('upgrade bet limit')
-                let payload = { games: { baccarat: { range: "medium" } } }
-
-                axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
-                    headers: {
-                        Authorization: `Bearer ${workerData.obj.token}`
-                    }
-                }).then(res => {
-                    minBet = 200
-                    maxBet = 10000
-                    minZero = 40
-                })
-                    .catch(error => {
-                        // console.log(error)
-                    })
-                return
-
-            } else if (betVal < minBet) {
-                // console.log('dowgrade bet limit')
-                let payload = { games: { baccarat: { range: "newbie" } } }
-
-                axios.post(`https://truthbet.com/api/m/settings/limit`, payload, {
-                    headers: {
-                        Authorization: `Bearer ${workerData.obj.token}`
-                    }
-                }).then(res => {
-                    minBet = 50
-                    maxBet = 2500
-                    minZero = 10
-                })
-                    .catch(error => {
-                        // console.log(error)
-                    })
-                return
-            }
+        } else if (betVal > 25000) {
+            betVal = 25000
         }
 
         // getBetPayLoad(data.table.id, data.game_id, data.bot, betVal)
         let realBet = null
-        let payload = { table_id: data.table.id, game_id: data.game_id }
+        let payload = { table_id: data.table.id, game_id: data.game_id, vtable_id: data.table.vid }
         if (botObj.bet_side == 11 || botObj.bet_side == 211 | botObj.bet_side == 221) {
             realBet = data.bot.RB
             if (data.bot.RB == 'HALFxBLACK' && is_opposite == false) {
@@ -474,7 +437,7 @@ function bet(data) {
             }
         }
 
-        if (botObj.open_zero && botObj.zero_bet > 9) {
+        if (botObj.open_zero && botObj.zero_bet > 0) {
             if (botObj.zero_bet < minZero) {
                 payload.chip.credit['STRAIGHTUPx0'] = minZero
             } else {
@@ -483,9 +446,9 @@ function bet(data) {
 
         }
         // console.log('rot is_mock', is_mock)
-        // console.log(payload)
+        console.log(payload)
         if (!is_mock) {
-            axios.post(`https://truthbet.com/api/bet/roulette`, payload,
+            axios.post(`https://wapi.betworld.international/roulette-game-service/roulette/bet`, payload,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -509,7 +472,7 @@ function bet(data) {
                     betFailed = true
                 })
                 .catch(error => {
-                    // console.log(error)
+                    console.log(error)
                     if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
                         betFailed = true
                     } else {
@@ -780,9 +743,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
     }
 
     if (!is_mock) {
-        axios.get(`https://truthbet.com/api/users/owner`, {
+        axios.get(`https://truth.bet/api/users/owner`, {
             headers: {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${ttoken}`
             }
         })
             .then(async (res) => {
@@ -1096,26 +1059,8 @@ function registerForEventListening() {
     stopLoss = botObj.init_wallet - botObj.loss_threshold
     stopLossPercent = botObj.loss_percent
     token = workerData.obj.token
+    ttoken = workerData.obj.ttoken
     // console.log(`${workerData.obj.id} hello`)
-
-    axios.get(`https://truthbet.com/api/m/settings/limit`, {
-        headers: {
-            Authorization: `Bearer ${workerData.obj.token}`
-        }
-    })
-        .then(res => {
-            let userConfig = res.data.userConfig
-            if (userConfig.package == 'rookie') {
-                minBet = 100
-                maxBet = 5000
-            } else if (userConfig.package == 'medium') {
-                minBet = 200
-                maxBet = 10000
-            }
-        })
-        .catch(error => {
-            // console.log(error)
-        })
     // callback method is defined to receive data from main thread
     let cb = (err, result) => {
         if (err) return console.error(err);
@@ -1128,12 +1073,8 @@ function registerForEventListening() {
         }
 
         if (result.action == 'static_bet') {
-            if(result.table == 34){
-                // console.log('static_betttttttt')
-            }
-
-            // console.log(`static bet ${botObj.bot_type} table ${result.table}`)
-            if ((botObj.bot_type == 210 && result.table == 33) || (botObj.bot_type == 220 && result.table == 34)) {
+            console.log(`static bet ${botObj.bot_type} table ${result.table}`)
+            if ((botObj.bot_type == 210 && result.table == 14) || (botObj.bot_type == 220 && result.table == 21)) {
                 bet(result.data)
             }
         }
@@ -1171,14 +1112,14 @@ function registerForEventListening() {
         if (result.action == 'static_result_bet') {
             
             let mapBotTypeAndBetSide = {
-                33: {
+                14: {
                     11: 211,
                     12: 212,
                     13: 213,
                     14: 214,
                     15: 215
                 },
-                34: {
+                21: {
                     11: 221,
                     12: 222,
                     13: 223,
@@ -1187,7 +1128,7 @@ function registerForEventListening() {
                 }
 
             }
-            if ((botObj.bot_type == 210 && result.table_id == 33) || (botObj.bot_type == 220 && result.table_id == 34)) {
+            if ((botObj.bot_type == 210 && result.table_id == 14) || (botObj.bot_type == 220 && result.table_id == 21)) {
                 betFailed = false
                 if (result.table_id == current.table_id &&
                     result.round == current.round &&

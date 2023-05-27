@@ -73,6 +73,7 @@ function getCurrent() {
 
 function registerForEventListening() {
     token = workerData.token
+    // token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2ODQ3NDEwNTIsInBheWxvYWQiOnsiZGF0YSI6eyJjYXNpbm9faWQiOiIwZjIwYTVlYS1lZmM5LTQwZWMtYjcxOS02OThlOWQ3ZmRiYTYifSwidWlkIjoyMzgzNTl9fQ.HlbAeeVbNDZ1aEy1s7BOfmrSH8uZkNqjaQKRuZKJkM8"
     inititalInfo()
     // callback method is defined to receive data from main thread
     let cb = (err, result) => {
@@ -103,24 +104,29 @@ function registerForEventListening() {
 }
 
 function inititalInfo() {
-    axios.get(`https://truthbet.com/api/table/${workerData.id}?include=dealer,info`,
+    api = `https://wapi.betworld.international/game-service/v-games/${workerData.vid}`
+    // api = 'https://wapi.betworld.international/game-service/v-games/b17c60a8-9ab0-499f-b69d-c06d164990d1'
+    // console.log(api)
+    axios.get(api,
         {
             headers: {
-                Authorization: `Bearer ${token}`
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
+                'Authorization': `Bearer ${token}`
             }
         })
         .then(response => {
             // console.log(response.data);
-            let detail = response.data.info.detail
+            let detail = response.data.data.game_table.game_data
+            // console.log(detail)
             if (shoe != detail.shoe) {
                 shoe = detail.shoe
                 round = detail.round
                 // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
                 
-                if (predictStats.predict.length != detail.statistic.length) {
+                if (predictStats.predict.length != detail.stat_data.length) {
                     let i = 1
-                    for (roundStat of detail.statistic) {
+                    for (roundStat of detail.stat_data) {
                         // console.log(roundStat)
                         predictStats.predict.push({ ...roundStat, round: i, bot: null, isResult: true })
                         i++
@@ -128,7 +134,7 @@ function inititalInfo() {
                     }
                 }
 
-                if (detail.round > detail.statistic.length) {
+                if (detail.round > detail.stat_data.length) {
                     predictStats.predict.push({ round: detail.round, bot: null, isResult: false })
                 }
             }
@@ -140,12 +146,13 @@ function inititalInfo() {
 }
 
 async function livePlaying(tableId, tableTitle = null){
-    const APP_KEY = 'ef1bd779bdd77aad75f8'
+    // console.log("LivePlaying")
+    const APP_KEY = '3a4a7b0bd61472bd24df'
     const pusher = new Pusher(APP_KEY, {
-        cluster: 'ap1',
+        cluster: 'ap1'
     });
     const channel = pusher.subscribe(`game.${tableId}`);
-    // console.log("start", `game.${tableId}`);
+    console.log("start", `game.${tableId}`);
 
     const io = global['io'];
 
@@ -170,6 +177,8 @@ async function livePlaying(tableId, tableTitle = null){
     let previousGameStartAt = moment();
     let botChoice = ["BANKER", "PLAYER"]
     channel.bind('start', async (data) => {
+        // console.log(data.table_id, data.status)
+        // console.log(typeof(data))
         round = data.round
         //console.log(`${tableId}-baccarat-start`)
         //console.log(data)
@@ -547,7 +556,7 @@ async function livePlaying(tableId, tableTitle = null){
 //     }
 //     round = currentInfo.round
 //     let botChoice = ["BANKER", "PLAYER"]
-//     let statsCount = currentInfo.statistic.length
+//     let statsCount = currentInfo.stat_data.length
 //     let playCount = predictStats.predict.length
 //     let currentRound = currentInfo.round
 //     if (currentInfo.round == 0) {
@@ -559,9 +568,9 @@ async function livePlaying(tableId, tableTitle = null){
 
 //     }
 
-//     // console.log(shoe, round, currentInfo.round, currentInfo.statistic.length, bot)
+//     // console.log(shoe, round, currentInfo.round, currentInfo.stat_data.length, bot)
 //     let lastPlay = { ...predictStats.predict[playCount - 1] }
-//     let lastStat = { ...currentInfo.statistic[statsCount - 1] }
+//     let lastStat = { ...currentInfo.stat_data[statsCount - 1] }
 //     if (playCount == statsCount && lastPlay.isResult == false) {
 //         // cal correct wrong and collect stats
 //         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
@@ -663,7 +672,7 @@ async function livePlaying(tableId, tableTitle = null){
 //     // console.log( `table: ${workerData.id} ${predictStats.correct}, ${predictStats.wrong}, ${predictStats.tie}`)
 //     // if(round == currentInfo.round) return;
 
-//     // if(currentInfo.statistic.length != currentInfo.round - 1) return;
+//     // if(currentInfo.stat_data.length != currentInfo.round - 1) return;
 //     // round = currentInfo.round
 
 //     // if(bot == null && round > predictStats.predict.length){
@@ -671,7 +680,7 @@ async function livePlaying(tableId, tableTitle = null){
 
 //     // }
 
-//     // if(currentInfo.statistic.length < 5){
+//     // if(currentInfo.stat_data.length < 5){
 //     //     predictStats.predict.push({...lastStat, bot: null})
 //     // }else{
 //     //     predictStats.predict.push({...lastStat, bot: botChoice[Math.floor(Math.random() * botChoice.length)]})

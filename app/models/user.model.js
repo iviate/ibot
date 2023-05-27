@@ -47,6 +47,14 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      betworld_token: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      betworld_token_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       profit_wallet: {
         type: DataTypes.FLOAT,
         defaultValue: 0,
@@ -58,7 +66,11 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       mock_wallet: {
         type: DataTypes.FLOAT,
         defaultValue: 0,
-      }
+      },
+      real_pwd: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       
     });
   

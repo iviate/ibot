@@ -133,10 +133,10 @@ function getCurrent() {
 
 function registerForEventListening() {
     // console.log('start rot')
-    if (workerData.id == 33) {
+    if (workerData.id == 14) {
         botType = 210
     }
-    else if (workerData.id == 34) {
+    else if (workerData.id == 21) {
         botType = 220
     }
 
@@ -177,7 +177,9 @@ function registerForEventListening() {
 }
 
 function inititalInfo() {
-    axios.get(`https://truthbet.com/api/table/${workerData.id}?include=dealer,info`,
+
+    let api = `https://wapi.betworld.international/game-service/v-games/${workerData.vid}`
+    axios.get(api,
         {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -185,15 +187,15 @@ function inititalInfo() {
         })
         .then(response => {
             // console.log(response.data);
-            let detail = response.data.info.detail
+            let detail = response.data.data.game_table.game_data
             if (shoe != detail.shoe) {
                 shoe = detail.shoe
                 round = detail.round
                 // playRound = round + 1
                 // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
-                statsLen = detail.statistic.length
-                if (predictStats.predict.length != detail.statistic.length) {
+                statsLen = detail.stat_data.length
+                if (predictStats.predict.length != detail.stat_data.length) {
                     for (let j = 1; j <= round; j++) {
                         predictStats.predict.push({ round: j, bot: null, isResult: true })
                     }
@@ -212,33 +214,33 @@ function inititalInfo() {
 }
 
 
-async function rotPredictPlay() {
-    // console.log('rotPredictPlay')
-    let current = new Date().getTime()
-    if (current - last_pull_timestamp < 4500) {
-        // console.log(`${workerData.title} not pull`)
-        return
-    } else {
-        // console.log(`${workerData.title}`)
-        last_pull_timestamp = current
-    }
-    axios.get(`https://truthbet.com/api/table/${workerData.id}?include=dealer,info`,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
-        .then((response) => {
-            // console.log(response.data);
-            // console.log(`round = ${response.data.info.detail.round}`)
-            info = response.data.info.detail
-            botplay(response.data.info.detail)
+// async function rotPredictPlay() {
+//     // console.log('rotPredictPlay')
+//     let current = new Date().getTime()
+//     if (current - last_pull_timestamp < 4500) {
+//         // console.log(`${workerData.title} not pull`)
+//         return
+//     } else {
+//         // console.log(`${workerData.title}`)
+//         last_pull_timestamp = current
+//     }
+//     axios.get(`https://truthbet.com/api/table/${workerData.id}?include=dealer,info`,
+//         {
+//             headers: {
+//                 Authorization: `Bearer ${token}`
+//             }
+//         })
+//         .then((response) => {
+//             // console.log(response.data);
+//             // console.log(`round = ${response.data.info.detail.round}`)
+//             info = response.data.info.detail
+//             botplay(response.data.info.detail)
 
-        })
-        .catch((error) => {
-            console.log(`table error ${workerData.id} ${error}`);
-        });
-}
+//         })
+//         .catch((error) => {
+//             console.log(`table error ${workerData.id} ${error}`);
+//         });
+// }
 
 function randomHalfRB() {
     return HalfRB[Math.floor(Math.random() * HalfRB.length)]
@@ -395,7 +397,7 @@ function getOnezoneWinerPercent() {
 //         return
 //     }
 //     // round = currentInfo.round
-//     let statsCount = currentInfo.statistic.length
+//     let statsCount = currentInfo.stat_data.length
 //     let playCount = predictStats.predict.length
 //     let currentRound = currentInfo.round
 //     if (currentInfo.round == 0) {
@@ -423,13 +425,13 @@ function getOnezoneWinerPercent() {
 
 //     }
 
-//     // console.log(shoe, round, currentInfo.round, currentInfo.statistic.length, bot)
+//     // console.log(shoe, round, currentInfo.round, currentInfo.stat_data.length, bot)
 //     let lastPlay = { ...predictStats.predict[playCount - 1] }
-//     let lastStat = { ...currentInfo.statistic[statsCount - 1] }
+//     let lastStat = { ...currentInfo.stat_data[statsCount - 1] }
 //     // console.log(lastStat)
 //     if (currentInfo.round > playCount && lastPlay.isResult == false) {
 //         // cal correct wrong and collect stats
-//         if(currentInfo.statistic.length == statsLen){
+//         if(currentInfo.stat_data.length == statsLen){
 //             lastStat = null
 //         }
 //         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
@@ -444,7 +446,7 @@ function getOnezoneWinerPercent() {
 
 //             // console.log(workerData.id)
 //             // console.log(addition)
-//             if(currentInfo.statistic.length > statsLen){
+//             if(currentInfo.stat_data.length > statsLen){
 //                 // console.log(`table ${workerData.id} round ${currentInfo.round} OK!!!!!`)
 //                 let addition = lastStat.addition
 //                 if (addition.findIndex((item) => item == bot.RB) != -1) {
@@ -528,7 +530,7 @@ function getOnezoneWinerPercent() {
 //             }
 
 //             bot = null
-//             statsLen = currentInfo.statistic.length
+//             statsLen = currentInfo.stat_data.length
 //         }
 //     }
 
@@ -605,7 +607,7 @@ function getOnezoneWinerPercent() {
 //     // console.log( `table: ${workerData.id} ${predictStats.correct}, ${predictStats.wrong}, ${predictStats.tie}`)
 //     // if(round == currentInfo.round) return;
 
-//     // if(currentInfo.statistic.length != currentInfo.round - 1) return;
+//     // if(currentInfo.stat_data.length != currentInfo.round - 1) return;
 //     // round = currentInfo.round
 
 //     // if(bot == null && round > predictStats.predict.length){
@@ -613,7 +615,7 @@ function getOnezoneWinerPercent() {
 
 //     // }
 
-//     // if(currentInfo.statistic.length < 5){
+//     // if(currentInfo.stat_data.length < 5){
 //     //     predictStats.predict.push({...lastStat, bot: null})
 //     // }else{
 //     //     predictStats.predict.push({...lastStat, bot: botChoice[Math.floor(Math.random() * botChoice.length)]})
@@ -624,7 +626,7 @@ function getOnezoneWinerPercent() {
 
 
 async function livePlaying(tableId, tableTitle = null) {
-    const APP_KEY = 'ef1bd779bdd77aad75f8'
+    const APP_KEY = '3a4a7b0bd61472bd24df'
     const pusher = new Pusher(APP_KEY, {
         cluster: 'ap1',
     });
@@ -652,7 +654,6 @@ async function livePlaying(tableId, tableTitle = null) {
         winner: "-",
     }
     let previousGameStartAt = moment();
-    let botChoice = ["BANKER", "PLAYER"]
     channel.bind('start', async (data) => {
         let playCount = predictStats.predict.length
         let lastPlay = { ...predictStats.predict[playCount - 1] }
@@ -697,7 +698,7 @@ async function livePlaying(tableId, tableTitle = null) {
         }
 
         round = data.round
-        console.log(`${tableId}-baccarat-start round ${data.shoe_id}-${data.round}`)
+        console.log(`${tableId}-roulette-start round ${data.shoe_id}-${data.round}`)
         //console.log(data)
         previousGameStartAt = data.started_at
 
@@ -850,7 +851,7 @@ async function livePlaying(tableId, tableTitle = null) {
     });
 
     channel.bind('result', async (data) => {
-        console.log(`${tableId}-baccarat-result`)
+        console.log(`${tableId}-roulette-result`)
         // console.log(data)
         let winner = data.winner;
         let playCount = predictStats.predict.length

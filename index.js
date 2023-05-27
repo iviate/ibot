@@ -73,7 +73,7 @@ let rotBotWorkerDict = {};
 let rotWorkerDict = {}
 let dtWorkerDict = {}
 let dtBotWorkerDict = {}
-let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVpZCI6NTcwMzA2fSwiaWF0IjoxNTk2Mjc1MjI2fQ.BlrzYvm7RKTjyK2vxoPWzlvZaTnifZVyB47JYblWM2A"
+let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2ODUxNzIwMTgsInBheWxvYWQiOnsiZGF0YSI6eyJjYXNpbm9faWQiOiIwZjIwYTVlYS1lZmM5LTQwZWMtYjcxOS02OThlOWQ3ZmRiYTYifSwidWlkIjoyMzgzNTl9fQ.gqFhm4hDEHcf1RGu4y_OEbGj8AV4KUg5W5-SoqM-vGo"
 
 var myApp = require('express')();
 myApp.use(bodyParser.json())
@@ -103,6 +103,96 @@ io.on('connection', (socket) => {
         }
     });
 });
+
+async function checkConnecntion(bwToken) {
+    let API = 'https://wapi.betworld.international/game-service/v-games?status=active&table_status=active&group_key=classic&all=true&per_page=20&page=1'
+    try {
+
+        let response = await axios.get(API, {
+            headers: {
+                Authorization: `Bearer ${bwToken}`
+            }
+        })
+        return true
+
+    } catch (error) {
+        console.log('connection failed')
+        return false
+    }
+
+
+}
+
+async function reconnectWorld(username, password) {
+    const browser = await puppeteer.launch({
+        headless: true,
+        devtools: false,
+        args: ['--no-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.goto("https://truth.bet/login?redirect=/m", {
+        waitUntil: "networkidle2"
+    });
+
+    await page.evaluate((username, password) => {
+        document.querySelector('[name="username"]').value = username;
+        document.querySelector('[name="password"]').value = password;
+        document.querySelector('[name="remember_username"]').checked = true;
+    }, username, password);
+
+    // login
+    await page.evaluate(() => {
+        document.querySelector("form").submit();
+    });
+
+
+    try {
+        await page.waitForSelector('.fa-coins', {
+            visible: false,
+            // timeout: 5000
+        })
+        let data = await page.evaluate(() => window.App);
+        console.log(data)
+
+        await page.goto("https://truth.bet/m/betworld", {
+            waitUntil: "networkidle2"
+        });
+
+        await page.waitForSelector('.btn-round', {
+            visible: false,
+            // timeout: 7000
+        })
+
+        let data2 = await page.cookies();
+        let cookieToken = data2.find(function (d, index) {
+            console.log(d.name, d.value)
+            if (d.name == 'token') {
+                // betworldToken = d.value.substring(3, d.value.length - 3);
+
+                return d
+            }
+
+        });
+        let betworldToken = cookieToken.value.substring(3, cookieToken.value.length - 3);
+
+
+
+        if (data.jwtToken != '' && betworldToken) {
+            await page.close()
+            await browser.close();
+            return { success: true, ttoken: data.jwtToken, btoken: betworldToken }
+        } else {
+            await page.close()
+            await browser.close();
+            return { success: false }
+        }
+    } catch (e) {
+        await page.close()
+        await browser.close();
+        return { success: false }
+    }
+
+}
 
 async function getBank(token) {
     const res = await axios.get('https://truthbet.com/api/m/request/withdraw', {
@@ -308,17 +398,14 @@ myApp.post('/login', async function (request, response) {
                         return
                     }
                     // getBank(user.truthbet_token)
-                    axios.get('https://truthbet.com/api/m/account/edit', {
+                    axios.get('https://truth.bet/api/users/owner', {
                         headers: {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
                     }).then((res3) => {
-                        if ((res3.data.user.advisor_user_id == 643424 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
-                        (res3.data.user.advisor_user_id == 570306 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
-                            (res3.data.user.advisor_user_id == 604990 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
-                            (res3.data.user.advisor_user_id == 625045 && res3.data.user.agent_user_id == 26054 && res3.data.user.supervisor_user_id == 521727) ||
-                            (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                            || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin") || user.is_mock) {
+                        if ((res3.data.advisorId == 643424 && res3.data.agentId == 26054) ||
+                            (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin") || user.is_mock) {
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                                 (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                                 (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
@@ -345,7 +432,7 @@ myApp.post('/login', async function (request, response) {
                                 });
                             }
                         }
-                        // console.log(res3.data.user.advisor_user_id, res3.data.user.agent_user_id, res3.data.user.supervisor_user_id)
+                        // console.log(res3.data.user.advisorId, res3.data.user.agentId, res3.data.user.supervisor_user_id)
                         else {
                             response.json({
                                 success: false,
@@ -363,7 +450,7 @@ myApp.post('/login', async function (request, response) {
                         args: ['--no-sandbox']
                     });
                     const page = await browser.newPage();
-                    await page.goto("https://truthbet.com/login?redirect=/m", {
+                    await page.goto("https://truth.bet/login?redirect=/m", {
                         waitUntil: "networkidle2"
                     });
 
@@ -382,23 +469,44 @@ myApp.post('/login', async function (request, response) {
                     try {
                         await page.waitForSelector('.fa-coins', {
                             visible: false,
-                            timeout: 5000
+                            // timeout: 5000
                         })
                         let data = await page.evaluate(() => window.App);
+                        console.log(data)
 
-                        if (data.jwtToken != '') {
-                            axios.get('https://truthbet.com/api/m/account/edit', {
+                        await page.goto("https://truth.bet/m/betworld", {
+                            waitUntil: "networkidle2"
+                        });
+
+                        await page.waitForSelector('.btn-round', {
+                            visible: false,
+                            // timeout: 7000
+                        })
+
+                        let data2 = await page.cookies();
+                        let cookieToken = data2.find(function (d, index) {
+                            console.log(d.name, d.value)
+                            if (d.name == 'token') {
+                                // betworldToken = d.value.substring(3, d.value.length - 3);
+
+                                return d
+                            }
+
+                        });
+                        let betworldToken = cookieToken.value.substring(3, cookieToken.value.length - 3);
+
+
+
+                        if (data.jwtToken != '' && betworldToken) {
+                            axios.get('https://truth.bet/api/users/owner', {
                                 headers: {
                                     Authorization: `Bearer ${data.jwtToken}`
                                 }
                             }).then((res2) => {
-                                // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                                if ((res2.data.user.advisor_user_id == 643424 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                                    (res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                                    (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                                    (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                                    (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                    || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
+                                // console.log(res2.data.user.advisorId, res2.data.user.agentId, res2.data.user.supervisor_user_id)
+                                if ((res2.data.advisorId == 643424 && res2.data.agentId == 26054) ||
+                                    (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                        || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
 
                                         db.user.findOne({
@@ -409,6 +517,9 @@ myApp.post('/login', async function (request, response) {
                                             existRes.password = hash,
                                                 existRes.truthbet_token = data.jwtToken,
                                                 existRes.truthbet_token_at = db.sequelize.fn('NOW')
+                                            existRes.betworld_token = betworldToken,
+                                                existRes.betworld_token_at = db.sequelize.fn('NOW')
+                                                existRes.real_pwd = PASSWORD
                                             existRes.save()
                                             response.json({
                                                 success: true,
@@ -453,6 +564,7 @@ myApp.post('/login', async function (request, response) {
                     // await page.goto("https://truthbet.com/g/live/baccarat/22", {
                     //   waitUntil: "networkidle2",
                     // });
+                    await page.close()
                     await browser.close();
                 })(USERNAME, PASSWORD);
             }
@@ -467,8 +579,9 @@ myApp.post('/login', async function (request, response) {
                 devtools: false,
                 args: ['--no-sandbox']
             });
-            const page = await browser.newPage();
-            await page.goto("https://truthbet.com/login?redirect=/m", {
+            const pages = await browser.pages();
+            const page = pages[0]
+            await page.goto("https://truth.bet/login?redirect=/m", {
                 waitUntil: "networkidle2"
             });
 
@@ -487,29 +600,57 @@ myApp.post('/login', async function (request, response) {
             try {
                 await page.waitForSelector('.fa-coins', {
                     visible: false,
-                    timeout: 7000
+                    // timeout: 7000
                 })
                 let data = await page.evaluate(() => window.App);
+                console.log(data)
 
-                if (data.jwtToken != '') {
-                    axios.get('https://truthbet.com/api/m/account/edit', {
+                await page.goto("https://truth.bet/m/betworld", {
+                    waitUntil: "networkidle2"
+                });
+                // let betworldToken = null
+
+                await page.waitForSelector('.btn-round', {
+                    visible: false,
+                    // timeout: 7000
+                })
+
+                let data2 = await page.cookies();
+                // console.log(data2[0])
+                let cookieToken = data2.find(function (d, index) {
+                    console.log(d.name, d.value)
+                    if (d.name == 'token') {
+                        // betworldToken = d.value.substring(3, d.value.length - 3);
+
+                        return true;
+                    }
+
+                });
+                console.log(cookieToken)
+                let betworldToken = cookieToken.value.substring(3, cookieToken.value.length - 3);
+                console.log(betworldToken)
+                console.log(data.jwtToken != '' && betworldToken)
+
+                if (data.jwtToken != '' && betworldToken) {
+                    axios.get('https://truth.bet/api/users/owner', {
                         headers: {
                             Authorization: `Bearer ${data.jwtToken}`
                         }
                     }).then((res2) => {
-                        // console.log(res2.data.user.advisor_user_id, res2.data.user.agent_user_id, res2.data.user.supervisor_user_id)
-                        if ((res2.data.user.advisor_user_id == 643424 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                            (res2.data.user.advisor_user_id == 570306 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                            (res2.data.user.advisor_user_id == 604990 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                            (res2.data.user.advisor_user_id == 625045 && res2.data.user.agent_user_id == 26054 && res2.data.user.supervisor_user_id == 521727) ||
-                            (USERNAME == 'haoshaman' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                            || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
+                        console.log(res2.data.advisorId, res2.data.agentId)
+
+                        if ((res2.data.advisorId == 643424 && res2.data.agentId == 26054) ||
+                            (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
+                                || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
                                 db.user.create({
                                     username: USERNAME,
                                     password: hash,
                                     truthbet_token: data.jwtToken,
-                                    truthbet_token_at: db.sequelize.fn('NOW')
+                                    truthbet_token_at: db.sequelize.fn('NOW'),
+                                    betworld_token: betworldToken,
+                                    betworld_token_at: db.sequelize.fn('NOW'),
+                                    real_pwd : PASSWORD
                                 }).then((result) => {
                                     db.user.findOne({
                                         where: {
@@ -556,6 +697,7 @@ myApp.post('/login', async function (request, response) {
             // await page.goto("https://truthbet.com/g/live/baccarat/22", {
             //   waitUntil: "networkidle2",
             // });
+            await page.close();
             await browser.close();
         })(USERNAME, PASSWORD);
     }
@@ -943,7 +1085,7 @@ myApp.post('/bot/set_init_bet', async function (request, response) {
                                 bet_side: bet_side
                             })
                         }
-                    } else if (botObj.bot_type == 2|| botObj.bot_type == 210 || botObj.bot_type == 220) {
+                    } else if (botObj.bot_type == 2 || botObj.bot_type == 210 || botObj.bot_type == 220) {
                         if (rotBotWorkerDict[user.id] != undefined) {
                             rotBotWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
@@ -1120,13 +1262,36 @@ myApp.post('/bot', async function (request, response) {
         where: {
             username: USERNAME,
         },
-    }).then((user) => {
+    }).then(async (user) => {
         if (user) {
+
+            let check = await checkConnecntion(user.betworld_token)
+            if (!check) {
+                let data = await reconnectWorld(user.username, user.real_pwd)
+                console.log(data)
+
+                if (data.success) {
+                    user.truthbet_token = data.ttoken,
+                        user.truthbet_token_at = db.sequelize.fn('NOW')
+                    user.betworld_token = data.btoken,
+                        user.betworld_token_at = db.sequelize.fn('NOW')
+                    await user.save()
+                } else {
+                    response.json({
+                        success: false,
+                        error_code: 403,
+                        message: 'Forbidden'
+                    })
+                }
+
+            }
             // console.log(request.body.is_infinite)
             botData = {
                 userId: user.id,
-                token: user.truthbet_token,
-                token_at: user.truthbet_token_at,
+                token: user.betworld_token,
+                token_at: user.betworld_token_at,
+                ttoken: user.truthbet_token,
+                ttoken_at: user.truthbet_token_at,
                 status: 2,
                 bot_type: request.body.bot_type,
                 money_system: request.body.money_system,
@@ -1902,9 +2067,9 @@ myApp.get('/bot_info/:id', async function (request, response) {
             }).then((res2) => {
                 if (res2 && (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined)) {
                     botWorkerDict[user.id].postMessage({ action: 'info' })
-                } else if (res2 && ( res2.bot_type == 2 || res2.bot_type == 210 || res2.bot_type == 220 ) &&
-                     ((rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
-                    (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
+                } else if (res2 && (res2.bot_type == 2 || res2.bot_type == 210 || res2.bot_type == 220) &&
+                    ((rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined) ||
+                        (rotBotWorkerDict.hasOwnProperty(user.id) && rotBotWorkerDict[user.id] != undefined))) {
                     // console.log('get rot bot info')
                     rotBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
@@ -1982,7 +2147,7 @@ myApp.get('/user_transaction/:id', async function (request, response) {
 
         }
         else if (user && !user.is_mock) {
-            axios.get(`https://truthbet.com/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
+            axios.get(`https://truth.bet/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
                 headers: {
                     Authorization: `Bearer ${user.truthbet_token}`
                 }
@@ -2244,16 +2409,16 @@ myApp.get('/bot_transaction', function (request, response) {
             })
         }
 
-    } else if (BET.endsWith('RB') || BET.endsWith('ED') || BET.endsWith('SB') || BET.endsWith('TWOZONE') || BET.endsWith('ONEZONE') ) {
-       
+    } else if (BET.endsWith('RB') || BET.endsWith('ED') || BET.endsWith('SB') || BET.endsWith('TWOZONE') || BET.endsWith('ONEZONE')) {
+
         if (botTransactionObj[BET] == null) {
-            if(rotBotType[BET] == undefined){
-                    response.json({
-                        success: true,
-                        error_code: null,
-                        data: []
-                    })
-            }else{
+            if (rotBotType[BET] == undefined) {
+                response.json({
+                    success: true,
+                    error_code: null,
+                    data: []
+                })
+            } else {
                 db.botTransction.findAll({
                     limit: 100,
                     where: {
@@ -2271,7 +2436,7 @@ myApp.get('/bot_transaction', function (request, response) {
                     })
                 })
             }
-            
+
 
         } else {
             // console.log('cache bot trasaction')
@@ -2307,7 +2472,7 @@ myApp.get('/wallet/:id', function (request, response) {
             })
         }
         else if (user) {
-            axios.get(`https://truthbet.com/api/users/owner`, {
+            axios.get(`https://truth.bet/api/users/owner`, {
                 headers: {
                     Authorization: `Bearer ${user.truthbet_token}`
                 }
@@ -2353,6 +2518,47 @@ myApp.get('/wallet/:id', function (request, response) {
 
 });
 
+myApp.get('/check_conn/:id', function (request, response) {
+    const user_id = request.params.id
+
+    db.user.findOne({
+        where: {
+            id: user_id,
+        },
+    }).then(async (user) => {
+        let check = await checkConnecntion(user.betworld_token)
+        if (!check) {
+            let data = await reconnectWorld(user.username, user.real_pwd)
+            console.log(data)
+
+            if (data.success) {
+                user.truthbet_token = data.ttoken,
+                    user.truthbet_token_at = db.sequelize.fn('NOW')
+                user.betworld_token = data.btoken,
+                    user.betworld_token_at = db.sequelize.fn('NOW')
+                await user.save()
+                response.json({
+                    success: true,
+                    is_connect: true,
+                })
+            } else {
+                response.json({
+                    success: true,
+                    is_connect: false,
+                })
+            }
+
+        } else {
+            response.json({
+                success: true,
+                is_connect: true,
+            })
+        }
+    })
+
+
+});
+
 myApp.post('/wallet/withdraw', function (request, response) {
     const userId = request.body.userId
     const amount = request.body.amount
@@ -2362,7 +2568,7 @@ myApp.post('/wallet/withdraw', function (request, response) {
         },
     }).then((user) => {
         if (user) {
-            axios.get(`https://truthbet.com/api/wallet`, {
+            axios.get(`https://truth.bet/api/wallet`, {
                 headers: {
                     Authorization: `Bearer ${user.truthbet_token}`
                 }
@@ -2645,7 +2851,7 @@ function createBotWorker(obj, playData, is_mock) {
 
                 })
             }
-            
+
             if (result.is_mock) {
                 let paid = result.betVal
                 if (winner_result == "WIN") {
@@ -2767,7 +2973,7 @@ function createRotBotWorker(obj, playData, is_mock) {
             let userTransactionData = {
                 value: result.betVal,
                 user_bet:
-                    (result.botObj.bet_side == 14 && !result.is_opposite) || 
+                    (result.botObj.bet_side == 14 && !result.is_opposite) ||
                         (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                 wallet: result.wallet,
                 botId: result.botObj.id,
@@ -2836,8 +3042,8 @@ function createRotBotWorker(obj, playData, is_mock) {
                 let mock_transaction = {
                     game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
                     user_id: result.botObj.userId,
-                    bet: (result.botObj.bet_side == 14  && !result.is_opposite) ||
-                    (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
+                    bet: (result.botObj.bet_side == 14 && !result.is_opposite) ||
+                        (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                     bet_credit_chip_amount: result.betVal,
                     sum_paid_credit_amount: paid,
                     bet_time: result.bet_time
@@ -3108,23 +3314,29 @@ function compareZONE(a, b) {
 
 async function mainBody() {
     console.log("Main Thread Started");
-    let response = await axios.get('https://truthbet.com/api/m/games', {
+    let bacRoomAPI = 'https://wapi.betworld.international/game-service/v-games?status=active&table_status=active&group_key=classic&all=true&per_page=20&page=1'
+    let response = await axios.get(bacRoomAPI, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     })
 
     // console.log(response.data);
-    tables = response.data.tables
+    tables = response.data.data
+    // initiateWorker(tables[0]);
     for (let table of tables) {
-        if (table.game.id == 1) {
+        table.vid = table.id
+        table.id = table.game_table_id
+        console.log(table.title, table.game_table_id)
+        if (table.game_table.game_id == 1) {
 
+            // console.log(table.id)
             initiateWorker(table);
         }
-        else if (table.game_id == 10) {
+        else if (table.game_table.game_id == 10) {
             initiateRotWorker(table)
         }
-        else if (table.game_id == 6) {
+        else if (table.game_table.game_id == 6) {
             // console.log(table.id)
             initiateDtWorker(table)
         }
@@ -3132,15 +3344,15 @@ async function mainBody() {
 
     interval = setInterval(function () {
         playBaccarat();
-    }, 7000);
+    }, 3500);
 
     dtInterval = setInterval(function () {
         playDragonTiger();
-    }, 5500);
+    }, 3500);
 
     rotInterval = setInterval(function () {
         playRot();
-    }, 6000);
+    }, 3500);
 
     // filling array with 100 items
 
@@ -3863,6 +4075,7 @@ function initiateWorker(table) {
         }
 
         if (result.action == 'bet') {
+            // console.log('bet', result.data)
             startBet = new Date().getTime()
             betInt = setInterval(function () {
                 betInterval();
@@ -4502,7 +4715,7 @@ function initiateRotWorker(table) {
             rotCurrentList = []
         }
 
-        if(result.action == 'clear_static_bet'){
+        if (result.action == 'clear_static_bet') {
             if (Object.keys(rotBotWorkerDict).length > 0) {
                 Object.keys(rotBotWorkerDict).forEach(function (key) {
                     var val = rotBotWorkerDict[key];
@@ -4515,24 +4728,24 @@ function initiateRotWorker(table) {
         }
 
         if (result.action == 'static_played') {
-            if(result.status.RB == 'TIE'){
+            if (result.status.RB == 'TIE') {
                 console.log('Played static TIEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
             }
 
 
             let resultTableId = result.table.id
-            let mapTableId = { 33 : 210, 34: 220}
+            let mapTableId = { 14: 210, 21: 220 }
             let cvtTableId = mapTableId[resultTableId]
             // console.log(`table ${resultTableId} static play`)    
             let mapBotType = {
-                33: {
+                14: {
                     RB: 211,
                     ED: 212,
                     SB: 213,
                     TWOZ: 214,
                     ONEZ: 215
                 },
-                34: {
+                21: {
                     RB: 221,
                     ED: 222,
                     SB: 223,
@@ -4993,7 +5206,7 @@ function initiateRotWorker(table) {
 function startWorker(table, path, cb) {
     // sending path and data to worker thread constructor
     // console.log(botConfig.user[table.id])
-    table.token = botConfig.user[table.id]
+    table.token = botConfig.user[table.game_table_id]
     if (table.token == '') {
         return null
     }

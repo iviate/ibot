@@ -98,7 +98,8 @@ function registerForEventListening() {
 }
 
 function inititalInfo() {
-    axios.get(`https://truthbet.com/api/table/${workerData.id}?include=dealer,info`,
+    let api = `https://wapi.betworld.international/game-service/v-games/${workerData.vid}`
+    axios.get(api,
         {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -106,16 +107,16 @@ function inititalInfo() {
         })
         .then(response => {
             // console.log(response.data);
-            let detail = response.data.info.detail
+            let detail = response.data.data.game_table.game_data
             if (shoe != detail.shoe) {
                 shoe = detail.shoe
                 round = detail.round
                 // predictStatsHistory.push({ ...predictStats })
                 predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
                 
-                if (predictStats.predict.length != detail.statistic.length) {
+                if (predictStats.predict.length != detail.stat_data.length) {
                     let i = 1
-                    for (roundStat of detail.statistic) {
+                    for (roundStat of detail.stat_data) {
                         // console.log(roundStat)
                         predictStats.predict.push({ ...roundStat, round: i, bot: null, isResult: true })
                         i++
@@ -123,7 +124,7 @@ function inititalInfo() {
                     }
                 }
 
-                if (detail.round > detail.statistic.length) {
+                if (detail.round > detail.stat_data.length) {
                     predictStats.predict.push({ round: detail.round, bot: null, isResult: false })
                 }
             }
@@ -177,7 +178,7 @@ function inititalInfo() {
 //     }
 //     round = currentInfo.round
 //     let botChoice = ["TIGER", "DRAGON"]
-//     let statsCount = currentInfo.statistic.length
+//     let statsCount = currentInfo.stat_data.length
 //     let playCount = predictStats.predict.length
 //     let currentRound = currentInfo.round
 //     if (currentInfo.round == 0) {
@@ -189,9 +190,9 @@ function inititalInfo() {
 
 //     }
 
-//     // console.log(shoe, round, currentInfo.round, currentInfo.statistic.length, bot)
+//     // console.log(shoe, round, currentInfo.round, currentInfo.stat_data.length, bot)
 //     let lastPlay = { ...predictStats.predict[playCount - 1] }
-//     let lastStat = { ...currentInfo.statistic[statsCount - 1] }
+//     let lastStat = { ...currentInfo.stat_data[statsCount - 1] }
 //     if (playCount == statsCount && lastPlay.isResult == false) {
 //         // cal correct wrong and collect stats
 //         predictStats.predict[playCount - 1] = { ...lastPlay, isResult: true, ...lastStat }
@@ -296,7 +297,7 @@ function inititalInfo() {
 //     // console.log( `table: ${workerData.id} ${predictStats.correct}, ${predictStats.wrong}, ${predictStats.tie}`)
 //     // if(round == currentInfo.round) return;
 
-//     // if(currentInfo.statistic.length != currentInfo.round - 1) return;
+//     // if(currentInfo.stat_data.length != currentInfo.round - 1) return;
 //     // round = currentInfo.round
 
 //     // if(bot == null && round > predictStats.predict.length){
@@ -304,7 +305,7 @@ function inititalInfo() {
 
 //     // }
 
-//     // if(currentInfo.statistic.length < 5){
+//     // if(currentInfo.stat_data.length < 5){
 //     //     predictStats.predict.push({...lastStat, bot: null})
 //     // }else{
 //     //     predictStats.predict.push({...lastStat, bot: botChoice[Math.floor(Math.random() * botChoice.length)]})
@@ -315,7 +316,7 @@ function inititalInfo() {
 
 
 async function livePlaying(tableId, tableTitle = null){
-    const APP_KEY = 'ef1bd779bdd77aad75f8'
+    const APP_KEY = '3a4a7b0bd61472bd24df'
     const pusher = new Pusher(APP_KEY, {
         cluster: 'ap1',
     });
@@ -451,7 +452,7 @@ async function livePlaying(tableId, tableTitle = null){
     });
 
     channel.bind('result', async (data) => {
-        //console.log(`${tableId}-baccarat-result`)
+        console.log(`${tableId}-dragon-tiger-result`)
         //console.log(data)
         let winner = data.winner;
         let playCount = predictStats.predict.length
