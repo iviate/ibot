@@ -403,7 +403,7 @@ myApp.post('/login', async function (request, response) {
                             Authorization: `Bearer ${user.truthbet_token}`
                         }
                     }).then((res3) => {
-                        if ((res3.data.advisorId == 643424 && res3.data.agentId == 26054) ||
+                        if ((res3.data.advisorId == 716478 && res3.data.agentId == 26054) ||
                             (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
                                 || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin") || user.is_mock) {
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
@@ -504,7 +504,7 @@ myApp.post('/login', async function (request, response) {
                                 }
                             }).then((res2) => {
                                 // console.log(res2.data.user.advisorId, res2.data.user.agentId, res2.data.user.supervisor_user_id)
-                                if ((res2.data.advisorId == 643424 && res2.data.agentId == 26054) ||
+                                if ((res2.data.advisorId == 716478 && res2.data.agentId == 26054) ||
                                     (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
                                         || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
