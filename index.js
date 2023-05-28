@@ -515,12 +515,12 @@ myApp.post('/login', async function (request, response) {
                                                 username: USERNAME
                                             }
                                         }).then((existRes) => {
-                                            existRes.password = hash,
-                                                existRes.truthbet_token = data.jwtToken,
-                                                existRes.truthbet_token_at = db.sequelize.fn('NOW')
-                                            existRes.betworld_token = betworldToken,
-                                                existRes.betworld_token_at = db.sequelize.fn('NOW')
-                                                existRes.real_pwd = PASSWORD
+                                            existRes.password = hash
+                                            existRes.truthbet_token = data.jwtToken
+                                            existRes.truthbet_token_at = db.sequelize.fn('NOW')
+                                            existRes.betworld_token = betworldToken
+                                            existRes.betworld_token_at = db.sequelize.fn('NOW')
+                                            existRes.real_pwd = PASSWORD
                                             existRes.save()
                                             response.json({
                                                 success: true,
@@ -640,7 +640,7 @@ myApp.post('/login', async function (request, response) {
                     }).then((res2) => {
                         console.log(res2.data.advisorId, res2.data.agentId)
 
-                        if ((res2.data.advisorId == 643424 && res2.data.agentId == 26054) ||
+                        if ((res2.data.advisorId == 716478 && res2.data.agentId == 26054) ||
                             (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
                                 || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
@@ -651,7 +651,7 @@ myApp.post('/login', async function (request, response) {
                                     truthbet_token_at: db.sequelize.fn('NOW'),
                                     betworld_token: betworldToken,
                                     betworld_token_at: db.sequelize.fn('NOW'),
-                                    real_pwd : PASSWORD
+                                    real_pwd: PASSWORD
                                 }).then((result) => {
                                     db.user.findOne({
                                         where: {
