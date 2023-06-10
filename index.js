@@ -205,6 +205,95 @@ async function getBank(token) {
     return res.data.accounts[0]
 }
 
+myApp.post('/martingel', async function (request, response) {
+    const userId = request.body.userId;
+    const name = request.body.name;
+    const data = request.body.data
+    // console.log(WALLET)
+
+    const user = await db.user.findOne({
+        where: {
+            id: userId,
+        },
+    });
+    if (user) {
+        db.martingel.create({
+            userId: userId,
+            name: name,
+            data: JSON.stringify(data),
+        }).then((result) => {
+            response.json({
+                success: true,
+                data: result
+            })
+        })
+    } else {
+        response.json({
+            success: false,
+            data: {
+                code: 401,
+                error: 'user not found'
+            }
+        })
+
+    }
+})
+
+myApp.post('/martingel/:id', async function (request, response) {
+    const name = request.body.name;
+    const data = request.body.data
+    // console.log(WALLET)
+
+    const martingel = await db.martingel.findOne({
+        where: {
+            id: request.params.id,
+        },
+    })
+    if (martingel) {
+        martingel.name = name
+        martingel.data = JSON.stringify(data)
+        await martingel.save()
+        response.json({
+            success: true,
+            data: martingel
+        })
+    } else {
+        response.json({
+            success: false,
+            data: {
+                code: 401,
+                error: 'save not found'
+            }
+        })
+
+    }
+})
+
+myApp.get('/martingel/:id', async function (request, response) {
+
+    const martingels = await db.martingel.findAll({
+        where: {
+            userId: request.params.id,
+        },
+    })
+    if(martingels){
+        await martingels.forEach(element => {
+            console.log(element)
+            element.data = JSON.parse(element.data)
+        });
+    
+        response.json({
+            success: true,
+            data: {
+                martingels: martingels
+            }
+        })
+    }
+    
+
+
+})
+
 myApp.post('/create_mock_user', async function (request, response) {
     const USERNAME = request.body.username;
     const PASSWORD = request.body.password;
@@ -1265,27 +1354,29 @@ myApp.post('/bot', async function (request, response) {
         },
     }).then(async (user) => {
         if (user) {
+            if (!user.is_mock) {
+                let check = await checkConnecntion(user.betworld_token)
+                if (!check) {
+                    let data = await reconnectWorld(user.username, user.real_pwd)
+                    console.log(data)
 
-            let check = await checkConnecntion(user.betworld_token)
-            if (!check) {
-                let data = await reconnectWorld(user.username, user.real_pwd)
-                console.log(data)
+                    if (data.success) {
+                        user.truthbet_token = data.ttoken,
+                            user.truthbet_token_at = db.sequelize.fn('NOW')
+                        user.betworld_token = data.btoken,
+                            user.betworld_token_at = db.sequelize.fn('NOW')
+                        await user.save()
+                    } else {
+                        response.json({
+                            success: false,
+                            error_code: 403,
+                            message: 'Forbidden'
+                        })
+                    }
 
-                if (data.success) {
-                    user.truthbet_token = data.ttoken,
-                        user.truthbet_token_at = db.sequelize.fn('NOW')
-                    user.betworld_token = data.btoken,
-                        user.betworld_token_at = db.sequelize.fn('NOW')
-                    await user.save()
-                } else {
-                    response.json({
-                        success: false,
-                        error_code: 403,
-                        message: 'Forbidden'
-                    })
                 }
-
             }
+
             // console.log(request.body.is_infinite)
             botData = {
                 userId: user.id,
@@ -2083,7 +2174,9 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 response.json({
                     success: true,
                     error_code: null,
-                    data: {}
+                    data: {
+                        bot_type: res2.bot_type
+                    }
                 })
             })
         } else {
