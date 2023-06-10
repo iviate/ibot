@@ -2171,13 +2171,22 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 if (res2 && (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
                     dtBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
-                response.json({
-                    success: true,
-                    error_code: null,
-                    data: {
-                        bot_type: res2.bot_type
-                    }
-                })
+                if(res2){
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: {
+                            bot_type: res2.bot_type  
+                        }
+                    })
+                }else{
+                    response.json({
+                        success: true,
+                        error_code: null,
+                        data: null
+                    })
+                }
+                
             })
         } else {
             response.json({
