@@ -196,15 +196,15 @@ function getBetVal() {
         betval = allInBetVal
     }
 
-    let mod = ~~(betval % 10)
-    // console.log(mod, betval)
-    if (mod != 0 && mod != 5) {
-        if (mod < 5) {
-            betval = (Math.floor((betval / 10)) * 10) + 5
-        } else if (mod > 5) {
-            betval = Math.ceil(betval / 10) * 10
-        }
-    }
+    // let mod = ~~(betval % 10)
+    // // console.log(mod, betval)
+    // if (mod != 0 && mod != 5) {
+    //     if (mod < 5) {
+    //         betval = (Math.floor((betval / 10)) * 10) + 5
+    //     } else if (mod > 5) {
+    //         betval = Math.ceil(betval / 10) * 10
+    //     }
+    // }
 
     return ~~betval
 }
@@ -234,8 +234,8 @@ function bet(data) {
 
         let betVal = getBetVal()
         // console.log(`betVal : ${betVal}`)
-        if (betVal < botObj.init_bet) {
-            betVal = botObj.init_bet
+        if (betVal < 0) {
+            betVal = 1
         } else if (betVal > 25000) {
             betVal = 25000
         }

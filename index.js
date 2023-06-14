@@ -901,29 +901,30 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             let nextVal = ret[ret.length - 1] + ret[ret.length - 2]
             ret.push(nextVal)
         }
-        // console.log('3 in 9')
-        // console.log(ret)
         return ret
     } else if (money_system == 8) {
 
-        // console.log('3 in 9')
-        // console.log(ret)
-
-        let initSet = [50, 50, 50,
-            100, 100, 100,
-            200, 200, 200,
-            400, 400, 400,
-            800, 800, 800,
-            1600, 1600, 1600,
-            3200, 3200, 3200,
-            6400, 6400, 6400]
+        let initSet = [init_bet, init_bet, init_bet,
+            init_bet * 2, init_bet * 2, init_bet * 2,
+            init_bet * 4, init_bet * 4, init_bet * 4,
+            init_bet * 8, init_bet * 8, init_bet * 8,
+            init_bet * 16, init_bet * 16, init_bet * 16,
+            init_bet * 32, init_bet * 32, init_bet * 32,
+            init_bet * 64, init_bet * 64, init_bet * 64,
+            init_bet * 128, init_bet * 128, init_bet * 128, 
+            init_bet * 256, init_bet * 256, init_bet * 256,
+            init_bet * 512, init_bet * 512, init_bet * 512,
+            init_bet * 1024, init_bet * 1024, init_bet * 1024,
+            init_bet * 2048, init_bet * 2048, init_bet * 2048
+        ]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
-            if (init_bet > initSet[i]) {
-                continue
+            let bVal = initSet[i]
+            if (bVal < 10000) {
+                ret.push(bVal)
             } else {
-                ret.push(initSet[i])
+                break;
             }
         }
         // console.log(ret)
@@ -931,13 +932,13 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
     }
     else if (money_system == 9) {
 
-        // console.log('3 in 9')
-        // console.log(ret)
-
         let initSet = [1, 2, 3,
             5, 8, 13,
             21, 34, 55,
-            89, 144, 233]
+            89, 144, 233, 
+            377, 610, 987,
+            1597, 2584, 4181,
+           6765, 10946 ]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {

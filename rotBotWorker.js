@@ -25,7 +25,7 @@ let status = 2
 var isStop = false;
 var minBet = 50
 var maxBet = 2500
-var minZero = 10
+var minZero = 1
 var turnover = 0
 var is_opposite = false
 var table = null
@@ -211,15 +211,15 @@ function getBetVal() {
         betval = allInBetVal
     }
 
-    let mod = ~~(betval % 10)
-    // console.log(mod, betval)
-    if (mod != 0 && mod != 5) {
-        if (mod < 5) {
-            betval = (Math.floor((betval / 10)) * 10) + 5
-        } else if (mod > 5) {
-            betval = Math.ceil(betval / 10) * 10
-        }
-    }
+    // let mod = ~~(betval % 10)
+    // // console.log(mod, betval)
+    // if (mod != 0 && mod != 5) {
+    //     if (mod < 5) {
+    //         betval = (Math.floor((betval / 10)) * 10) + 5
+    //     } else if (mod > 5) {
+    //         betval = Math.ceil(betval / 10) * 10
+    //     }
+    // }
 
 
     return ~~betval
@@ -334,8 +334,8 @@ function bet(data) {
 
         let betVal = getBetVal()
         // console.log(`betVal : ${betVal}`)
-        if (betVal < botObj.init_bet) {
-            betVal = botObj.init_bet
+        if (betVal < 0) {
+            betVal = 1
         } else if (betVal > 25000) {
             betVal = 25000
         }
@@ -401,8 +401,11 @@ function bet(data) {
                 dozen.splice(index1, 1)
                 let index2 = dozen.indexOf(data.bot.TWOZONE[1])
                 dozen.splice(index2, 1)
-                // console.log(dozen[0])
+                
                 realBet = dozen[0]
+                console.log('opposite two zone : ', realBet)
+                payload.chip = {}
+                payload.chip['credit'] = {}
                 payload.chip.credit[realBet] = betVal
             }
             
