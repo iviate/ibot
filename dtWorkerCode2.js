@@ -452,7 +452,7 @@ async function livePlaying(tableId, tableTitle = null){
     });
 
     channel.bind('result', async (data) => {
-        console.log(`${tableId}-dragon-tiger-result`)
+        // console.log(`${tableId}-dragon-tiger-result`)
         //console.log(data)
         let winner = data.winner;
         let playCount = predictStats.predict.length
@@ -486,7 +486,7 @@ async function livePlaying(tableId, tableTitle = null){
                         table: workerData,
                         bot_type: 3
                     })
-                  }, 4000)
+                  }, 2000)
                 
             }
             bot = null

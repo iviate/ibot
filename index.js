@@ -152,7 +152,7 @@ async function reconnectWorld(username, password) {
             // timeout: 5000
         })
         let data = await page.evaluate(() => window.App);
-        console.log(data)
+        // console.log(data)
 
         await page.goto("https://truth.bet/m/betworld", {
             waitUntil: "networkidle2"
@@ -165,7 +165,7 @@ async function reconnectWorld(username, password) {
 
         let data2 = await page.cookies();
         let cookieToken = data2.find(function (d, index) {
-            console.log(d.name, d.value)
+            // console.log(d.name, d.value)
             if (d.name == 'token') {
                 // betworldToken = d.value.substring(3, d.value.length - 3);
 
@@ -278,7 +278,7 @@ myApp.get('/martingel/:id', async function (request, response) {
     })
     if(martingels){
         await martingels.forEach(element => {
-            console.log(element)
+            // console.log(element)
             element.data = JSON.parse(element.data)
         });
     
@@ -292,6 +292,34 @@ myApp.get('/martingel/:id', async function (request, response) {
     
 
 
+})
+
+myApp.post('/martingel/delete/:id', async function (request, response) {
+    const name = request.body.name;
+    const data = request.body.data
+    // console.log(WALLET)
+
+    const martingel = await db.martingel.destroy({
+        where: {
+            id: request.params.id,
+        },
+    })
+    if (martingel) {
+        
+        response.json({
+            success: true,
+            data: []
+        })
+    } else {
+        response.json({
+            success: false,
+            data: {
+                code: 401,
+                error: 'save not found'
+            }
+        })
+
+    }
 })
 
 myApp.post('/create_mock_user', async function (request, response) {
@@ -495,7 +523,7 @@ myApp.post('/login', async function (request, response) {
                     }).then((res3) => {
                         if ((res3.data.advisorId == 716478 && res3.data.agentId == 26054) ||
                             (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin") || user.is_mock) {
+                                || USERNAME == 'bas099068' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin") || user.is_mock) {
                             if ((botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                                 (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) ||
                                 (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
@@ -562,7 +590,7 @@ myApp.post('/login', async function (request, response) {
                             // timeout: 5000
                         })
                         let data = await page.evaluate(() => window.App);
-                        console.log(data)
+                        // console.log(data)
 
                         await page.goto("https://truth.bet/m/betworld", {
                             waitUntil: "networkidle2"
@@ -575,7 +603,7 @@ myApp.post('/login', async function (request, response) {
 
                         let data2 = await page.cookies();
                         let cookieToken = data2.find(function (d, index) {
-                            console.log(d.name, d.value)
+                            // console.log(d.name, d.value)
                             if (d.name == 'token') {
                                 // betworldToken = d.value.substring(3, d.value.length - 3);
 
@@ -596,7 +624,7 @@ myApp.post('/login', async function (request, response) {
                                 // console.log(res2.data.user.advisorId, res2.data.user.agentId, res2.data.user.supervisor_user_id)
                                 if ((res2.data.advisorId == 716478 && res2.data.agentId == 26054) ||
                                     (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                        || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
+                                        || USERNAME == 'bas099068' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
                                     bcrypt.hash(PASSWORD, 12, function (err, hash) {
 
                                         db.user.findOne({
@@ -731,7 +759,7 @@ myApp.post('/login', async function (request, response) {
 
                         if ((res2.data.advisorId == 716478 && res2.data.agentId == 26054) ||
                             (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
-                                || USERNAME == 'vegasboyv2' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
+                                || USERNAME == 'bas099068' || USERNAME == 'vegasboyv3' || USERNAME == 'vegasboyv4' || USERNAME == 'vegasboyv5' || USERNAME == "betforwin")) {
                             bcrypt.hash(PASSWORD, 12, function (err, hash) {
                                 db.user.create({
                                     username: USERNAME,
@@ -915,13 +943,17 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             init_bet * 256, init_bet * 256, init_bet * 256,
             init_bet * 512, init_bet * 512, init_bet * 512,
             init_bet * 1024, init_bet * 1024, init_bet * 1024,
-            init_bet * 2048, init_bet * 2048, init_bet * 2048
+            init_bet * 2048, init_bet * 2048, init_bet * 2048,
+            init_bet * 4096, init_bet * 4096, init_bet * 4096,
+            init_bet * 8192, init_bet * 8192, init_bet * 8192,
+            init_bet * 16384, init_bet * 16384, init_bet * 16384,
+
         ]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
             let bVal = initSet[i]
-            if (bVal < 10000) {
+            if (bVal < 20000) {
                 ret.push(bVal)
             } else {
                 break;
@@ -938,15 +970,15 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             89, 144, 233, 
             377, 610, 987,
             1597, 2584, 4181,
-           6765, 10946 ]
+           6765, 10946, 17729 ]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
             let bVal = initSet[i] * init_bet
-            if (bVal < 10000) {
+            if (bVal < 20000) {
                 ret.push(bVal)
             } else {
-                ret.push(10000)
+                ret.push(20000)
                 break;
             }
 
@@ -1359,7 +1391,7 @@ myApp.post('/bot', async function (request, response) {
                 let check = await checkConnecntion(user.betworld_token)
                 if (!check) {
                     let data = await reconnectWorld(user.username, user.real_pwd)
-                    console.log(data)
+                    // console.log(data)
 
                     if (data.success) {
                         user.truthbet_token = data.ttoken,
@@ -2376,11 +2408,17 @@ myApp.get('/bot_transaction', function (request, response) {
         '210SB': 213,
         '210TWOZONE': 214,
         '210ONEZONE': 215,
+        '210FIRSTZONE': 216,
+        '210SECONDZONE': 217,
+        '210THIRDZONE': 218,
         '220RB': 221,
         '220ED': 222,
         '220SB': 223,
         '220TWOZONE': 224,
         '220ONEZONE': 225,
+        '220FIRSTZONE': 226,
+        '220SECONDZONE': 227,
+        '220THIRDZONE': 228
 
     }
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
@@ -2513,7 +2551,8 @@ myApp.get('/bot_transaction', function (request, response) {
             })
         }
 
-    } else if (BET.endsWith('RB') || BET.endsWith('ED') || BET.endsWith('SB') || BET.endsWith('TWOZONE') || BET.endsWith('ONEZONE')) {
+    } else if (BET.endsWith('RB') || BET.endsWith('ED') || BET.endsWith('SB') || BET.endsWith('TWOZONE') || BET.endsWith('ONEZONE') 
+        || BET.endsWith('FIRSTZONE') || BET.endsWith('SECONDZONE') || BET.endsWith('THIRDZONE')) {
 
         if (botTransactionObj[BET] == null) {
             if (rotBotType[BET] == undefined) {
@@ -2633,7 +2672,7 @@ myApp.get('/check_conn/:id', function (request, response) {
         let check = await checkConnecntion(user.betworld_token)
         if (!check) {
             let data = await reconnectWorld(user.username, user.real_pwd)
-            console.log(data)
+            // console.log(data)
 
             if (data.success) {
                 user.truthbet_token = data.ttoken,
@@ -3018,7 +3057,7 @@ function createRotBotWorker(obj, playData, is_mock) {
             return console.error(err);
         }
         if (result.action == 'bet_success') {
-            // result.win_percent = win_percent
+            result.win_percent = 50
             // console.log(result)
             io.emit(`user${result.data.current.botObj.userId}`, result)
             console.log(`rot bot ${result.data.current.botObj.userId} bet success`)
@@ -3057,15 +3096,16 @@ function createRotBotWorker(obj, playData, is_mock) {
         // }
         if (result.action == 'process_result') {
 
-            console.log('rot index process result')
+            // console.log('rot index process result')
             // console.log(result.action)
             // console.log(result.wallet.myWallet.MAIN_WALLET.chips.cre)
             let userWallet = result.wallet
             let winner_result = result.botTransaction.win_result
             // console.log(result.bet, result.botTransaction.bet, result.bet != result.botTransaction.bet, 
             //                 result.botTransaction.win_result, result.is_opposite)
+            
 
-            if (result.botTransaction.win_result != 'TIE' && result.bet != result.botTransaction.bet) {
+            if (result.botTransaction.win_result != 'TIE' && result.is_opposite) {
                 if (result.botTransaction.win_result == 'WIN') {
                     winner_result = 'LOSE'
                 } else if (result.botTransaction.win_result == 'LOSE') {
@@ -3078,7 +3118,10 @@ function createRotBotWorker(obj, playData, is_mock) {
                 value: result.betVal,
                 user_bet:
                     (result.botObj.bet_side == 14 && !result.is_opposite) ||
-                        (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
+                        (result.botObj.bet_side == 15 && result.is_opposite) ||
+                        (result.botObj.bet_side == 16 && result.is_opposite) ||
+                        (result.botObj.bet_side == 17 && result.is_opposite) ||
+                        (result.botObj.bet_side == 18 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                 wallet: result.wallet,
                 botId: result.botObj.id,
                 result: winner_result,
@@ -3133,22 +3176,40 @@ function createRotBotWorker(obj, playData, is_mock) {
 
                 })
             }
-            console.log('process result rot is_mock', is_mock)
+            // console.log('process result rot is_mock', is_mock)
             if (result.is_mock) {
                 let paid = result.betVal
-                if (winner_result == "WIN") {
+                if((result.botObj.bet_side == 14 && !result.is_opposite) || (result.botObj.bet_side == 15 && result.is_opposite)
+                || (result.botObj.bet_side == 16 && result.is_opposite) || (result.botObj.bet_side == 17 && result.is_opposite)
+                || (result.botObj.bet_side == 18 && result.is_opposite)){
                     paid += result.betVal
+                }
+                if (winner_result == "WIN") {
+                    if((result.botObj.bet_side == 14 && result.is_opposite) || (result.botObj.bet_side == 15 && !result.is_opposite)
+                    || (result.botObj.bet_side == 16 && !result.is_opposite) || (result.botObj.bet_side == 17 && !result.is_opposite)
+                    || (result.botObj.bet_side == 18 && !result.is_opposite)){
+                        paid += result.betVal * 2
+                    }else{
+                        paid += result.betVal
+                    }
                 } else if (winner_result == "LOSE") {
                     paid = 0
                 }
                 var zerofilled = ('000' + result.botTransaction.round).slice(-3);
-                console.log(`process result rot mock data`, result.bet, typeof result.bet)
+                // console.log(`process result rot mock data`, result.bet, typeof result.bet)
                 let mock_transaction = {
                     game_info: `${result.botTransaction.table_title} / ${result.botTransaction.shoe}-${zerofilled}`,
                     user_id: result.botObj.userId,
                     bet: (result.botObj.bet_side == 14 && !result.is_opposite) ||
-                        (result.botObj.bet_side == 15 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
-                    bet_credit_chip_amount: result.betVal,
+                        (result.botObj.bet_side == 15 && result.is_opposite) ||
+                        (result.botObj.bet_side == 16 && result.is_opposite) ||
+                        (result.botObj.bet_side == 17 && result.is_opposite) ||
+                        (result.botObj.bet_side == 18 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
+                    bet_credit_chip_amount: (result.botObj.bet_side == 14 && !result.is_opposite) ||
+                    (result.botObj.bet_side == 15 && result.is_opposite) ||
+                    (result.botObj.bet_side == 16 && result.is_opposite) ||
+                    (result.botObj.bet_side == 17 && result.is_opposite) ||
+                    (result.botObj.bet_side == 18 && result.is_opposite) ? result.betVal * 2 : result.betVal,
                     sum_paid_credit_amount: paid,
                     bet_time: result.bet_time
                 }
@@ -3855,7 +3916,7 @@ function initiateWorker(table) {
         if (result.action == 'played') {
             clearInterval(betInt)
             if (result.status == 'FAILED' || result.status == null) {
-                console.log('bet failed')
+                // console.log('bet failed')
                 isPlay = false
                 isBet = false
                 currentList = []
@@ -3958,7 +4019,7 @@ function initiateWorker(table) {
                 // console.log(threeCutCurrentBetData)
                 clearInterval(threeCutBetInt)
                 if (result.status == 'FAILED' || result.status == null) {
-                    console.log('bet failed')
+                    // console.log('bet failed')
                     isThreeCutBet = false
                     return
                 }
@@ -4054,7 +4115,7 @@ function initiateWorker(table) {
             } else {
                 clearInterval(fourCutBetInt)
                 if (result.status == 'FAILED' || result.status == null) {
-                    console.log('bet failed')
+                    // console.log('bet failed')
                     isFourCutBet = false
                     return
                 }
@@ -4146,7 +4207,7 @@ function initiateWorker(table) {
         }
 
         if (result.action == 'three_cut_bet') {
-            console.log('three_cut_bet', isThreeCutBet)
+            // console.log('three_cut_bet', isThreeCutBet)
             if (isThreeCutBet) {
             } else {
                 isThreeCutBet = true
@@ -4163,7 +4224,7 @@ function initiateWorker(table) {
         }
 
         if (result.action == 'four_cut_bet') {
-            console.log('four_cut_bet', isFourCutBet)
+            // console.log('four_cut_bet', isFourCutBet)
             if (isFourCutBet) {
             } else {
                 isFourCutBet = true
@@ -4801,21 +4862,6 @@ function initiateRotWorker(table) {
                 })
                 isPlayRot.ZONE = false
             }
-
-
-            // // isPlay = false
-            // if(result.playList.findIndex((item) => item == 'RB') != -1){
-            //     isPlayRot.RB = false
-            // }
-            // if(result.playList.findIndex((item) => item == 'ED') != -1){
-            //     isPlayRot.ED = false
-            // }
-            // if(result.playList.findIndex((item) => item == 'SB') != -1){
-            //     isPlayRot.SB = false
-            // }
-            // if(result.playList.findIndex((item) => item == 'ZONE') != -1){
-            //     isPlayRot.ZONE = false
-            // }
             rotCurrentList = []
         }
 
@@ -4847,14 +4893,20 @@ function initiateRotWorker(table) {
                     ED: 212,
                     SB: 213,
                     TWOZ: 214,
-                    ONEZ: 215
+                    ONEZ: 215,
+                    FZ: 216,
+                    SZ: 217,
+                    TZ: 218
                 },
                 21: {
                     RB: 221,
                     ED: 222,
                     SB: 223,
                     TWOZ: 224,
-                    ONEZ: 225
+                    ONEZ: 225,
+                    FZ: 226,
+                    SZ: 227,
+                    TZ: 228
                 }
 
             }
@@ -5265,6 +5317,243 @@ function initiateRotWorker(table) {
                 })
             })
 
+            db.botTransction.findOne({
+                where: {
+                    bot_type: mapBotType[resultTableId].FZ,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+                botTransactionObj[`${cvtTableId}FIRSTZONE`] = null
+                if (result.status.FIRSTZONE == 'WIN') {
+                    point += 1
+                } else if (result.status.FIRSTZONE == 'LOSE') {
+                    point -= 1
+                }
+                let FZbotTransactionData = {
+                    bot_type: mapBotType[resultTableId].FZ,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: 'DOZENx1st',
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status.FIRSTZONE,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(FZbotTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: mapBotType[resultTableId].FZ,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: mapBotType[resultTableId].FZ,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            FZbotTransactionData.id = res.id
+
+                            if (Object.keys(rotBotWorkerDict).length > 0) {
+                                Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                    var val = rotBotWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'static_result_bet',
+                                        bot_type: result.bot_type,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: 'DOZEN1st',
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status.FIRSTZONE,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: FZbotTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
+
+            db.botTransction.findOne({
+                where: {
+                    bot_type: mapBotType[resultTableId].SZ,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+                botTransactionObj[`${cvtTableId}SECONDZONE`] = null
+                if (result.status.SECONDZONE == 'WIN') {
+                    point += 1
+                } else if (result.status.SECONDZONE == 'LOSE') {
+                    point -= 1
+                }
+                let SZbotTransactionData = {
+                    bot_type: mapBotType[resultTableId].SZ,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: 'DOZENx2nd',
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status.SECONDZONE,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(SZbotTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: mapBotType[resultTableId].SZ,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: mapBotType[resultTableId].SZ,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            SZbotTransactionData.id = res.id
+
+                            if (Object.keys(rotBotWorkerDict).length > 0) {
+                                Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                    var val = rotBotWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'static_result_bet',
+                                        bot_type: result.bot_type,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: 'DOZEN2nd',
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status.SECONDZONE,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: SZbotTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
+
+            db.botTransction.findOne({
+                where: {
+                    bot_type: mapBotType[resultTableId].TZ,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+                botTransactionObj[`${cvtTableId}THIRDZONE`] = null
+                if (result.status.THIRDZONE == 'WIN') {
+                    point += 1
+                } else if (result.status.THIRDZONE == 'LOSE') {
+                    point -= 1
+                }
+                let TZbotTransactionData = {
+                    bot_type: mapBotType[resultTableId].TZ,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: 'DOZENx3rd',
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status.THIRDZONE,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(TZbotTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: mapBotType[resultTableId].TZ,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: mapBotType[resultTableId].TZ,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            TZbotTransactionData.id = res.id
+
+                            if (Object.keys(rotBotWorkerDict).length > 0) {
+                                Object.keys(rotBotWorkerDict).forEach(function (key) {
+                                    var val = rotBotWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'static_result_bet',
+                                        bot_type: result.bot_type,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: 'DOZEN3rd',
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status.THIRDZONE,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: TZbotTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
+
         }
 
 
@@ -5283,7 +5572,7 @@ function initiateRotWorker(table) {
         }
 
         if (result.action == 'static_bet') {
-            console.log(`table ${result.data.table.id} bet`)
+            // console.log(`table ${result.data.table.id} bet`)
             rotStaticStartBet = new Date().getTime()
             rotStaticBetInt[result.data.table.id] = setInterval(function () {
                 rotStaticBetInterval(rotStaticStartBet, result.data, result.data.table.id);

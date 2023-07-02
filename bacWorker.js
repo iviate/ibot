@@ -418,7 +418,7 @@ async function livePlaying(tableId, tableTitle = null){
                     table: workerData,
                     bot_type: 4
                 })
-              }, 5000)
+              }, 2000)
             
             isThreeCutPlay = false
             threecutBot = null
@@ -443,7 +443,7 @@ async function livePlaying(tableId, tableTitle = null){
                     table: workerData,
                     bot_type: 5
                 })
-              }, 5000)
+              }, 2000)
             
             isFourCutPlay = false
             fourcutBot = null
@@ -476,7 +476,7 @@ async function livePlaying(tableId, tableTitle = null){
                         table: workerData,
                         bot_type: 1 
                     })
-                  }, 5000)
+                  }, 2000)
                 
             }
             bot = null

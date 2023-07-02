@@ -207,7 +207,7 @@ function getBetVal() {
     else if (botObj.money_system == 9) {
         betval = playData[playTurn - 1]
     }
-    else if(botObj.money_system == 10){
+    else if (botObj.money_system == 10) {
         betval = allInBetVal
     }
 
@@ -297,13 +297,13 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
-    
+
     // console.log(table.id, status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
     if (betFailed) {
         return
     }
     // console.log(table.id)
-    
+
 
     if (current.shoe == data.shoe && current.round == data.round) {
         betFailed = false
@@ -401,14 +401,14 @@ function bet(data) {
                 dozen.splice(index1, 1)
                 let index2 = dozen.indexOf(data.bot.TWOZONE[1])
                 dozen.splice(index2, 1)
-                
+
                 realBet = dozen[0]
-                console.log('opposite two zone : ', realBet)
+                // console.log('opposite two zone : ', realBet)
                 payload.chip = {}
                 payload.chip['credit'] = {}
                 payload.chip.credit[realBet] = betVal
             }
-            
+
         } else if (botObj.bet_side == 15 || botObj.bet_side == 215 | botObj.bet_side == 225) {
             if (!is_opposite) {
                 realBet = data.bot.ONEZONE
@@ -438,6 +438,58 @@ function bet(data) {
 
 
             }
+        } else if (botObj.bet_side == 16 || botObj.bet_side == 216 | botObj.bet_side == 226) {
+            if (!is_opposite) {
+                realBet = 'DOZENx1st'
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet] = betVal
+            } else {
+                // console.log('opposite one zone')
+                let dozen = ['DOZENx2nd', 'DOZENx3rd']
+                // console.log(index)
+                realBet = dozen
+                // console.log(realBet)
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet[0]] = betVal
+                payload.chip.credit[realBet[1]] = betVal
+            }
+        } else if (botObj.bet_side == 17 || botObj.bet_side == 217 | botObj.bet_side == 227) {
+            if (!is_opposite) {
+                realBet = 'DOZENx2nd'
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet] = betVal
+            } else {
+                // console.log('opposite one zone')
+                let dozen = ['DOZENx1st', 'DOZENx3rd']
+
+                realBet = dozen
+                // console.log(realBet)
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet[0]] = betVal
+                payload.chip.credit[realBet[1]] = betVal
+
+            }
+        } else if (botObj.bet_side == 18 || botObj.bet_side == 218 | botObj.bet_side == 228) {
+            if (!is_opposite) {
+                realBet = 'DOZENx3rd'
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet] = betVal
+            } else {
+                // console.log('opposite one zone')
+                let dozen = ['DOZENx1st', 'DOZENx2nd']
+                // console.log(index)
+                realBet = dozen
+                // console.log(realBet)
+                payload.chip = {}
+                payload.chip['credit'] = {}
+                payload.chip.credit[realBet[0]] = betVal
+                payload.chip.credit[realBet[1]] = betVal
+            }
         }
 
         if (botObj.open_zero && botObj.zero_bet > 0) {
@@ -449,7 +501,7 @@ function bet(data) {
 
         }
         // console.log('rot is_mock', is_mock)
-        console.log(payload)
+        console.log(is_mock, payload)
         if (!is_mock) {
             axios.post(`https://wapi.betworld.international/roulette-game-service/roulette/bet`, payload,
                 {
@@ -464,7 +516,9 @@ function bet(data) {
                         turnover += payload.chip.credit['STRAIGHTUPx0']
                     }
 
-                    if (( botObj.bet_side == 14 && is_opposite == false ) || (botObj.bet_side == 15 && is_opposite == true)) {
+                    if ((botObj.bet_side == 14 && is_opposite == false) || (botObj.bet_side == 15 && is_opposite == true)
+                        || (botObj.bet_side == 16 && is_opposite == true) || (botObj.bet_side == 17 && is_opposite == true)
+                        || (botObj.bet_side == 18 && is_opposite == true)) {
                         turnover += betVal * 2
                     } else {
                         turnover += betVal
@@ -475,7 +529,7 @@ function bet(data) {
                     betFailed = true
                 })
                 .catch(error => {
-                    console.log(error)
+                    console.log('rot bet error : ', error.response.data.code)
                     if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
                         betFailed = true
                     } else {
@@ -488,7 +542,9 @@ function bet(data) {
                 turnover += payload.chip.credit['STRAIGHTUPx0']
             }
 
-            if (( botObj.bet_side == 14 && is_opposite == false ) || (botObj.bet_side == 15 && is_opposite == true)) {
+            if ((botObj.bet_side == 14 && is_opposite == false) || (botObj.bet_side == 15 && is_opposite == true)
+                || (botObj.bet_side == 16 && is_opposite == true) || (botObj.bet_side == 17 && is_opposite == true)
+                || (botObj.bet_side == 18 && is_opposite == true)) {
                 turnover += betVal * 2
             } else {
                 turnover += betVal
@@ -572,7 +628,7 @@ function genLeftProfitXSystem(wallet) {
 }
 
 async function processResultBet(betStatus, botTransactionId, botTransaction, gameResult) {
-    if(betStatus == 'TIE'){
+    if (betStatus == 'TIE') {
         console.log('rot bot worker process result TIEEEEEEEEEE')
     }
     // console.log('rot bot worker process result')
@@ -599,14 +655,14 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
     else if (botObj.money_system == 7) {
         // console.log(`before playTurn ${playTurn}`)
         // console.log(playData[playTurn-1])
-        if(score == 0){
+        if (score == 0) {
             winStreak = 0
             profitloss += -1 * (playData[playTurn - 1] * 2)
         }
-        else if (betStatus == "WIN") {
+        else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             winStreak += 1
             profitloss += playData[playTurn - 1]
-        } else if (betStatus == 'LOSE') {
+        } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             winStreak = 0
             profitloss += -1 * (playData[playTurn - 1] * 2)
         }
@@ -644,9 +700,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
 
         }
     } else if (botObj.money_system == 8) {
-        if(score == 0){
+        if (score == 0) {
         }
-        else if (betStatus == "WIN") {
+        else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             XRWinStreak += 1
         }
         // console.log(` XR SYSTEM ${playTurn}, ${XRWinStreak}, ${XRPreviousWinStreak}`)
@@ -702,10 +758,17 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                 playTurn = 1
             }
         } else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-            playTurn -= 2
-            if (playTurn < 1) {
-                playTurn = 1
+            if ((botObj.bet_side == 14 && current.is_opposite == true) || (botObj.bet_side == 15 && current.is_opposite == false)
+                || (botObj.bet_side == 16 && is_opposite == false) || (botObj.bet_side == 17 && is_opposite == false)
+                || (botObj.bet_side == 18 && is_opposite == false)) {
+                    playTurn = 1
+            } else {
+                playTurn -= 2
+                if (playTurn < 1) {
+                    playTurn = 1
+                }
             }
+
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
             playTurn += 1
             if (playTurn > playData.length) {
@@ -720,10 +783,10 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
         }
         else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             allInStreak += 1
-            if(allInStreak >= playData.length){
+            if (allInStreak >= playData.length) {
                 allInStreak = 0
                 allInBetVal = botObj.init_bet
-            }else{
+            } else {
                 allInBetVal += current.betVal
             }
         } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
@@ -734,7 +797,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
     else if (botObj.money_system == 11) {
         // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
         if (score == 0) {
-            playTurn = 1  
+            playTurn = 1
         } else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
             playTurn++
             if (playTurn > playData.length) {
@@ -899,19 +962,23 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                 u.mock_wallet -= current.betVal
             }
             else if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
-                if ((botObj.bet_side == 14 && current.is_opposite == true) || (botObj.bet_side == 15 && current.is_opposite == false)) {
+                if ((botObj.bet_side == 14 && current.is_opposite == true) || (botObj.bet_side == 15 && current.is_opposite == false)
+                    || (botObj.bet_side == 16 && is_opposite == false) || (botObj.bet_side == 17 && is_opposite == false)
+                    || (botObj.bet_side == 18 && is_opposite == false)) {
                     u.mock_wallet += (current.betVal * 2)
                 } else {
                     u.mock_wallet += current.betVal
                 }
 
             } else if ((betStatus == 'LOSE' && current.is_opposite == false) || (betStatus == 'WIN' && current.is_opposite == true)) {
-                if ((botObj.bet_side == 14 && current.is_opposite == false) || (botObj.bet_side == 15 && current.is_opposite == true)) {
+                if ((botObj.bet_side == 14 && current.is_opposite == false) || (botObj.bet_side == 15 && current.is_opposite == true)
+                    || (botObj.bet_side == 16 && is_opposite == true) || (botObj.bet_side == 17 && is_opposite == true)
+                    || (botObj.bet_side == 18 && is_opposite == true)) {
                     u.mock_wallet -= (current.betVal * 2)
                 } else {
                     u.mock_wallet -= current.betVal
                 }
-                
+
             } else if (betStatus == 'TIE') {
             }
             let currentWallet = u.mock_wallet
@@ -1076,7 +1143,7 @@ function registerForEventListening() {
         }
 
         if (result.action == 'static_bet') {
-            console.log(`static bet ${botObj.bot_type} table ${result.table}`)
+            // console.log(`static bet ${botObj.bot_type} table ${result.table}`)
             if ((botObj.bot_type == 210 && result.table == 14) || (botObj.bot_type == 220 && result.table == 21)) {
                 bet(result.data)
             }
@@ -1095,16 +1162,16 @@ function registerForEventListening() {
             }
             if (botObj.bot_type != 210 && botObj.bot_type != 220) {
                 // console.log('action result_bet')
-                
+
                 betFailed = false
                 if (result.table_id == current.table_id &&
                     result.round == current.round &&
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[botObj.bet_side] == result.botTransaction.bot_type) {
-                   
+
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
-                    }, 5000)
+                    }, 1000)
 
                 }
             }
@@ -1113,21 +1180,27 @@ function registerForEventListening() {
             betFailed = false
         }
         if (result.action == 'static_result_bet') {
-            
+
             let mapBotTypeAndBetSide = {
                 14: {
                     11: 211,
                     12: 212,
                     13: 213,
                     14: 214,
-                    15: 215
+                    15: 215,
+                    16: 216,
+                    17: 217,
+                    18: 218
                 },
                 21: {
                     11: 221,
                     12: 222,
                     13: 223,
                     14: 224,
-                    15: 225
+                    15: 225,
+                    16: 226,
+                    17: 227,
+                    18: 228
                 }
 
             }
@@ -1140,7 +1213,7 @@ function registerForEventListening() {
                     // console.log(result)
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
-                    }, 3000)
+                    }, 1000)
 
                 }
             }

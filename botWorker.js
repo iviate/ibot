@@ -278,7 +278,7 @@ function bet(data) {
         // }
 
 
-        console.log(data)
+        // console.log(data)
         let payload = { table_id: data.table.id, game_id: data.game_id, vtable_id: data.table.vid }
         let realBet = data.bot
         if (data.bot == 'PLAYER' && is_opposite == false) {
@@ -294,9 +294,9 @@ function bet(data) {
         } else {
             return
         }
-
+        console.log('bac payload', is_mock, payload)
         if (!is_mock) {
-            console.log(payload)
+            
             axios.post(`https://wapi.betworld.international/baccarat-game-service/baccarat/bet`, payload,
                 {
                     headers: {

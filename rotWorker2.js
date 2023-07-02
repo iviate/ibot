@@ -717,7 +717,10 @@ async function livePlaying(tableId, tableTitle = null) {
                 twoZoneCorrect: 0,
                 twoZoneWrong: 0,
                 oneZoneCorrect: 0,
-                oneZoneWrong: 0
+                oneZoneWrong: 0,
+                firstZoneCorrect: 0,
+                secondZoneCorrect: 0,
+                thirdZoneCorrect: 0,
             }
             if (isPlay) {
                 isPlay = false
@@ -759,7 +762,7 @@ async function livePlaying(tableId, tableTitle = null) {
                 TWOZONE: getTwozoneWinerPercent(),
                 ONEZONE: getOnezoneWinerPercent()
             }
-            console.log(`remainBet ${remainBet}`)
+            // console.log(`remainBet ${remainBet}`)
             if (remainBet > 17) {
 
                 setTimeout(function () {
@@ -775,7 +778,7 @@ async function livePlaying(tableId, tableTitle = null) {
                             playList: ['RB', 'ED', 'SB', 'ZONE']
                         }
                     })
-                }, 6500)
+                }, 1000)
 
             } else {
                 // parentPort.postMessage({ action: 'played', status: 'FAILED', playList: ['RB', 'ED', 'SB', 'ZONE'], table: workerData })
@@ -851,7 +854,7 @@ async function livePlaying(tableId, tableTitle = null) {
     });
 
     channel.bind('result', async (data) => {
-        console.log(`${tableId}-roulette-result`)
+        // console.log(`${tableId}-roulette-result`)
         // console.log(data)
         let winner = data.winner;
         let playCount = predictStats.predict.length
@@ -866,7 +869,10 @@ async function livePlaying(tableId, tableTitle = null) {
                 ED: 'LOSE',
                 SB: 'LOSE',
                 TWOZONE: 'LOSE',
-                ONEZONE: 'LOSE'
+                ONEZONE: 'LOSE',
+                FIRSTZONE: 'LOSE',
+                SECONDZONE: 'LOSE',
+                THIRDZONE: 'LOSE'
             }
 
             let addition = data.addition
@@ -904,6 +910,21 @@ async function livePlaying(tableId, tableTitle = null) {
                 status.ONEZONE = 'WIN'
             } else {
                 statCount.oneZoneWrong++;
+            }
+
+            if (addition.findIndex((item) => item == ['DOZENx1st']) != -1) {
+                status.FIRSTZONE = 'WIN'
+            } else {
+            }
+
+            if (addition.findIndex((item) => item == ['DOZENx2nd']) != -1) {
+                status.SECONDZONE = 'WIN'
+            } else {
+            }
+
+            if (addition.findIndex((item) => item == ['DOZENx3rd']) != -1) {
+                status.THIRDZONE = 'WIN'
+            } else {
             }
 
 
