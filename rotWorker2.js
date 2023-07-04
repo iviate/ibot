@@ -698,7 +698,7 @@ async function livePlaying(tableId, tableTitle = null) {
         }
 
         round = data.round
-        console.log(`${tableId}-roulette-start round ${data.shoe_id}-${data.round}`)
+        // console.log(`${tableId}-roulette-start round ${data.shoe_id}-${data.round}`)
         //console.log(data)
         previousGameStartAt = data.started_at
 

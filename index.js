@@ -3479,6 +3479,18 @@ function compareZONE(a, b) {
 
 async function mainBody() {
     console.log("Main Thread Started");
+
+    await db.bot.update({
+        status: 3
+    }, {
+        where: {
+            status: {
+                [Op.ne]: 3
+            }
+
+        }
+    })
+
     let bacRoomAPI = 'https://wapi.betworld.international/game-service/v-games?status=active&table_status=active&group_key=classic&all=true&per_page=20&page=1'
     let response = await axios.get(bacRoomAPI, {
         headers: {

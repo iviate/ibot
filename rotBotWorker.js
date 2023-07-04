@@ -202,7 +202,6 @@ function getBetVal() {
     }
     else if (botObj.money_system == 8) {
         betval = playData[playTurn - 1]
-        // console.log(`3 in 9 bet val ${playTurn} : ${betval}`)
     }
     else if (botObj.money_system == 9) {
         betval = playData[playTurn - 1]
@@ -297,7 +296,6 @@ function getBetVal() {
 
 function bet(data) {
     table = data.table
-
     // console.log(table.id, status, betFailed, botObj.bet_side, botObj.is_infinite, data.playList)
     if (betFailed) {
         return
@@ -524,7 +522,7 @@ function bet(data) {
                         turnover += betVal
                     }
 
-                    current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
+                    current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite, bet_side : botObj.bet_side}
                     parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                     betFailed = true
                 })
@@ -550,7 +548,7 @@ function bet(data) {
                 turnover += betVal
             }
 
-            current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
+            current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite, bet_side : botObj.bet_side }
             parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
             betFailed = true
             bet_time = Date.now()
@@ -638,7 +636,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 6 || botObj.money_system == 5) {
         // console.log(betStatus, botTransactionId, botTransaction, current.is_opposite)
+        console.log('play turn on martingel : ', playTurn, playData.length)
         if (score == 0) {
+           
             playTurn++
             if (playTurn > playData.length) {
                 playTurn = 1
@@ -651,6 +651,7 @@ async function processResultBet(betStatus, botTransactionId, botTransaction, gam
                 playTurn = 1
             }
         }
+        console.log('play turn on martingel after : ', playTurn, playData.length)
     }
     else if (botObj.money_system == 7) {
         // console.log(`before playTurn ${playTurn}`)
@@ -1206,10 +1207,12 @@ function registerForEventListening() {
             }
             if ((botObj.bot_type == 210 && result.table_id == 14) || (botObj.bot_type == 220 && result.table_id == 21)) {
                 betFailed = false
+               
                 if (result.table_id == current.table_id &&
                     result.round == current.round &&
                     result.shoe == current.shoe &&
-                    mapBotTypeAndBetSide[result.table_id][botObj.bet_side] == result.botTransaction.bot_type) {
+                    mapBotTypeAndBetSide[result.table_id][current.bet_side] == result.botTransaction.bot_type) {
+                    console.log('bet_side effect : ', current.bet_side, result.botTransaction.bot_type)
                     // console.log(result)
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
