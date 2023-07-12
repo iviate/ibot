@@ -3,6 +3,9 @@
 
 require('log-timestamp');
 // module included to create worker threads
+
+process.setMaxListeners(0);
+
 const {
     Worker
 } = require('worker_threads');
