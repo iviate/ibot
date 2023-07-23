@@ -915,7 +915,7 @@ function registerForEventListening() {
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[result.table_id][current.bet_side] == result.botTransaction.bot_type) {
                         // console.log('static_result_bet',botObj.bot_type, result.table_id, current.table_id, result.round, current.round, result.shoe, current.shoe,
-                        mapBotTypeAndBetSide[result.table_id][current.bet_side], result.botTransaction.bot_type, result.botTransactionId)
+                        // mapBotTypeAndBetSide[result.table_id][current.bet_side], result.botTransaction.bot_type, result.botTransactionId)
                     // console.log('bet_side effect : ', current.bet_side, result.botTransaction.bot_type)
                     // console.log(result)
                     setTimeout(function () {
