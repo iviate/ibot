@@ -385,9 +385,9 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 
         } else if (betStatus == 'TIE') {
             if (playData.length == 1) {
-                playData.push((Math.ceil(playData[0] * 10) / 10) / 2)
+                playData.push(Math.ceil(playData[0] * 10) / 10)
             } else {
-                playData.push((Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10) / 2)
+                playData.push(Math.ceil((playData[0] + playData[playData.length - 1]) * 10) / 10)
             }
         }
     } else if (botObj.money_system == 9) {

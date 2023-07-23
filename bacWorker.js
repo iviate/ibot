@@ -4,7 +4,8 @@ require('log-timestamp');
 const { parentPort, workerData } = require('worker_threads');
 const axios = require('axios');
 const moment = require('moment-timezone');
-const Pusher = require("pusher-js")
+const Pusher = require("pusher-js");
+const { stat } = require('fs');
 
 // let interval;
 // let index = -1;
@@ -17,7 +18,10 @@ let round;
 let predictStats = { shoe: '', correct: 0, wrong: 0, tie: 0, info: {}, predict: [] };
 // let predictStatsHistory = [];
 let statsCount;
-let bot = null;
+let bot = null
+let bot_static = null
+let static_data = {}
+let is_static_play = false
 let threecutBot = null;
 let fourcutBot = null;
 let playRound = null;
@@ -191,6 +195,8 @@ async function livePlaying(tableId, tableTitle = null){
             round = data.round
             // predictStatsHistory.push({ ...predictStats })
             predictStats = { shoe: shoe, correct: 0, wrong: 0, tie: 0, info: {}, predict: [] }
+            
+
             if(isPlay){
                 isPlay = false
                 bot = null
@@ -280,14 +286,18 @@ async function livePlaying(tableId, tableTitle = null){
             }
         }
         
+        if(is_static_play){
+            is_static_play = false
+            parentPort.postMessage({ action: 'static_played', status: 'FAILED' })
+        }
 
-        if(isPlay && playRound < data.round){
+        if(isPlay && playRound != data.round){
             isPlay = false
             parentPort.postMessage({ action: 'played', status: 'FAILED' })
             return
         }
 
-        if (data.round < 2) {
+        if (data.round < 3) {
             bot = null
             predictStats.predict.push({ round: data.round, bot: null, isResult: false })
             if (isPlay && playRound < 4) {
@@ -296,16 +306,40 @@ async function livePlaying(tableId, tableTitle = null){
             }
         } else {
             bot = botChoice[Math.floor(Math.random() * botChoice.length)]
-            predictStats.predict.push({ round: data.round, bot: bot, isResult: false })
+            bot_static = botChoice[Math.floor(Math.random() * botChoice.length)]
+            predictStats.predict.push({ round: data.round, bot: bot, isResult: false, bot_static: bot_static })
+            
+            if (remainBet > 10) {
+                
+                // console.log(remainBet, bot_static)
+                // let sum = predictStats.correct + predictStats.wrong + predictStats.tie
+                static_data['shoe'] = shoe
+                static_data['round'] = data.round
+                is_static_play = true
+                setTimeout(function () {
+                    parentPort.postMessage({
+                        action: 'static_bet', data: {
+                            bot: bot_static,
+                            table: workerData,
+                            shoe: shoe,
+                            round: data.round,
+                            game_id: data.id,
+                            remaining: remainBet,
+                            win_percent: 50
+                        }
+                    })
+                }, 500)
+
+            } else {
+                // parentPort.postMessage({ action: 'played', status: 'FAILED', playList: ['RB', 'ED', 'SB', 'ZONE'], table: workerData })
+            }
+
             if (isPlay && playRound == data.round) {
                 // console.log(response.data);
                 // console.log(`round = ${response.data.info.detail.round}`)
                 // let current = response.data.game
                 // console.log(current)
-                
-                
                 if (remainBet > 10) {
-
                     let sum = predictStats.correct + predictStats.wrong + predictStats.tie
                     let win_percent = 0
                     if (sum != 0) {
@@ -418,7 +452,7 @@ async function livePlaying(tableId, tableTitle = null){
                     table: workerData,
                     bot_type: 4
                 })
-              }, 2000)
+              }, 1000)
             
             isThreeCutPlay = false
             threecutBot = null
@@ -443,25 +477,34 @@ async function livePlaying(tableId, tableTitle = null){
                     table: workerData,
                     bot_type: 5
                 })
-              }, 2000)
+              }, 1000)
             
             isFourCutPlay = false
             fourcutBot = null
         }
 
         if (bot != null) {
-            let status = ''
-            if (winner == 'TIE') {
-                predictStats.tie++;
-                status = 'TIE'
-                
+            let status = {
+                DEFAULT : 'TIE',
+                P: "TIE",
+                B: "TIE"
             }
-            else if (lastPlay.bot == winner) {
+            
+            if(winner == 'PLAYER'){
+                status.P = 'WIN'
+                status.B = 'LOSE'
+            }else if(winner == 'BANKER'){
+                status.P = 'LOSE'
+                status.B = 'WIN'
+            }
+
+            if(winner == 'TIE'){
+            } else if (lastPlay.bot == winner) {
                 predictStats.correct++;
-                status = 'WIN'
+                status.DEFAULT = 'WIN'
             } else {
                 predictStats.wrong++;
-                status = 'LOSE'
+                status.DEFAULT = 'LOSE'
             }
 
             if (isPlay && playRound == round) {
@@ -476,10 +519,53 @@ async function livePlaying(tableId, tableTitle = null){
                         table: workerData,
                         bot_type: 1 
                     })
-                  }, 2000)
+                  }, 1000)
                 
             }
             bot = null
+        }
+        // console.log('result : ', bot_static)
+        if (bot_static != null) {
+            // console.log('winner : ', winner)
+            let static_status = {
+                DEFAULT : 'TIE',
+                P: "TIE",
+                B: "TIE"
+            }
+            
+
+            if(winner == 'PLAYER'){
+                static_status.P = 'WIN'
+                static_status.B = 'LOSE'
+            }else if(winner == 'BANKER'){
+                static_status.P = 'LOSE'
+                static_status.B = 'WIN'
+            }
+            
+            if(winner == 'TIE'){
+            }
+            else if (bot_static == winner) {
+                static_status.DEFAULT = 'WIN'
+            } else {
+                static_status.DEFAULT = 'LOSE'
+            }
+
+            if (is_static_play && static_data['round'] == round) {
+                static_data['round'] = null
+                is_static_play = false
+                setTimeout(function () {
+                    parentPort.postMessage({
+                        action: 'static_played',
+                        status: static_status, 
+                        stats: predictStats.predict[playCount - 1], 
+                        shoe: shoe, 
+                        table: workerData,
+                        bot_type: 1
+                    })
+                  }, 1000)
+                
+            }
+            bot_static = null
         }
         // liveData.winner = winner;
         // liveData.status = "END";

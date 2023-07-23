@@ -1212,11 +1212,11 @@ function registerForEventListening() {
                     result.round == current.round &&
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[result.table_id][current.bet_side] == result.botTransaction.bot_type) {
-                    console.log('bet_side effect : ', current.bet_side, result.botTransaction.bot_type)
+                    // console.log('bet_side effect : ', current.bet_side, result.botTransaction.bot_type)
                     // console.log(result)
                     setTimeout(function () {
                         processResultBet(result.status, result.botTransactionId, result.botTransaction, result.result)
-                    }, 1000)
+                    }, 2000)
 
                 }
             }

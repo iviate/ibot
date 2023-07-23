@@ -724,7 +724,7 @@ myApp.post('/login', async function (request, response) {
                     // timeout: 7000
                 })
                 let data = await page.evaluate(() => window.App);
-                console.log(data)
+                // console.log(data)
 
                 await page.goto("https://truth.bet/m/betworld", {
                     waitUntil: "networkidle2"
@@ -747,10 +747,10 @@ myApp.post('/login', async function (request, response) {
                     }
 
                 });
-                console.log(cookieToken)
+                // console.log(cookieToken)
                 let betworldToken = cookieToken.value.substring(3, cookieToken.value.length - 3);
-                console.log(betworldToken)
-                console.log(data.jwtToken != '' && betworldToken)
+                // console.log(betworldToken)
+                // console.log(data.jwtToken != '' && betworldToken)
 
                 if (data.jwtToken != '' && betworldToken) {
                     axios.get('https://truth.bet/api/users/owner', {
@@ -758,7 +758,7 @@ myApp.post('/login', async function (request, response) {
                             Authorization: `Bearer ${data.jwtToken}`
                         }
                     }).then((res2) => {
-                        console.log(res2.data.advisorId, res2.data.agentId)
+                        // console.log(res2.data.advisorId, res2.data.agentId)
 
                         if ((res2.data.advisorId == 716478 && res2.data.agentId == 26054) ||
                             (USERNAME == 'ttb168789' || USERNAME == 'testf111' || USERNAME == 'kobhilow112233' || USERNAME == 'kobhilow1' || USERNAME == 'aaa111aaa'
@@ -1139,7 +1139,7 @@ myApp.post('/bot/set_bet_side', async function (request, response) {
                 if (botObj) {
                     botObj.bet_side = bet_side
                     botObj.save()
-                    if (botObj.bot_type == 1) {
+                    if (botObj.bot_type == 1 || botData.bot_type == 110 || botData.bot_type == 120 || botData.bot_type == 130 || botData.bot_type == 140) {
                         if (botWorkerDict[user.id] != undefined) {
                             botWorkerDict[user.id].postMessage({
                                 action: 'set_bet_side',
@@ -1204,7 +1204,7 @@ myApp.post('/bot/set_init_bet', async function (request, response) {
                     botObj.init_bet = init_bet
                     botObj.save()
 
-                    if (botObj.bot_type == 1) {
+                    if (botObj.bot_type == 1 || botData.bot_type == 110 || botData.bot_type == 120 || botData.bot_type == 130 || botData.bot_type == 140) {
                         if (botWorkerDict[user.id] != undefined) {
                             botWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
@@ -1268,7 +1268,7 @@ myApp.post('/bot/set_stop_loss', async function (request, response) {
                 if (botObj) {
                     botObj.loss_threshold = loss_threshold
                     botObj.save()
-                    if (botObj.bot_type == 1) {
+                    if (botObj.bot_type == 1 || botData.bot_type == 110 || botData.bot_type == 120 || botData.bot_type == 130 || botData.bot_type == 140) {
                         if (botWorkerDict[user.id] != undefined) {
                             botWorkerDict[user.id].postMessage({
                                 action: 'set_init_bet',
@@ -1331,7 +1331,7 @@ myApp.post('/bot/set_zero', async function (request, response) {
                 },
             }).then((botObj) => {
                 if (botObj) {
-                    if (botObj.bot_type == 1) {
+                    if (botObj.bot_type == 1 || botData.bot_type == 110 || botData.bot_type == 120 || botData.bot_type == 130 || botData.bot_type == 140) {
                         response.json({
                             success: false,
                             error_code: null
@@ -1480,7 +1480,7 @@ myApp.post('/bot', async function (request, response) {
                     if (res) {
                         botData.id = res.id
                         // console.log(botData)
-                        if (botData.bot_type == 1) {
+                        if (botData.bot_type == 1 || botData.bot_type == 110 || botData.bot_type == 120 || botData.bot_type == 130 || botData.bot_type == 140) {
                             createBotWorker(botData, playData, user.is_mock)
                         } else if (botData.bot_type == 2 || botData.bot_type == 210 || botData.bot_type == 220) {
                             createRotBotWorker(botData, playData, user.is_mock)
@@ -2424,66 +2424,37 @@ myApp.get('/bot_transaction', function (request, response) {
         '220THIRDZONE': 228
 
     }
+
+    let bacBotType = {
+        '1DEFAULT': 11,
+        '1P': 12,
+        '1THREECUT': 4,
+        '1FOURCUT': 5,
+        '110DEFAULT': 111,
+        '110P': 112,
+        '120DEFAULT': 121,
+        '120P': 122,
+        '130DEFAULT': 131,
+        '130P': 132,
+        '140DEFAULT': 141,
+        '140P': 142,
+    }
+
     let BET = (request.query.type || 'DEFAULT').toUpperCase()
-    if (BET == 'DEFAULT' || BET == 'PLAYER' || BET == 'BANKER' || BET == 'THREECUT' || BET == 'FOURCUT') {
+    if (BET.endsWith('DEFAULT') || BET.endsWith('P') || BET.endsWith('THREECUT') || BET.endsWith('FOURCUT')) {
+
         if (botTransactionObj[BET] == null) {
-            if (BET == 'DEFAULT') {
-                db.botTransction.findAll({
-                    where: {
-                        bot_type: 1,
-                    },
-                    limit: 100,
-                    order: [
-                        ['id', 'DESC']
-                    ],
-                }).then((res) => {
-                    botTransactionObj[BET] = res
-                    response.json({
-                        success: true,
-                        error_code: null,
-                        data: res
-                    })
+            if (bacBotType[BET] == undefined) {
+                response.json({
+                    success: true,
+                    error_code: null,
+                    data: []
                 })
-            } else if (BET == 'PLAYER' || BET == 'BANKER') {
+            } else {
                 db.botTransction.findAll({
                     limit: 100,
                     where: {
-                        bot_type: 1,
-                        bet: BET
-                    },
-                    order: [
-                        ['id', 'DESC']
-                    ],
-                }).then((res) => {
-                    botTransactionObj[BET] = res
-                    response.json({
-                        success: true,
-                        error_code: null,
-                        data: res
-                    })
-                })
-            } else if (BET == 'THREECUT') {
-                db.botTransction.findAll({
-                    limit: 100,
-                    where: {
-                        bot_type: 4
-                    },
-                    order: [
-                        ['id', 'DESC']
-                    ],
-                }).then((res) => {
-                    botTransactionObj[BET] = res
-                    response.json({
-                        success: true,
-                        error_code: null,
-                        data: res
-                    })
-                })
-            } else if (BET == 'FOURCUT') {
-                db.botTransction.findAll({
-                    limit: 100,
-                    where: {
-                        bot_type: 5
+                        bot_type: bacBotType[BET]
                     },
                     order: [
                         ['id', 'DESC']
@@ -2497,6 +2468,7 @@ myApp.get('/bot_transaction', function (request, response) {
                     })
                 })
             }
+
 
         } else {
             // console.log('cache bot trasaction')
@@ -2883,7 +2855,11 @@ var fourCutRemainingBet;
 
 var rotStaticBetInt = {};
 var rotStaticCurrentBetData = {};
-var rotStaticStartBet;
+// var rotStaticStartBet;
+
+var bacStaticBetInt = {};
+var bacStaticCurrentBetData = {};
+// var bacStaticStartBet;
 
 mainBody();
 
@@ -2941,6 +2917,8 @@ function createBotWorker(obj, playData, is_mock) {
                     winner_result = 'WIN'
                 }
             }
+
+            // console.log('botTransactionId', result.botTransactionId)
             let userTransactionData = {
                 value: result.betVal,
                 user_bet: result.bet,
@@ -3679,6 +3657,36 @@ function rotStaticBetInterval(start, data, tableId) {
     }
 }
 
+function bacStaticBetInterval(start, data, tableId) {
+    // console.log(`rotBetInterval ${tableId}`)
+    // console.log(startBet)
+    // console.log(data)
+    let n = new Date().getTime()
+    // if(tableId == 18){
+    //     console.log('bac static bet', tableId, n, start, n - start, (data.remaining - 2) * 1000, 'round : ', data.round)
+    // }
+    
+    // console.log(rotBetInt, tableId)
+    if (n - start > (data.remaining - 2) * 1000) {
+        // console.log('clearInterval ', tableId)
+        clearInterval(bacStaticBetInt[tableId])
+    } else {
+        // console.log(tableId, 'rot static betting')
+        if (Object.keys(botWorkerDict).length > 0) {
+            Object.keys(botWorkerDict).forEach(function (key) {
+                var val = botWorkerDict[key];
+                // console.log(key, val)
+                val.postMessage({
+                    action: 'static_bet',
+                    data: data,
+                    table: tableId
+                })
+            });
+
+        }
+    }
+}
+
 
 function playBaccarat() {
     // console.log(Object.keys(botWorkerDict))
@@ -3940,7 +3948,7 @@ function initiateWorker(table) {
 
             db.botTransction.findOne({
                 where: {
-                    bot_type: 1,
+                    bot_type: 11,
                 },
                 order: [
                     ['id', 'DESC']
@@ -3951,22 +3959,21 @@ function initiateWorker(table) {
                     point = latest.point
                 }
 
-                botTransactionObj['DEFAULT'] = null
-                botTransactionObj[result.stats.bot] = null
-                if (result.status == 'WIN') {
+                botTransactionObj['1DEFAULT'] = null
+                if (result.status.DEFAULT == 'WIN') {
                     point += 1
-                } else if (result.status == 'LOSE') {
+                } else if (result.status.DEFAULT == 'LOSE') {
                     point -= 1
                 }
-                botTransactionData = {
-                    bot_type: result.bot_type,
+                let botTransactionData = {
+                    bot_type: 11,
                     table_id: result.table.id,
                     table_title: result.table.title,
                     shoe: result.shoe,
                     round: result.stats.round,
                     bet: result.stats.bot,
                     result: JSON.stringify(result.stats),
-                    win_result: result.status,
+                    win_result: result.status.DEFAULT,
                     user_count: 0,
                     point: point
                 }
@@ -3974,7 +3981,7 @@ function initiateWorker(table) {
                 db.botTransction.create(botTransactionData).then((created) => {
                     db.botTransction.findOne({
                         where: {
-                            bot_type: 1,
+                            bot_type: 11,
                         },
                         order: [
                             ['id', 'DESC']
@@ -3987,7 +3994,7 @@ function initiateWorker(table) {
 
                             if (latestBotTransactionId != res.id) {
                                 io.emit('all', {
-                                    bot_type: 1,
+                                    bot_type: 11,
                                     bet: res.bet
                                 })
                                 latestBotTransactionId = res.id
@@ -4001,14 +4008,14 @@ function initiateWorker(table) {
                                     // console.log(key, val)
                                     val.postMessage({
                                         action: 'result_bet',
-                                        bot_type: result.bot_type,
+                                        bot_type: 11,
                                         table_id: result.table.id,
                                         table_title: result.table.title,
                                         shoe: result.shoe,
                                         round: result.stats.round,
                                         bet: result.stats.bot,
                                         result: JSON.stringify(result.stats),
-                                        status: result.status,
+                                        status: result.status.DEFAULT,
                                         user_count: 0,
                                         botTransactionId: res.id,
                                         botTransaction: botTransactionData
@@ -4021,9 +4028,294 @@ function initiateWorker(table) {
                 })
             })
 
+            db.botTransction.findOne({
+                where: {
+                    bot_type: 12,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+
+                botTransactionObj['1P'] = null
+                if (result.status.P == 'WIN') {
+                    point += 1
+                } else if (result.status.P == 'LOSE') {
+                    point -= 1
+                }
+                let PbotTransactionData = {
+                    bot_type: 12,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: result.stats.bot,
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status.P,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(PbotTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: 12,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+
+
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: 12,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            PbotTransactionData.id = res.id
+
+                            if (Object.keys(botWorkerDict).length > 0) {
+                                Object.keys(botWorkerDict).forEach(function (key) {
+                                    var val = botWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'result_bet',
+                                        bot_type: 12,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: result.stats.bot,
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status.P,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: PbotTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
+
             isPlay = false
             isBet = false
             currentList = []
+        }
+
+        if (result.action == 'static_played') {
+            // console.log('bac static played', result.stats.round, " : ", result.table.id, " : ", result.status, " : ", result.stats.bot_static)
+            clearInterval(bacStaticBetInt[result.table.id])
+            if (result.status == 'FAILED' || result.status == null) {
+                // console.log('bet failed')
+                return
+            }
+
+            let resultTableId = result.table.id
+            let mapTableId = { 18: 110, 20: 120, 22: 130, 26: 140 }
+            let cvtTableId = mapTableId[resultTableId]
+            // console.log(`table ${resultTableId} static play`)    
+            let mapBotType = {
+                18: {
+                    DEFAULT: 111,
+                    P: 112,
+                    B: 113,
+                },
+                20: {
+                    DEFAULT: 121,
+                    P: 122,
+                    B: 123,
+                },
+                22: {
+                    DEFAULT: 131,
+                    P: 132,
+                    B: 133,
+                },
+                26: {
+                    DEFAULT: 141,
+                    P: 142,
+                    B: 143,
+                },
+
+            }
+
+            db.botTransction.findOne({
+                where: {
+                    bot_type: mapBotType[resultTableId].DEFAULT,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+
+                botTransactionObj[`${cvtTableId}DEFAULT`] = null
+                // botTransactionObj[result.stats.bot] = null
+                if (result.status.DEFAULT == 'WIN') {
+                    point += 1
+                } else if (result.status.DEFAULT == 'LOSE') {
+                    point -= 1
+                }
+                let botTransactionData = {
+                    bot_type: mapBotType[resultTableId].DEFAULT,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: result.stats.bot_static,
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status.DEFAULT,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(botTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: mapBotType[resultTableId].DEFAULT,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+
+
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: mapBotType[resultTableId].DEFAULT,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            botTransactionData.id = res.id
+
+                            if (Object.keys(botWorkerDict).length > 0) {
+                                Object.keys(botWorkerDict).forEach(function (key) {
+                                    var val = botWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'static_result_bet',
+                                        bot_type: mapBotType[resultTableId].DEFAULT,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: result.stats.bot_static,
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status.DEFAULT,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: botTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
+
+            db.botTransction.findOne({
+                where: {
+                    bot_type: mapBotType[resultTableId].P,
+                },
+                order: [
+                    ['id', 'DESC']
+                ]
+            }).then((latest) => {
+                let point = 0
+                if (latest) {
+                    point = latest.point
+                }
+
+                botTransactionObj[`${cvtTableId}P`] = null
+                // botTransactionObj[result.stats.bot] = null
+                if (result.status.P == 'WIN') {
+                    point += 1
+                } else if (result.status.P == 'LOSE') {
+                    point -= 1
+                }
+                let PbotTransactionData = {
+                    bot_type: mapBotType[resultTableId].P,
+                    table_id: result.table.id,
+                    table_title: result.table.title,
+                    shoe: result.shoe,
+                    round: result.stats.round,
+                    bet: 'PLAYER',
+                    result: JSON.stringify(result.stats),
+                    win_result: result.status.P,
+                    user_count: 0,
+                    point: point
+                }
+
+                db.botTransction.create(PbotTransactionData).then((created) => {
+                    db.botTransction.findOne({
+                        where: {
+                            bot_type: mapBotType[resultTableId].P,
+                        },
+                        order: [
+                            ['id', 'DESC']
+                        ]
+                    }).then((res) => {
+
+
+                        // console.log(res)
+                        if (res) {
+
+                            if (latestBotTransactionId != res.id) {
+                                io.emit('all', {
+                                    bot_type: mapBotType[resultTableId].P,
+                                    bet: res.bet
+                                })
+                                latestBotTransactionId = res.id
+                            }
+
+                            PbotTransactionData.id = res.id
+
+                            if (Object.keys(botWorkerDict).length > 0) {
+                                Object.keys(botWorkerDict).forEach(function (key) {
+                                    var val = botWorkerDict[key];
+                                    // console.log(key, val)
+                                    val.postMessage({
+                                        action: 'static_result_bet',
+                                        bot_type: mapBotType[resultTableId].P,
+                                        table_id: result.table.id,
+                                        table_title: result.table.title,
+                                        shoe: result.shoe,
+                                        round: result.stats.round,
+                                        bet: 'PLAYER',
+                                        result: JSON.stringify(result.stats),
+                                        status: result.status.P,
+                                        user_count: 0,
+                                        botTransactionId: res.id,
+                                        botTransaction: PbotTransactionData
+
+                                    })
+                                });
+                            }
+                        }
+                    })
+                })
+            })
         }
 
         if (result.action == 'three_cut_played') {
@@ -4053,7 +4345,7 @@ function initiateWorker(table) {
                         point = latest.point
                     }
 
-                    botTransactionObj['THREECUT'] = null
+                    botTransactionObj['1THREECUT'] = null
                     if (result.status == 'WIN') {
                         point += 1
                     } else if (result.status == 'LOSE') {
@@ -4148,7 +4440,7 @@ function initiateWorker(table) {
                         point = latest.point
                     }
 
-                    botTransactionObj['FOURCUT'] = null
+                    botTransactionObj['1FOURCUT'] = null
                     if (result.status == 'WIN') {
                         point += 1
                     } else if (result.status == 'LOSE') {
@@ -4266,6 +4558,21 @@ function initiateWorker(table) {
             isBet = true
 
             io.emit('bot', { action: 'play', data: result.data })
+        }
+
+        if (result.action == 'static_bet') {
+            console.log(`bac table ${result.data.table.id} static bet`)
+            let bacStaticStartBet = new Date().getTime()
+            bacStaticBetInt[result.data.table.id] = setInterval(function () {
+                bacStaticBetInterval(bacStaticStartBet, result.data, result.data.table.id);
+            }, 2400);
+
+            bacStaticCurrentBetData[result.data.table.id] = result.data
+            // rotIsBet = true;
+            // rotRemainingBet = result.data.remaining
+            // rotCurrentBetData = result.data
+
+            io.emit('bot', { action: 'bac_static_play', data: result.data })
         }
         // // if worker thread is still working on list then write index and updated value
         // if (result.isInProgress) {
@@ -5588,10 +5895,10 @@ function initiateRotWorker(table) {
 
         if (result.action == 'static_bet') {
             // console.log(`table ${result.data.table.id} bet`)
-            rotStaticStartBet = new Date().getTime()
+            let rotStaticStartBet = new Date().getTime()
             rotStaticBetInt[result.data.table.id] = setInterval(function () {
                 rotStaticBetInterval(rotStaticStartBet, result.data, result.data.table.id);
-            }, 2400);
+            }, 2000);
 
             rotStaticCurrentBetData[result.data.table.id] = result.data
             // rotIsBet = true;
