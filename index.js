@@ -6,10 +6,13 @@ require('log-timestamp');
 
 process.setMaxListeners(0);
 
+
+
+
 const {
     Worker
 } = require('worker_threads');
-const botConfig = require("./config/bot.config.js");
+const botConfig = require("./config/b_world_bot.config.js");
 const axios = require('axios');
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt')
@@ -28,6 +31,11 @@ const { bot, member } = require('./app/models');
 const { DH_CHECK_P_NOT_PRIME } = require('constants');
 // const { Json } = require('sequelize/types/lib/utils');
 // const { USE } = require('sequelize/types/lib/index-hints');
+
+const yeh = require('./yeh')
+var url_helper = require('url');
+var b_world = require('./b_world')
+
 db.sequelize.sync({
     alter: true
 });
@@ -78,6 +86,8 @@ let dtWorkerDict = {}
 let dtBotWorkerDict = {}
 let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2ODUxNzIwMTgsInBheWxvYWQiOnsiZGF0YSI6eyJjYXNpbm9faWQiOiIwZjIwYTVlYS1lZmM5LTQwZWMtYjcxOS02OThlOWQ3ZmRiYTYifSwidWlkIjoyMzgzNTl9fQ.gqFhm4hDEHcf1RGu4y_OEbGj8AV4KUg5W5-SoqM-vGo"
 
+var user_token = {}
+
 var myApp = require('express')();
 myApp.use(bodyParser.json())
 myApp.use(cors())
@@ -107,6 +117,32 @@ io.on('connection', (socket) => {
     });
 });
 
+function getWorkerPort(userId) {
+    if (botWorkerDict[userId] != undefined) {
+        return botWorkerDict[userId]
+    }
+    else if (rotBotWorkerDict[userId] != undefined) {
+        return rotBotWorkerDict[userId]
+    }
+    else if (dtBotWorkerDict[userId] != undefined) {
+        return dtBotWorkerDict[userId]
+    } else {
+        return null
+    }
+}
+
+function setUserToken(userId, token) {
+    user_token[userId] = token
+    let workerPort = getWorkerPort(userId)
+    // console.log('setUserToken : ', workerPort)
+    if (workerPort) {
+        workerPort.postMessage({
+            action: 'set_token',
+            data: token
+        })
+    }
+}
+
 async function checkConnecntion(bwToken) {
     let API = 'https://wapi.betworld.international/game-service/v-games?status=active&table_status=active&group_key=classic&all=true&per_page=20&page=1'
     try {
@@ -122,8 +158,6 @@ async function checkConnecntion(bwToken) {
         console.log('connection failed')
         return false
     }
-
-
 }
 
 async function reconnectWorld(username, password) {
@@ -279,12 +313,12 @@ myApp.get('/martingel/:id', async function (request, response) {
             userId: request.params.id,
         },
     })
-    if(martingels){
+    if (martingels) {
         await martingels.forEach(element => {
             // console.log(element)
             element.data = JSON.parse(element.data)
         });
-    
+
         response.json({
             success: true,
             data: {
@@ -292,7 +326,7 @@ myApp.get('/martingel/:id', async function (request, response) {
             }
         })
     }
-    
+
 
 
 })
@@ -308,7 +342,7 @@ myApp.post('/martingel/delete/:id', async function (request, response) {
         },
     })
     if (martingel) {
-        
+
         response.json({
             success: true,
             data: []
@@ -477,8 +511,164 @@ myApp.post('/clear_port', async function (request, response) {
     }
 })
 
-
 myApp.post('/login', async function (request, response) {
+    // console.log('login')
+    const USERNAME = request.body.username;
+    const PASSWORD = request.body.password;
+
+    let user = await db.user.findOne({
+        where: {
+            username: USERNAME,
+        },
+    });
+
+    if (user) {
+        if (user.is_mock) {
+            let hasBot = null
+            if (res2) {
+                hasBot = res2
+            }
+            response.json({
+                success: true,
+                data: {
+                    user_id: user.id,
+                    bot: hasBot,
+                    username: USERNAME
+                }
+            });
+
+            return
+        } else {
+            let token_res = await b_world.get_token(USERNAME, PASSWORD)
+            let res2 = await db.bot.findOne({
+                where: {
+                    status: {
+                        [Op.ne]: 3
+                    },
+                    userId: user.id
+                }
+
+            })
+            // let bcrypt_result = await bcrypt.compare(PASSWORD, user.password)
+            if (token_res) {
+                let res3 = await yeh.get_user_profile(token_res['yeh_jwt'])
+                if ((res3.data.advisor_user_id == 109308 && res3.data.agent_user_id == 881) ||
+                    (USERNAME == 'kobhilow1' || USERNAME == 'bas099068') || user.is_mock) {
+
+                    user.password = ""
+                    user.truthbet_token = token_res['yeh_jwt']
+                    user.truthbet_token_at = db.sequelize.fn('NOW')
+                    user.betworld_token = token_res['b_world_jwt']
+                    user.betworld_token_at = db.sequelize.fn('NOW')
+                    user.real_pwd = PASSWORD
+                    user.save()
+
+                    setUserToken(user.id, token_res)
+
+
+                    if (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+
+                        response.json({
+                            success: true,
+                            data: {
+                                user_id: user.id,
+                                bot: hasBot,
+                                username: USERNAME
+                            }
+                        });
+                    }
+                    else if (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+
+                        response.json({
+                            success: true,
+                            data: {
+                                user_id: user.id,
+                                bot: hasBot,
+                                username: USERNAME
+                            }
+                        });
+                    }
+                    else if (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined) {
+                        if (res2) {
+                            hasBot = res2
+                        }
+                        response.json({
+                            success: true,
+                            data: {
+                                user_id: user.id,
+                                bot: hasBot,
+                                username: USERNAME
+                            }
+                        });
+                    } else {
+                        response.json({
+                            success: true,
+                            data: {
+                                user_id: user.id,
+                                bot: null,
+                                username: USERNAME
+                            }
+                        });
+                    }
+
+
+                }
+                // console.log(res3.data.user.advisorId, res3.data.user.agentId, res3.data.user.supervisor_user_id)
+                else {
+                    response.json({
+                        success: false,
+                        message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                    });
+                }
+            } else {
+                response.json({
+                    success: false,
+                    message: 'ข้อมูลไม่ถูกต้องกรุณาลองใหม่อีกครั้ง'
+                });
+            }
+        }
+
+    } else {
+        let token_res = await b_world.get_token(USERNAME, PASSWORD)
+        if (token_res) {
+            let res3 = await yeh.get_user_profile(token_res['yeh_jwt'])
+            if ((res3.data.advisor_user_id == 109308 && res3.data.agent_user_id == 881) ||
+                (USERNAME == 'kobhilow1' || USERNAME == 'bas099068')) {
+                const created_user = await db.user.create({
+                    username: USERNAME,
+                    password: "",
+                    truthbet_token: token_res['yeh_jwt'],
+                    truthbet_token_at: db.sequelize.fn('NOW'),
+                    betworld_token: token_res['b_world_jwt'],
+                    betworld_token_at: db.sequelize.fn('NOW'),
+                    real_pwd: PASSWORD
+                })
+
+                setUserToken(created_user.id, token_res)
+
+                response.json({
+                    success: true,
+                    data: {
+                        user_id: created_user.id,
+                        bot: null,
+                        username: created_user.username
+                    }
+                });
+            }
+            // console.log(res3.data.user.advisorId, res3.data.user.agentId, res3.data.user.supervisor_user_id)
+            else {
+                response.json({
+                    success: false,
+                    message: "ยูสเซอร์ไม่ได้เป็นสมาชิก"
+                });
+            }
+        }
+
+        // require("dotenv").config();
+    }
+});
+
+myApp.post('/old_login', async function (request, response) {
     // console.log('login')
     const USERNAME = request.body.username;
     const PASSWORD = request.body.password;
@@ -942,7 +1132,7 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             init_bet * 16, init_bet * 16, init_bet * 16,
             init_bet * 32, init_bet * 32, init_bet * 32,
             init_bet * 64, init_bet * 64, init_bet * 64,
-            init_bet * 128, init_bet * 128, init_bet * 128, 
+            init_bet * 128, init_bet * 128, init_bet * 128,
             init_bet * 256, init_bet * 256, init_bet * 256,
             init_bet * 512, init_bet * 512, init_bet * 512,
             init_bet * 1024, init_bet * 1024, init_bet * 1024,
@@ -950,13 +1140,14 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
             init_bet * 4096, init_bet * 4096, init_bet * 4096,
             init_bet * 8192, init_bet * 8192, init_bet * 8192,
             init_bet * 16384, init_bet * 16384, init_bet * 16384,
+            init_bet * 32768, init_bet * 32768, init_bet * 32768,
 
         ]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
             let bVal = initSet[i]
-            if (bVal < 20000) {
+            if (bVal < 50000) {
                 ret.push(bVal)
             } else {
                 break;
@@ -970,18 +1161,18 @@ function processBotMoneySystem(money_system, init_wallet, profit_threshold, init
         let initSet = [1, 2, 3,
             5, 8, 13,
             21, 34, 55,
-            89, 144, 233, 
+            89, 144, 233,
             377, 610, 987,
             1597, 2584, 4181,
-           6765, 10946, 17729 ]
+            6765, 10946, 17729,
+            28675]
 
         let ret = []
         for (let i = 0; i < initSet.length; i++) {
             let bVal = initSet[i] * init_bet
-            if (bVal < 20000) {
+            if (bVal < 50000) {
                 ret.push(bVal)
             } else {
-                ret.push(20000)
                 break;
             }
 
@@ -1391,17 +1582,26 @@ myApp.post('/bot', async function (request, response) {
     }).then(async (user) => {
         if (user) {
             if (!user.is_mock) {
-                let check = await checkConnecntion(user.betworld_token)
+                if (!user_token.hasOwnProperty(user.id)) {
+                    let token_res = b_world.get_token(user.username, user.real_pwd)
+                    if(token_res){
+                        setUserToken(user.id, token_res)
+                    }else{
+                        user_token[user.id] = {
+                            yeh_jwt: "",
+                            b_world_jwt: ""
+                        }
+                    }
+                   
+                }
+
+                let check = await b_world.get_game_list(user_token[user.id]['b_world_jwt'])
                 if (!check) {
-                    let data = await reconnectWorld(user.username, user.real_pwd)
+                    let data = await b_world.get_token(user.username, user.real_pwd)
                     // console.log(data)
 
-                    if (data.success) {
-                        user.truthbet_token = data.ttoken,
-                            user.truthbet_token_at = db.sequelize.fn('NOW')
-                        user.betworld_token = data.btoken,
-                            user.betworld_token_at = db.sequelize.fn('NOW')
-                        await user.save()
+                    if (data) {
+                        setUserToken(user.id, data)
                     } else {
                         response.json({
                             success: false,
@@ -1416,9 +1616,9 @@ myApp.post('/bot', async function (request, response) {
             // console.log(request.body.is_infinite)
             botData = {
                 userId: user.id,
-                token: user.betworld_token,
+                token: user_token[user.id]['b_world_jwt'],
                 token_at: user.betworld_token_at,
-                ttoken: user.truthbet_token,
+                ttoken: user_token[user.id]['yeh_jwt'],
                 ttoken_at: user.truthbet_token_at,
                 status: 2,
                 bot_type: request.body.bot_type,
@@ -1436,7 +1636,9 @@ myApp.post('/bot', async function (request, response) {
                 profit_wallet: 0,
                 is_opposite: false,
                 zero_bet: request.body.zero_bet | 0,
-                open_zero: false
+                open_zero: false,
+                username: user.username,
+                password: user.real_pwd
             }
             // console.log(botData)
             let playData = []
@@ -2207,22 +2409,22 @@ myApp.get('/bot_info/:id', async function (request, response) {
                 if (res2 && (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined)) {
                     dtBotWorkerDict[user.id].postMessage({ action: 'info' })
                 }
-                if(res2){
+                if (res2) {
                     response.json({
                         success: true,
                         error_code: null,
                         data: {
-                            bot_type: res2.bot_type  
+                            bot_type: res2.bot_type
                         }
                     })
-                }else{
+                } else {
                     response.json({
                         success: true,
                         error_code: null,
                         data: null
                     })
                 }
-                
+
             })
         } else {
             response.json({
@@ -2242,7 +2444,7 @@ myApp.get('/user_transaction/:id', async function (request, response) {
         where: {
             id: request.params.id,
         },
-    }).then((user) => {
+    }).then(async (user) => {
         if (user.is_mock) {
             let limit = 20
             let offset = (page - 1) * 20
@@ -2286,18 +2488,25 @@ myApp.get('/user_transaction/:id', async function (request, response) {
 
         }
         else if (user && !user.is_mock) {
-            axios.get(`https://truth.bet/api/m/reports/stakes?report_type=1&game_id=&table_id=&page=${page}`, {
-                headers: {
-                    Authorization: `Bearer ${user.truthbet_token}`
+            if (!user_token.hasOwnProperty(user.id)) {
+                let token_res = b_world.get_token(user.username, user.real_pwd)
+                if (token_res) {
+                    setUserToken(user.id, token_res)
+                } else {
+                    user_token[user.id] = {
+                        yeh_jwt: "",
+                        b_world_jwt: ""
+                    }
                 }
+
+            }
+
+            let res = b_world.get_history(user_token[user.id]['b_world_jwt'], page)
+            response.json({
+                success: true,
+                error_code: null,
+                data: res.data || []
             })
-                .then(res => {
-                    response.json({
-                        success: true,
-                        error_code: null,
-                        data: res.data
-                    })
-                })
         } else {
             response.json({
                 success: false,
@@ -2526,7 +2735,7 @@ myApp.get('/bot_transaction', function (request, response) {
             })
         }
 
-    } else if (BET.endsWith('RB') || BET.endsWith('ED') || BET.endsWith('SB') || BET.endsWith('TWOZONE') || BET.endsWith('ONEZONE') 
+    } else if (BET.endsWith('RB') || BET.endsWith('ED') || BET.endsWith('SB') || BET.endsWith('TWOZONE') || BET.endsWith('ONEZONE')
         || BET.endsWith('FIRSTZONE') || BET.endsWith('SECONDZONE') || BET.endsWith('THIRDZONE')) {
 
         if (botTransactionObj[BET] == null) {
@@ -2574,7 +2783,7 @@ myApp.get('/wallet/:id', function (request, response) {
         where: {
             id: user_id,
         },
-    }).then((user) => {
+    }).then(async (user) => {
 
         if (user && user.is_mock) {
             // console.log(user.mock_wallet)
@@ -2590,33 +2799,52 @@ myApp.get('/wallet/:id', function (request, response) {
             })
         }
         else if (user) {
-            axios.get(`https://truth.bet/api/users/owner`, {
-                headers: {
-                    Authorization: `Bearer ${user.truthbet_token}`
+            // axios.get(`https://truth.bet/api/users/owner`, {
+            //     headers: {
+            //         Authorization: `Bearer ${user.truthbet_token}`
+            //     }
+            // })
+            //     .then(res => {
+            if (!user_token.hasOwnProperty(user.id)) {
+                let token_res = b_world.get_token(user.username, user.real_pwd)
+                if (token_res) {
+                    setUserToken(user.id, token_res)
+                } else {
+                    user_token[user.id] = {
+                        yeh_jwt: "",
+                        b_world_jwt: ""
+                    }
+                }
+
+            }
+
+            let res = await yeh.get_user_profile(user_token[user.id]['yeh_jwt'])
+            if (!res) {
+                let token_res = await b_world.get_token(user.username, user.real_pwd)
+                res = await yeh.get_user_profile(token_res['yeh_jwt'])
+                setUserToken(user.id, token_res)
+            }
+            let profit_wallet = user.profit_wallet
+            // console.log(res.data)
+            let all_wallet = res.data.user_credit.credit_chip
+            let play_wallet = all_wallet - profit_wallet
+            // console.log({
+            //     profit_wallet: 0,
+            //     all_wallet: all_wallet,
+            //     play_wallet: all_wallet,
+            //     myWallet: res.data.myWallet
+            // })
+            response.json({
+                success: true,
+                error_code: null,
+                data: {
+                    profit_wallet: profit_wallet,
+                    all_wallet: all_wallet,
+                    play_wallet: play_wallet,
+                    myWallet: res.data.chips
                 }
             })
-                .then(res => {
-                    // console.log(res.data)
-                    let profit_wallet = user.profit_wallet
-                    let all_wallet = res.data.chips.credit
-                    let play_wallet = all_wallet - profit_wallet
-                    // console.log({
-                    //     profit_wallet: 0,
-                    //     all_wallet: all_wallet,
-                    //     play_wallet: all_wallet,
-                    //     myWallet: res.data.myWallet
-                    // })
-                    response.json({
-                        success: true,
-                        error_code: null,
-                        data: {
-                            profit_wallet: profit_wallet,
-                            all_wallet: all_wallet,
-                            play_wallet: play_wallet,
-                            myWallet: res.data.chips
-                        }
-                    })
-                })
+            // })
             // .catch(error => {
             //     response.json({
             //         success: false,
@@ -2644,17 +2872,25 @@ myApp.get('/check_conn/:id', function (request, response) {
             id: user_id,
         },
     }).then(async (user) => {
-        let check = await checkConnecntion(user.betworld_token)
+        if (!user_token.hasOwnProperty(user.id)) {
+            let token_res = b_world.get_token(user.username, user.real_pwd)
+            if(token_res){
+                setUserToken(user.id, token_res)
+            }else{
+                user_token[user.id] = {
+                    yeh_jwt: "",
+                    b_world_jwt: ""
+                }
+            }
+           
+        }
+        let check = await checkConnecntion(user_token[user.id]['b_world_jwt'])
         if (!check) {
-            let data = await reconnectWorld(user.username, user.real_pwd)
+            let data = await b_world.get_token(user.username, user.real_pwd)
             // console.log(data)
 
-            if (data.success) {
-                user.truthbet_token = data.ttoken,
-                    user.truthbet_token_at = db.sequelize.fn('NOW')
-                user.betworld_token = data.btoken,
-                    user.betworld_token_at = db.sequelize.fn('NOW')
-                await user.save()
+            if (data) {
+                setUserToken(user.id, data)
                 response.json({
                     success: true,
                     is_connect: true,
@@ -2880,6 +3116,11 @@ function createBotWorker(obj, playData, is_mock) {
             io.emit(`user${result.userId}`, result)
         }
 
+        if (result.action == 'set_token') {
+            user_token[result.data.userId]['yeh_jwt'] = result.data.yeh_jwt
+            user_token[result.data.userId]['b_world_jwt'] = result.data.b_world_jwt
+        }
+
         if (result.action == 'info') {
             // console.log('bot info')
             io.emit(`user${result.userId}`, { ...result, isPlay: isBet, win_percent: win_percent, currentBetData: currentBetData })
@@ -3046,6 +3287,11 @@ function createRotBotWorker(obj, playData, is_mock) {
         if (result.action == 'bet_failed') {
             console.log(`rot bot ${result.botObj.userId} bet failed ${result.error}`)
         }
+
+        if (result.action == 'set_token') {
+            user_token[result.data.userId]['yeh_jwt'] = result.data.yeh_jwt
+            user_token[result.data.userId]['b_world_jwt'] = result.data.b_world_jwt
+        }
         // if (result.action == 'restart_result') {
         //     io.emit(`user${result.userId}`, result)
         // }
@@ -3084,7 +3330,7 @@ function createRotBotWorker(obj, playData, is_mock) {
             let winner_result = result.botTransaction.win_result
             // console.log(result.bet, result.botTransaction.bet, result.bet != result.botTransaction.bet, 
             //                 result.botTransaction.win_result, result.is_opposite)
-            
+
 
             if (result.botTransaction.win_result != 'TIE' && result.is_opposite) {
                 if (result.botTransaction.win_result == 'WIN') {
@@ -3160,17 +3406,17 @@ function createRotBotWorker(obj, playData, is_mock) {
             // console.log('process result rot is_mock', is_mock)
             if (result.is_mock) {
                 let paid = result.betVal
-                if((result.botObj.bet_side == 14 && !result.is_opposite) || (result.botObj.bet_side == 15 && result.is_opposite)
-                || (result.botObj.bet_side == 16 && result.is_opposite) || (result.botObj.bet_side == 17 && result.is_opposite)
-                || (result.botObj.bet_side == 18 && result.is_opposite)){
+                if ((result.botObj.bet_side == 14 && !result.is_opposite) || (result.botObj.bet_side == 15 && result.is_opposite)
+                    || (result.botObj.bet_side == 16 && result.is_opposite) || (result.botObj.bet_side == 17 && result.is_opposite)
+                    || (result.botObj.bet_side == 18 && result.is_opposite)) {
                     paid += result.betVal
                 }
                 if (winner_result == "WIN") {
-                    if((result.botObj.bet_side == 14 && result.is_opposite) || (result.botObj.bet_side == 15 && !result.is_opposite)
-                    || (result.botObj.bet_side == 16 && !result.is_opposite) || (result.botObj.bet_side == 17 && !result.is_opposite)
-                    || (result.botObj.bet_side == 18 && !result.is_opposite)){
+                    if ((result.botObj.bet_side == 14 && result.is_opposite) || (result.botObj.bet_side == 15 && !result.is_opposite)
+                        || (result.botObj.bet_side == 16 && !result.is_opposite) || (result.botObj.bet_side == 17 && !result.is_opposite)
+                        || (result.botObj.bet_side == 18 && !result.is_opposite)) {
                         paid += result.betVal * 2
-                    }else{
+                    } else {
                         paid += result.betVal
                     }
                 } else if (winner_result == "LOSE") {
@@ -3187,10 +3433,10 @@ function createRotBotWorker(obj, playData, is_mock) {
                         (result.botObj.bet_side == 17 && result.is_opposite) ||
                         (result.botObj.bet_side == 18 && result.is_opposite) ? JSON.stringify(result.bet) : result.bet,
                     bet_credit_chip_amount: (result.botObj.bet_side == 14 && !result.is_opposite) ||
-                    (result.botObj.bet_side == 15 && result.is_opposite) ||
-                    (result.botObj.bet_side == 16 && result.is_opposite) ||
-                    (result.botObj.bet_side == 17 && result.is_opposite) ||
-                    (result.botObj.bet_side == 18 && result.is_opposite) ? result.betVal * 2 : result.betVal,
+                        (result.botObj.bet_side == 15 && result.is_opposite) ||
+                        (result.botObj.bet_side == 16 && result.is_opposite) ||
+                        (result.botObj.bet_side == 17 && result.is_opposite) ||
+                        (result.botObj.bet_side == 18 && result.is_opposite) ? result.betVal * 2 : result.betVal,
                     sum_paid_credit_amount: paid,
                     bet_time: result.bet_time
                 }
@@ -3241,8 +3487,14 @@ function createDtWorker(obj, playData, is_mock) {
         if (result.action == 'bet_failed') {
             console.log(`dt bot ${result.botObj.userId} bet failed ${result.error}`)
         }
+
         if (result.action == 'restart_result') {
             io.emit(`user${result.userId}`, result)
+        }
+
+        if (result.action == 'set_token') {
+            user_token[result.data.userId]['yeh_jwt'] = result.data.yeh_jwt
+            user_token[result.data.userId]['b_world_jwt'] = result.data.b_world_jwt
         }
 
         if (result.action == 'info') {
@@ -3472,12 +3724,30 @@ async function mainBody() {
         }
     })
 
-    let bacRoomAPI = 'https://wapi.betworld.international/game-service/v-games?status=active&table_status=active&group_key=classic&all=true&per_page=20&page=1'
-    let response = await axios.get(bacRoomAPI, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    })
+    let response = null
+    let r3 = null
+    try {
+        let r1 = await yeh.login('jx448112', 'aj5786nj')
+        let r2 = await yeh.launch_game(r1['jwt'], 14)
+
+        var url_parts = url_helper.parse(r2['url'], true);
+        var query = url_parts.query;
+        // console.log(query['sync_token'])
+        r3 = await b_world.login_with_token(query['sync_token'])
+        // console.log(r3)
+        let bacRoomAPI = 'https://wapi.betworld.international/game-service/v-games?status=active&table_status=active&group_key=classic&all=true&per_page=100&page=1'
+
+        response = await axios.get(bacRoomAPI, {
+            headers: {
+                Authorization: `Bearer ${r3['jwt']}`
+            }
+        })
+        // console.log(response.data)
+    } catch (error) {
+        console.log(error)
+    }
+
+
 
     // console.log(response.data);
     tables = response.data.data
@@ -3485,19 +3755,25 @@ async function mainBody() {
     for (let table of tables) {
         table.vid = table.id
         table.id = table.game_table_id
-        console.log(table.title, table.game_table_id)
-        if (table.game_table.game_id == 1) {
+        console.log(botConfig.hasOwnProperty(table.game_table_id), table.title, table.game_table_id, table.game_table.game_id)
+        table.token = r3['jwt']
+        if(botConfig.hasOwnProperty(table.game_table_id)){
+            if (table.game_table.game_id == 1 && table.min_bet == 1) {
 
-            // console.log(table.id)
-            initiateWorker(table);
+                console.log('bac: ', table.id, table.vid)
+                initiateWorker(table)
+            }
+            else if (table.game_table.game_id == 10 && table.min_bet == 1) {
+                console.log('rot: ', table.id, table.vid)
+                initiateRotWorker(table)
+            }
+            else if (table.game_table.game_id == 6 && table.min_bet == 1) {
+                // console.log(table.id)
+                console.log('dt: ', table.id, table.vid)
+                initiateDtWorker(table)
+            }
         }
-        else if (table.game_table.game_id == 10) {
-            initiateRotWorker(table)
-        }
-        else if (table.game_table.game_id == 6) {
-            // console.log(table.id)
-            initiateDtWorker(table)
-        }
+        
     }
 
     interval = setInterval(function () {
@@ -3665,7 +3941,7 @@ function bacStaticBetInterval(start, data, tableId) {
     // if(tableId == 18){
     //     console.log('bac static bet', tableId, n, start, n - start, (data.remaining - 2) * 1000, 'round : ', data.round)
     // }
-    
+
     // console.log(rotBetInt, tableId)
     if (n - start > (data.remaining - 2) * 1000) {
         // console.log('clearInterval ', tableId)
@@ -5921,8 +6197,8 @@ function initiateRotWorker(table) {
 function startWorker(table, path, cb) {
     // sending path and data to worker thread constructor
     // console.log(botConfig.user[table.id])
-    table.token = botConfig.user[table.game_table_id]
-    if (table.token == '') {
+    // table.token = botConfig.user[table.game_table_id]
+    if (!table.token) {
         return null
     }
     let w = new Worker(path, {

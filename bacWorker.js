@@ -145,7 +145,7 @@ function inititalInfo() {
 
         })
         .catch(error => {
-            console.log(error);
+            console.log('bac worker : ', error);
         });
 }
 
@@ -156,7 +156,7 @@ async function livePlaying(tableId, tableTitle = null){
         cluster: 'ap1'
     });
     const channel = pusher.subscribe(`game.${tableId}`);
-    console.log("start", `game.${tableId}`);
+    console.log("bac start", `game.${tableId}`);
 
     const io = global['io'];
 

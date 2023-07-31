@@ -321,7 +321,7 @@ async function livePlaying(tableId, tableTitle = null){
         cluster: 'ap1',
     });
     const channel = pusher.subscribe(`game.${tableId}`);
-    // console.log("start", `game.${tableId}`);
+    console.log("dt start", `game.${tableId}`);
 
     const io = global['io'];
 

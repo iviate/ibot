@@ -5,6 +5,8 @@ const { bot } = require('./app/models');
 const { POINT_CONVERSION_COMPRESSED } = require('constants');
 const e = require('express');
 const db = require('./app/models');
+const b_world = require('./b_world')
+const yeh = require('./yeh')
 
 let interval;
 let systemData;
@@ -35,6 +37,19 @@ var allInStreak = 0
 var allInBetVal = 0
 
 registerForEventListening();
+
+async function re_token(username, password){
+    const token_res = await b_world.get_token(username, password)
+
+    // console.log(user)
+    if(token_res){
+        ttoken = token_res['yeh_jwt']
+        token = token_res['b_world_jwt']
+        parentPort.postMessage({ action: 'set_token', 
+                        data: { userId: botObj.userId, yeh_jwt: token_res['yeh_jwt'], b_world_jwt: token_res['b_world_jwt'] } })
+
+    }
+}
 
 function restartOnlyProfit() {
     axios.get(`https://truth.bet/api/users/owner`, {
@@ -158,11 +173,11 @@ function restartAll() {
 
 
 function restartXSystem(type) {
-    if (type == 1) {
-        restartOnlyProfit()
-    } else if (type == 2) {
-        restartAll()
-    }
+    // if (type == 1) {
+    //     restartOnlyProfit()
+    // } else if (type == 2) {
+    //     restartAll()
+    // }
 }
 
 function getBetVal() {
@@ -236,8 +251,8 @@ function bet(data) {
         // console.log(`betVal : ${betVal}`)
         if (betVal < 0) {
             betVal = 1
-        } else if (betVal > 25000) {
-            betVal = 25000
+        } else if (betVal > 50000) {
+            betVal = 50000
         }
 
         let payload = { table_id: data.table.id, game_id: data.game_id, vtable_id: data.table.vid }
@@ -272,7 +287,7 @@ function bet(data) {
                     parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
                     betFailed = true
                 })
-                .catch(error => {
+                .catch(async (error) => {
                     console.log(error)
                     if (error.response.data.code != 500 && error.response.data.code != "toomany_requests") {
                         betFailed = true
@@ -280,6 +295,7 @@ function bet(data) {
                         betFailed = false
                     }
                     parentPort.postMessage({ action: 'bet_failed', botObj: botObj, error: error.response.data.error })
+                    await re_token(botObj.username, botObj.password)
                 });
         } else {
             turnover += betVal
@@ -432,14 +448,19 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
     
 
     if (!is_mock) {
-        axios.get(`https://truth.bet/api/users/owner`, {
-            headers: {
-                Authorization: `Bearer ${ttoken}`
-            }
-        })
-            .then(async (res) => {
+        // axios.get(`https://truth.bet/api/users/owner`, {
+        //     headers: {
+        //         Authorization: `Bearer ${ttoken}`
+        //     }
+        // })
+        //     .then(async (res) => {
+                let res = await yeh.get_user_profile(ttoken)
+                if(!res){
+                    await re_token(botObj.username, botObj.password)
+                    res = await yeh.get_user_profile(ttoken)
+                }
                 // console.log(playData)
-                let currentWallet = res.data.chips.credit
+                let currentWallet = res.data.user_credit.credit_chip
                 let cutProfit = botObj.init_wallet + Math.floor(((botObj.profit_threshold - botObj.init_wallet) * 94) / 100)
                 if (playData.length == 0) {
                     if (botObj.is_infinite == false && currentWallet - botObj.profit_wallet >= cutProfit) {
@@ -566,10 +587,10 @@ async function processResultBet(betStatus, botTransactionId, botTransaction) {
 
                 }
 
-            })
-            .catch(error => {
-                console.log(error)
-            })
+            // })
+            // .catch(error => {
+            //     console.log(error)
+            // })
     } else {
         db.user.findOne({
             where: {
