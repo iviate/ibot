@@ -2501,11 +2501,12 @@ myApp.get('/user_transaction/:id', async function (request, response) {
 
             }
 
-            let res = b_world.get_history(user_token[user.id]['b_world_jwt'], page)
+            let res = await b_world.get_history(user_token[user.id]['b_world_jwt'], page)
+            // console.log('user transaction', res)
             response.json({
                 success: true,
                 error_code: null,
-                data: res.data || []
+                data: res || []
             })
         } else {
             response.json({

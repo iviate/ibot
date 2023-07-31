@@ -69,15 +69,18 @@ module.exports.get_history = async function get_history(token, page){
     const headers = {
         "Authorization": `Bearer ${token}`
     }
+    // console.log(token)
 
     let config = {
         headers: headers,
     }
 
     const url = `https://wapi.betworld.bingo/game-service/bet_game/find?per_page=20&page=${page}`
+    // console.log(url)
     try {
 
         let response = await axios.get(url, config)
+        // console.log(response.data)
         return response.data
 
     } catch (error) {
