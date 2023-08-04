@@ -554,9 +554,65 @@ myApp.post('/login', async function (request, response) {
     if (user) {
         if (user.is_mock) {
             let hasBot = null
-            if (res2) {
-                hasBot = res2
+            let res2 = await db.bot.findOne({
+                where: {
+                    status: {
+                        [Op.ne]: 3
+                    },
+                    userId: user.id
+                }
+
+            })
+
+            if (botWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                if (res2) {
+                    hasBot = res2
+                }
+                response.json({
+                    success: true,
+                    data: {
+                        user_id: user.id,
+                        bot: hasBot,
+                        username: USERNAME
+                    }
+                });
             }
+            else if (rotBotWorkerDict.hasOwnProperty(user.id) && botWorkerDict[user.id] != undefined) {
+                if (res2) {
+                    hasBot = res2
+                }
+                response.json({
+                    success: true,
+                    data: {
+                        user_id: user.id,
+                        bot: hasBot,
+                        username: USERNAME
+                    }
+                });
+            }
+            else if (dtBotWorkerDict.hasOwnProperty(user.id) && dtBotWorkerDict[user.id] != undefined) {
+                if (res2) {
+                    hasBot = res2
+                }
+                response.json({
+                    success: true,
+                    data: {
+                        user_id: user.id,
+                        bot: hasBot,
+                        username: USERNAME
+                    }
+                });
+            } else {
+                response.json({
+                    success: true,
+                    data: {
+                        user_id: user.id,
+                        bot: null,
+                        username: USERNAME
+                    }
+                });
+            }
+
             response.json({
                 success: true,
                 data: {
@@ -2928,7 +2984,7 @@ myApp.get('/check_conn/:id', function (request, response) {
             id: user_id,
         },
     }).then(async (user) => {
-        if (!user_token.hasOwnProperty(user.id)) {
+        if (!user_token.hasOwnProperty(user.id) && !user.is_mock) {
             let token_res = b_world.get_token(user.username, user.real_pwd)
             if (token_res) {
                 setUserToken(user.id, token_res)
@@ -2939,7 +2995,13 @@ myApp.get('/check_conn/:id', function (request, response) {
                 }
             }
 
+        }else{
+            user_token[user.id] = {
+                yeh_jwt: "",
+                b_world_jwt: ""
+            }
         }
+
         if (!user.is_mock) {
             let check = await checkConnecntion(user_token[user.id]['b_world_jwt'])
             if (!check) {
@@ -3305,8 +3367,11 @@ function createBotWorker(obj, playData, is_mock) {
                     sum_paid_credit_amount: paid,
                     bet_time: result.bet_time
                 }
+                // console.log('bac create mock trans : ', mock_transaction)
 
-                db.mockUserTransaction.create(mock_transaction)
+                db.mockUserTransaction.create(mock_transaction).then((created) => {
+                    // console.log(created)
+                })
             }
         }
     };

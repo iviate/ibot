@@ -344,7 +344,7 @@ function bet(data) {
                 });
         } else {
             turnover += betVal
-            current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite }
+            current = { bot: data.bot, bet: realBet, shoe: data.shoe, round: data.round, table_id: data.table.id, betVal: betVal, playTurn: playTurn, botObj: botObj, is_opposite: is_opposite, bet_side : botObj.bet_side }
             parentPort.postMessage({ action: 'bet_success', data: { ...data, betVal: betVal, current: current, botObj: botObj, turnover: turnover, bet: realBet } })
             betFailed = true
             bet_time = Date.now()
@@ -423,6 +423,7 @@ function genLeftProfitXSystem(wallet) {
 }
 
 async function processResultBet(betStatus, botTransactionId, botTransaction) {
+    // console.log('processResultBet()')
     if (botObj.money_system == 1) { }
     else if (botObj.money_system == 2 || botObj.money_system == 5) {
         if ((betStatus == 'WIN' && current.is_opposite == false) || (betStatus == 'LOSE' && current.is_opposite == true)) {
@@ -925,7 +926,7 @@ function registerForEventListening() {
             
             // if(result.table == 18){
             //     console.log(result.table_id, current.table_id, result.round, current.round, result.shoe, current.shoe,
-            //         apBotTypeAndBetSide[result.table_id][current.bet_side], result.botTransaction.bot_type)
+            //         mapBotTypeAndBetSide[result.table_id][current.bet_side], result.botTransaction.bot_type)
             // }
             
             if ((botObj.bot_type == 110 && result.table_id == 18) || (botObj.bot_type == 120 && result.table_id == 20)
@@ -933,12 +934,13 @@ function registerForEventListening() {
                 // console.log(result)
                 betFailed = false
                 
+                // console.log('static_result_bet',botObj.bot_type, result.table_id, current.table_id, result.round, current.round, result.shoe, current.shoe,
+                //                                     mapBotTypeAndBetSide[result.table_id][current.bet_side], result.botTransaction.bot_type, result.botTransactionId)
                 if (result.table_id == current.table_id &&
                     result.round == current.round &&
                     result.shoe == current.shoe &&
                     mapBotTypeAndBetSide[result.table_id][current.bet_side] == result.botTransaction.bot_type) {
-                        // console.log('static_result_bet',botObj.bot_type, result.table_id, current.table_id, result.round, current.round, result.shoe, current.shoe,
-                        // mapBotTypeAndBetSide[result.table_id][current.bet_side], result.botTransaction.bot_type, result.botTransactionId)
+                        
                     // console.log('bet_side effect : ', current.bet_side, result.botTransaction.bot_type)
                     // console.log(result)
                     setTimeout(function () {
