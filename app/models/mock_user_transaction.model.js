@@ -7,6 +7,9 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         game_info: {
             type: DataTypes.STRING
         },
+        note: {
+            type: DataTypes.STRING
+        },
         bet: {
             type: DataTypes.TEXT
         },

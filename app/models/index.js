@@ -26,6 +26,7 @@ db.rolling = require("./rolling.model")(sequelize, Sequelize, DataTypes)
 db.rolling_withdraw = require("./rolling_withdraw.model")(sequelize, Sequelize, DataTypes)
 db.mockUserTransaction = require("./mock_user_transaction.model")(sequelize, Sequelize, DataTypes)
 db.martingel = require("./martingel.model.js")(sequelize, Sequelize, DataTypes);
+db.special_user = require("./special_user.model.js")(sequelize, Sequelize, DataTypes);
 
 
 db.user.hasMany(db.martingel, { as: "martingels" });

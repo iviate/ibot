@@ -22,7 +22,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "start": "node --experimental-worker index.js"
   },
   "author": "",
   "license": "ISC"
