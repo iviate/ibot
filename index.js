@@ -37,6 +37,7 @@ var url_helper = require('url');
 var b_world = require('./b_world')
 
 db.sequelize.sync({
+    logging: console.log,
     alter: true
 });
 
